@@ -204,27 +204,38 @@ def endpoint_key(pkt: TcpPacket) -> tuple[tuple[str,int],tuple[str,int]]:
 
 
 def reassemble(segments: list[TcpPacket]) -> tuple[bytes, bool]:
-    """Return the longest contiguous TCP payload prefix and whether a gap was encountered.
+    """Return the contiguous TCP payload prefix and whether reconstruction was unsafe.
 
-    Retransmission overlaps are deduplicated. Sequence wraparound and reuse of
+    Identical retransmissions are deduplicated; gaps or conflicting overlaps
+    stop reconstruction. Sequence wraparound and reuse of
     the same 4-tuple for separate connections are limitations of this MVP.
     """
-    data_segs = [(p.seq,p.payload) for p in segments if p.payload]
+    data_segs = sorted(
+        ((p.seq, p.payload) for p in segments if p.payload),
+        key=lambda segment: segment[0],
+    )
     if not data_segs:
         return b'', False
-    data_segs.sort(key=lambda seg: seg[0])
-    base = data_segs[0][0]
+
+    # A SYN consumes one TCP sequence number. When observed, it gives us the
+    # expected start of the byte stream, so missing initial data is visible.
+    # Without a SYN, the capture may begin mid-stream; the first observed
+    # payload is our best available starting point, not proof of completeness.
+    syn_starts = [p.seq + 1 for p in segments if p.flags & 0x02]
+    base = min(syn_starts) if syn_starts else data_segs[0][0]
     out = bytearray()
-    gap = False
     for seq, payload in data_segs:
         start = seq - base
-        if start > len(out):
-            gap = True
-            break
-        overlap = max(0,len(out)-start)
-        if len(out)+max(0,len(payload)-overlap) > 16*1024*1024:
-            gap = True
-            break
-        if overlap < len(payload):
-            out.extend(payload[overlap:])
-    return bytes(out),gap
+        if start < 0 or start > len(out):
+            return bytes(out), True
+
+        overlap = min(len(payload), len(out) - start)
+        # A conflicting retransmission makes the stream ambiguous. Do not
+        # silently choose one version and risk reporting invented content.
+        if overlap and out[start:start + overlap] != payload[:overlap]:
+            return bytes(out), True
+        extension = payload[overlap:]
+        if len(out) + len(extension) > 16 * 1024 * 1024:
+            return bytes(out), True
+        out.extend(extension)
+    return bytes(out), False
