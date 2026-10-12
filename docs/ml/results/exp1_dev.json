@@ -1,0 +1,1405 @@
+{
+ "model_version": "bilstm-v1-972a87f2b6db",
+ "min_score": 0.25,
+ "data_seed": 1234,
+ "torch": "2.14.1+cu130",
+ "python": "3.13.16",
+ "threads": 4,
+ "checkpoint_sha256": "972a87f2b6db8b701ba43a63d1949ca0dc7684ec67c2c2a304ebbbaa19495d6a",
+ "splits": {
+  "val": {
+   "examples": 1500,
+   "entities": 1145,
+   "bilstm_at_min_score": {
+    "micro": {
+     "precision": 0.8518145161290323,
+     "recall": 0.7379912663755459,
+     "f1": 0.7908282639213852,
+     "tp": 845,
+     "fp": 147,
+     "fn": 300,
+     "support": 1145
+    },
+    "macro_f1": 0.7953354535817052,
+    "per_class": {
+     "PERSON_NAME": {
+      "precision": 0.7996515679442509,
+      "recall": 0.7251184834123223,
+      "f1": 0.7605633802816901,
+      "tp": 459,
+      "fp": 115,
+      "fn": 174,
+      "support": 633
+     },
+     "USERNAME": {
+      "precision": 0.9234449760765551,
+      "recall": 0.75390625,
+      "f1": 0.8301075268817204,
+      "tp": 386,
+      "fp": 32,
+      "fn": 126,
+      "support": 512
+     }
+    }
+   },
+   "threshold_sweep": {
+    "0.00": {
+     "precision": 0.8445,
+     "recall": 0.7397,
+     "f1": 0.7886
+    },
+    "0.05": {
+     "precision": 0.8445,
+     "recall": 0.7397,
+     "f1": 0.7886
+    },
+    "0.10": {
+     "precision": 0.847,
+     "recall": 0.7397,
+     "f1": 0.7897
+    },
+    "0.15": {
+     "precision": 0.8487,
+     "recall": 0.7397,
+     "f1": 0.7905
+    },
+    "0.20": {
+     "precision": 0.8495,
+     "recall": 0.7397,
+     "f1": 0.7908
+    },
+    "0.25": {
+     "precision": 0.8518,
+     "recall": 0.738,
+     "f1": 0.7908
+    },
+    "0.30": {
+     "precision": 0.8535,
+     "recall": 0.738,
+     "f1": 0.7916
+    },
+    "0.35": {
+     "precision": 0.8541,
+     "recall": 0.7362,
+     "f1": 0.7908
+    },
+    "0.40": {
+     "precision": 0.8547,
+     "recall": 0.7293,
+     "f1": 0.787
+    },
+    "0.45": {
+     "precision": 0.8549,
+     "recall": 0.7258,
+     "f1": 0.7851
+    },
+    "0.50": {
+     "precision": 0.86,
+     "recall": 0.7188,
+     "f1": 0.7831
+    },
+    "0.55": {
+     "precision": 0.8664,
+     "recall": 0.7022,
+     "f1": 0.7757
+    },
+    "0.60": {
+     "precision": 0.8767,
+     "recall": 0.6952,
+     "f1": 0.7755
+    },
+    "0.65": {
+     "precision": 0.8846,
+     "recall": 0.683,
+     "f1": 0.7708
+    },
+    "0.70": {
+     "precision": 0.8914,
+     "recall": 0.6664,
+     "f1": 0.7626
+    },
+    "0.75": {
+     "precision": 0.9008,
+     "recall": 0.6507,
+     "f1": 0.7556
+    },
+    "0.80": {
+     "precision": 0.9117,
+     "recall": 0.6218,
+     "f1": 0.7394
+    },
+    "0.85": {
+     "precision": 0.9174,
+     "recall": 0.6017,
+     "f1": 0.7268
+    },
+    "0.90": {
+     "precision": 0.9257,
+     "recall": 0.5878,
+     "f1": 0.719
+    },
+    "0.95": {
+     "precision": 0.934,
+     "recall": 0.5441,
+     "f1": 0.6876
+    },
+    "0.97": {
+     "precision": 0.9366,
+     "recall": 0.5031,
+     "f1": 0.6545
+    },
+    "0.99": {
+     "precision": 0.9382,
+     "recall": 0.4507,
+     "f1": 0.6088
+    }
+   },
+   "baselines": {
+    "majority(no_entities)": {
+     "micro": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 1145,
+      "support": 1145
+     },
+     "macro_f1": 0.0,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 633,
+       "support": 633
+      },
+      "USERNAME": {
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 512,
+       "support": 512
+      }
+     }
+    },
+    "existing_detect_key_rules": {
+     "micro": {
+      "precision": 1.0,
+      "recall": 0.18165938864628822,
+      "f1": 0.3074648928307465,
+      "tp": 208,
+      "fp": 0,
+      "fn": 937,
+      "support": 1145
+     },
+     "macro_f1": 0.3104616305634913,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 1.0,
+       "recall": 0.15955766192733017,
+       "f1": 0.27520435967302453,
+       "tp": 101,
+       "fp": 0,
+       "fn": 532,
+       "support": 633
+      },
+      "USERNAME": {
+       "precision": 1.0,
+       "recall": 0.208984375,
+       "f1": 0.345718901453958,
+       "tp": 107,
+       "fp": 0,
+       "fn": 405,
+       "support": 512
+      }
+     }
+    },
+    "strong_key_aware_rules": {
+     "micro": {
+      "precision": 0.9978563772775991,
+      "recall": 0.8131004366812227,
+      "f1": 0.8960538979788258,
+      "tp": 931,
+      "fp": 2,
+      "fn": 214,
+      "support": 1145
+     },
+     "macro_f1": 0.8990676198323795,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 0.9955456570155902,
+       "recall": 0.7061611374407583,
+       "f1": 0.8262476894639557,
+       "tp": 447,
+       "fp": 2,
+       "fn": 186,
+       "support": 633
+      },
+      "USERNAME": {
+       "precision": 1.0,
+       "recall": 0.9453125,
+       "f1": 0.9718875502008032,
+       "tp": 484,
+       "fp": 0,
+       "fn": 28,
+       "support": 512
+      }
+     }
+    }
+   },
+   "errors": {
+    "false_positives": 147,
+    "false_negatives": 300,
+    "fp_by_kind": {
+     "kv": 24,
+     "field_person": 36,
+     "text_neg": 31,
+     "field_user": 1,
+     "text_user": 14,
+     "field_neg": 19,
+     "text_mixed": 9,
+     "text_person": 13
+    },
+    "fn_by_kind": {
+     "field_person": 55,
+     "text_person": 106,
+     "field_user": 34,
+     "kv": 23,
+     "text_mixed": 49,
+     "text_user": 31,
+     "field_first": 2
+    },
+    "recall_by_kind": {
+     "field_first": 0.962,
+     "field_last": 1.0,
+     "field_person": 0.615,
+     "field_user": 0.815,
+     "kv": 0.819,
+     "text_mixed": 0.617,
+     "text_person": 0.615,
+     "text_user": 0.797,
+     "url": 1.0
+    },
+    "sample_false_positives": [
+     {
+      "kind": "kv",
+      "location": "form.payload",
+      "text": "product=Taeniom Go&page=2",
+      "span": "Taeniom",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "query.attendee",
+      "text": "Besarond T. Zobouez",
+      "span": "Zobouez",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "form.message",
+      "text": "Welcome to Gezeyndale!",
+      "span": "Gezeyndale",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "kv",
+      "location": "form.payload",
+      "text": "product=Chibiol Max&page=2",
+      "span": "Chibiol",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.data[0].gamertag",
+      "text": "fgeyaledottir",
+      "span": "fgeyaledottir",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "json_body.profile.attendee",
+      "text": "Niodaesios H. Deneyxsen",
+      "span": "Deneyxsen",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "form.message",
+      "text": "Welcome to Göteborg!",
+      "span": "Göteborg",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.comment",
+      "text": "Account xXBrishaXx was locked after 5 attempts",
+      "span": "Account",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.text",
+      "text": "Welcome to moleyburg!",
+      "span": "moleyburg",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "kv",
+      "location": "header.cookie",
+      "text": "product=Taeniom Go&page=2",
+      "span": "Taeniom Go",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "json_body.customer.store_name",
+      "text": "preylouk group",
+      "span": "preylouk",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "json_body.account.name",
+      "text": "arobrating",
+      "span": "arobrating",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "json_body.profile.name",
+      "text": "CHEYMEL MOTORS",
+      "span": "CHEYMEL MOTORS",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "kv",
+      "location": "json_body.log",
+      "text": "product=Stuwim Pro&page=2",
+      "span": "Stuwim",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_mixed",
+      "location": "json_body.comment",
+      "text": "Welcome Douaren, your handle is @douarensti85",
+      "span": "Welcome Douaren",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.items[0].note",
+      "text": "Welcome to Nagraethmouth!",
+      "span": "Nagraethmouth",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "form.name",
+      "text": "graemaerly",
+      "span": "graemaerly",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "json_body.account.name",
+      "text": "FLOWIPAET S. FLAPIAKIĆ",
+      "span": "FLOWIPAET S. FLAPIAKIĆ",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.items[0].note",
+      "text": "Welcome to Nialouford!",
+      "span": "Nialouford",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "form.message",
+      "text": "cc: WEYVEYN DIALEYMSKI",
+      "span": "WEYVEYN",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "form.message",
+      "text": "cc: WEYVEYN DIALEYMSKI",
+      "span": "DIALEYMSKI",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "json_body.account.store_name",
+      "text": "STEBRAR INC",
+      "span": "STEBRAR",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.comment",
+      "text": "Account prejeyl-dous39 was locked after 5 attempts",
+      "span": "Account prejeyl",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "json_body.payload.user.passenger",
+      "text": "peto c. choletov",
+      "span": "choletov",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "json_body.data[0].brand",
+      "text": "Diame Foods",
+      "span": "Diame Foods",
+      "label": "PERSON_NAME"
+     }
+    ],
+    "sample_false_negatives": [
+     {
+      "kind": "field_person",
+      "location": "query.attendee",
+      "text": "Besarond T. Zobouez",
+      "span": "Besarond T. Zobouez",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.message",
+      "text": "Hello Troualok! Your ticket is open.",
+      "span": "Troualok",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.data[0].gamertag",
+      "text": "fgeyaledottir",
+      "span": "fgeyaledottir",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.comment",
+      "text": "Ticket reassigned from Jürgen Stacexini to Vudey Zeykuov",
+      "span": "Jürgen Stacexini",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.comment",
+      "text": "Ticket reassigned from Jürgen Stacexini to Vudey Zeykuov",
+      "span": "Vudey Zeykuov",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "json_body.profile.attendee",
+      "text": "Niodaesios H. Deneyxsen",
+      "span": "Niodaesios H. Deneyxsen",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.data[0].nick",
+      "text": "Xxwuthxx",
+      "span": "Xxwuthxx",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "kv",
+      "location": "form.payload",
+      "text": "Username: zupriomaes.shiliorić\nRole: member",
+      "span": "zupriomaes.shiliorić",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.description",
+      "text": "Hello felot! Your ticket is open.",
+      "span": "felot",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_mixed",
+      "location": "json_body.notes",
+      "text": "Raeemetoth Flapiakić aka xXWuthXx posted a reply",
+      "span": "xXWuthXx",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_mixed",
+      "location": "form.message",
+      "text": "Welcome gaemios, your handle is @garianumford",
+      "span": "garianumford",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "gamertag",
+      "text": "bhumulson",
+      "span": "bhumulson",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.payload.user.nick",
+      "text": "greyniath_1976",
+      "span": "greyniath_1976",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "kv",
+      "location": "header.cookie",
+      "text": "Username: xxflulxx\nRole: member",
+      "span": "xxflulxx",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.payload.user.nick",
+      "text": "xXTifluXx",
+      "span": "xXTifluXx",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.bio",
+      "text": "Ticket reassigned from Naepremeyn Piacaeman to Raeemetoth Faejendson",
+      "span": "Naepremeyn Piacaeman",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.bio",
+      "text": "Ticket reassigned from Naepremeyn Piacaeman to Raeemetoth Faejendson",
+      "span": "Raeemetoth Faejendson",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "body.passenger",
+      "text": "Ciprouwiox A. Diopanez",
+      "span": "Ciprouwiox A. Diopanez",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.message",
+      "text": "Hello Jürgen! Your ticket is open.",
+      "span": "Jürgen",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "json_body.name",
+      "text": "Dawouner P. Woseytford",
+      "span": "Dawouner P. Woseytford",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "json_body.user.name",
+      "text": "Baechiatria P. Zinatford",
+      "span": "Baechiatria P. Zinatford",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "kv",
+      "location": "body.raw",
+      "text": "Username: pguvamman\nRole: member",
+      "span": "pguvamman",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.description",
+      "text": "Account pox_pachoun was locked after 5 attempts",
+      "span": "pox_pachoun",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "nick",
+      "text": "aliapir.shamisberg",
+      "span": "aliapir.shamisberg",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.comment",
+      "text": "Hello JEYSHIAN! Your ticket is open.",
+      "span": "JEYSHIAN",
+      "label": "PERSON_NAME"
+     }
+    ]
+   },
+   "raw_score_ece_vs_precision": 0.0682,
+   "raw_score_reliability_bins": [
+    {
+     "bin": "[0.0,0.1)",
+     "n": 3,
+     "mean_score": 0.08,
+     "precision": 0.0
+    },
+    {
+     "bin": "[0.1,0.2)",
+     "n": 3,
+     "mean_score": 0.133,
+     "precision": 0.0
+    },
+    {
+     "bin": "[0.2,0.3)",
+     "n": 7,
+     "mean_score": 0.232,
+     "precision": 0.286
+    },
+    {
+     "bin": "[0.3,0.4)",
+     "n": 13,
+     "mean_score": 0.369,
+     "precision": 0.769
+    },
+    {
+     "bin": "[0.4,0.5)",
+     "n": 20,
+     "mean_score": 0.459,
+     "precision": 0.6
+    },
+    {
+     "bin": "[0.5,0.6)",
+     "n": 49,
+     "mean_score": 0.546,
+     "precision": 0.551
+    },
+    {
+     "bin": "[0.6,0.7)",
+     "n": 52,
+     "mean_score": 0.652,
+     "precision": 0.635
+    },
+    {
+     "bin": "[0.7,0.8)",
+     "n": 75,
+     "mean_score": 0.755,
+     "precision": 0.68
+    },
+    {
+     "bin": "[0.8,0.9)",
+     "n": 54,
+     "mean_score": 0.85,
+     "precision": 0.722
+    },
+    {
+     "bin": "[0.9,1.0)",
+     "n": 727,
+     "mean_score": 0.988,
+     "precision": 0.926
+    }
+   ],
+   "cpu_timing": {
+    "single_field_ms": 2.5,
+    "batched_fields_per_sec": 2925.4
+   }
+  },
+  "calib": {
+   "examples": 1500,
+   "entities": 1106,
+   "bilstm_at_min_score": {
+    "micro": {
+     "precision": 0.8252853380158033,
+     "recall": 0.8499095840867993,
+     "f1": 0.8374164810690423,
+     "tp": 940,
+     "fp": 199,
+     "fn": 166,
+     "support": 1106
+    },
+    "macro_f1": 0.836691691459544,
+    "per_class": {
+     "PERSON_NAME": {
+      "precision": 0.7867036011080333,
+      "recall": 0.9015873015873016,
+      "f1": 0.8402366863905327,
+      "tp": 568,
+      "fp": 154,
+      "fn": 62,
+      "support": 630
+     },
+     "USERNAME": {
+      "precision": 0.8920863309352518,
+      "recall": 0.7815126050420168,
+      "f1": 0.8331466965285553,
+      "tp": 372,
+      "fp": 45,
+      "fn": 104,
+      "support": 476
+     }
+    }
+   },
+   "threshold_sweep": {
+    "0.00": {
+     "precision": 0.8246,
+     "recall": 0.8499,
+     "f1": 0.837
+    },
+    "0.05": {
+     "precision": 0.8246,
+     "recall": 0.8499,
+     "f1": 0.837
+    },
+    "0.10": {
+     "precision": 0.8246,
+     "recall": 0.8499,
+     "f1": 0.837
+    },
+    "0.15": {
+     "precision": 0.8253,
+     "recall": 0.8499,
+     "f1": 0.8374
+    },
+    "0.20": {
+     "precision": 0.8253,
+     "recall": 0.8499,
+     "f1": 0.8374
+    },
+    "0.25": {
+     "precision": 0.8253,
+     "recall": 0.8499,
+     "f1": 0.8374
+    },
+    "0.30": {
+     "precision": 0.8251,
+     "recall": 0.849,
+     "f1": 0.8369
+    },
+    "0.35": {
+     "precision": 0.8251,
+     "recall": 0.849,
+     "f1": 0.8369
+    },
+    "0.40": {
+     "precision": 0.8247,
+     "recall": 0.8463,
+     "f1": 0.8353
+    },
+    "0.45": {
+     "precision": 0.8249,
+     "recall": 0.8436,
+     "f1": 0.8342
+    },
+    "0.50": {
+     "precision": 0.828,
+     "recall": 0.8354,
+     "f1": 0.8317
+    },
+    "0.55": {
+     "precision": 0.8309,
+     "recall": 0.8309,
+     "f1": 0.8309
+    },
+    "0.60": {
+     "precision": 0.8353,
+     "recall": 0.8255,
+     "f1": 0.8304
+    },
+    "0.65": {
+     "precision": 0.8419,
+     "recall": 0.8183,
+     "f1": 0.8299
+    },
+    "0.70": {
+     "precision": 0.8447,
+     "recall": 0.8065,
+     "f1": 0.8252
+    },
+    "0.75": {
+     "precision": 0.8475,
+     "recall": 0.7939,
+     "f1": 0.8198
+    },
+    "0.80": {
+     "precision": 0.8501,
+     "recall": 0.7794,
+     "f1": 0.8132
+    },
+    "0.85": {
+     "precision": 0.8609,
+     "recall": 0.7613,
+     "f1": 0.8081
+    },
+    "0.90": {
+     "precision": 0.8749,
+     "recall": 0.7269,
+     "f1": 0.7941
+    },
+    "0.95": {
+     "precision": 0.8969,
+     "recall": 0.6844,
+     "f1": 0.7764
+    },
+    "0.97": {
+     "precision": 0.8985,
+     "recall": 0.632,
+     "f1": 0.742
+    },
+    "0.99": {
+     "precision": 0.9282,
+     "recall": 0.5497,
+     "f1": 0.6905
+    }
+   },
+   "baselines": {
+    "majority(no_entities)": {
+     "micro": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 1106,
+      "support": 1106
+     },
+     "macro_f1": 0.0,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 630,
+       "support": 630
+      },
+      "USERNAME": {
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 476,
+       "support": 476
+      }
+     }
+    },
+    "existing_detect_key_rules": {
+     "micro": {
+      "precision": 1.0,
+      "recall": 0.2088607594936709,
+      "f1": 0.3455497382198953,
+      "tp": 231,
+      "fp": 0,
+      "fn": 875,
+      "support": 1106
+     },
+     "macro_f1": 0.35132871565032364,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 1.0,
+       "recall": 0.1746031746031746,
+       "f1": 0.29729729729729726,
+       "tp": 110,
+       "fp": 0,
+       "fn": 520,
+       "support": 630
+      },
+      "USERNAME": {
+       "precision": 1.0,
+       "recall": 0.2542016806722689,
+       "f1": 0.4053601340033501,
+       "tp": 121,
+       "fp": 0,
+       "fn": 355,
+       "support": 476
+      }
+     }
+    },
+    "strong_key_aware_rules": {
+     "micro": {
+      "precision": 0.9024122807017544,
+      "recall": 0.744122965641953,
+      "f1": 0.8156590683845393,
+      "tp": 823,
+      "fp": 89,
+      "fn": 283,
+      "support": 1106
+     },
+     "macro_f1": 0.8136303448502744,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 0.8496621621621622,
+       "recall": 0.7984126984126985,
+       "f1": 0.8232405891980361,
+       "tp": 503,
+       "fp": 89,
+       "fn": 127,
+       "support": 630
+      },
+      "USERNAME": {
+       "precision": 1.0,
+       "recall": 0.6722689075630253,
+       "f1": 0.8040201005025126,
+       "tp": 320,
+       "fp": 0,
+       "fn": 156,
+       "support": 476
+      }
+     }
+    }
+   },
+   "errors": {
+    "false_positives": 199,
+    "false_negatives": 166,
+    "fp_by_kind": {
+     "text_person": 55,
+     "text_user": 16,
+     "text_neg": 63,
+     "url": 30,
+     "field_neg": 23,
+     "kv": 8,
+     "field_user": 4
+    },
+    "fn_by_kind": {
+     "text_person": 53,
+     "text_user": 32,
+     "field_user": 37,
+     "url": 33,
+     "field_person": 1,
+     "kv": 10
+    },
+    "recall_by_kind": {
+     "field_first": 1.0,
+     "field_last": 1.0,
+     "field_person": 0.994,
+     "field_user": 0.807,
+     "kv": 0.907,
+     "text_mixed": 1.0,
+     "text_person": 0.759,
+     "text_user": 0.778,
+     "url": 0.0
+    },
+    "sample_false_positives": [
+     {
+      "kind": "text_person",
+      "location": "json_body.text",
+      "text": "Best wishes, Ceychu",
+      "span": "wishes, Ceychu",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "form.comment",
+      "text": "Xxkiabeytxx has joined the chat",
+      "span": "Xxkiabeytxx",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.bio",
+      "text": "Flights to Kevikmouth are delayed.",
+      "span": "Kevikmouth",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.description",
+      "text": "breygriancua50 has joined the chat",
+      "span": "breygriancua50",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.items[0].note",
+      "text": "Flights to Paemeyndale are delayed.",
+      "span": "Paemeyndale",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.description",
+      "text": "Flights to Mastialport are delayed.",
+      "span": "Mastialport",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "url",
+      "location": "json_body.redirect_uri",
+      "text": "/docs/Chealorer_Prod",
+      "span": "Chealorer_Prod",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "form.comment",
+      "text": "Review Raechio Pro before buying.",
+      "span": "Review",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.notes",
+      "text": "Best wishes, Geyaris",
+      "span": "wishes, Geyaris",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "query.q",
+      "text": "Flights to Vienna are delayed.",
+      "span": "Vienna",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.notes",
+      "text": "wshopioxsen has joined the chat",
+      "span": "wshopioxsen",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "json_body.customer.description",
+      "text": "Flights to Tribriford are delayed.",
+      "span": "Tribriford",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "form.theme",
+      "text": "quarry_beta",
+      "span": "quarry_beta",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "header.referer",
+      "text": "/docs/ZIOKIOXMENT_PROD",
+      "span": "ZIOKIOXMENT_PROD",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.items[0].note",
+      "text": "Flights to Jeybusville are delayed.",
+      "span": "Jeybusville",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.comment",
+      "text": "Added hiacaem_15 to the group",
+      "span": "Added hiacaem_15",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.text",
+      "text": "Flights to Biaceylville are delayed.",
+      "span": "Biaceylville",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "url",
+      "location": "header.referer",
+      "text": "/docs/siabaekment_x",
+      "span": "siabaekment_x",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "json_body.redirect_uri",
+      "text": "/docs/CEALIORLY_X",
+      "span": "CEALIORLY_X",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "form.comment",
+      "text": "Review Olaaraem Pro before buying.",
+      "span": "Review",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.notes",
+      "text": "Flights to Oloushiaxburg are delayed.",
+      "span": "Oloushiaxburg",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "url",
+      "location": "url.path",
+      "text": "/docs/chaecaning_x",
+      "span": "chaecaning_x",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.bio",
+      "text": "Best wishes, Braeges",
+      "span": "wishes, Braeges",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.message",
+      "text": "Flights to Briciomhaven are delayed.",
+      "span": "Briciomhaven",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.bio",
+      "text": "feylolmae77 has joined the chat",
+      "span": "feylolmae77",
+      "label": "PERSON_NAME"
+     }
+    ],
+    "sample_false_negatives": [
+     {
+      "kind": "text_person",
+      "location": "json_body.text",
+      "text": "Best wishes, Ceychu",
+      "span": "Ceychu",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "form.comment",
+      "text": "Xxkiabeytxx has joined the chat",
+      "span": "Xxkiabeytxx",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.payload.user.alias",
+      "text": "MoulJi23",
+      "span": "MoulJi23",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.payload.user.alias",
+      "text": "lebu.cahinsen",
+      "span": "lebu.cahinsen",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.profile.alias",
+      "text": "TialithSath1984",
+      "span": "TialithSath1984",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "header.referer",
+      "text": "/profile/xXRedXx/posts",
+      "span": "xXRedXx",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.description",
+      "text": "breygriancua50 has joined the chat",
+      "span": "breygriancua50",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "header.referer",
+      "text": "/profile/flachey11/posts",
+      "span": "flachey11",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "json_body.link",
+      "text": "/profile/flachey_82/posts",
+      "span": "flachey_82",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.bio",
+      "text": "Added moul_du to the group",
+      "span": "moul_du",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "json_body.redirect_uri",
+      "text": "/profile/pirate_nocend/posts",
+      "span": "pirate_nocend",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "json_body.payload.user.participant",
+      "text": "Wifour Rossi",
+      "span": "Wifour Rossi",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.notes",
+      "text": "Best wishes, Geyaris",
+      "span": "Geyaris",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.notes",
+      "text": "wshopioxsen has joined the chat",
+      "span": "wshopioxsen",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "header.referer",
+      "text": "/profile/xXJiXx/posts",
+      "span": "xXJiXx",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "header.referer",
+      "text": "/profile/wneyaliarova/posts",
+      "span": "wneyaliarova",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "url.path",
+      "text": "/profile/cheverat.flualirman/posts",
+      "span": "cheverat.flualirman",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "body.text",
+      "text": "souge_71 has joined the chat",
+      "span": "souge_71",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.comment",
+      "text": "Added hiacaem_15 to the group",
+      "span": "hiacaem_15",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "header.referer",
+      "text": "/profile/mstokioini/posts",
+      "span": "mstokioini",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "url.path",
+      "text": "/profile/CASAE_68/posts",
+      "span": "CASAE_68",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.userHandle",
+      "text": "Troulou_58",
+      "span": "Troulou_58",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.bio",
+      "text": "Best wishes, Braeges",
+      "span": "Braeges",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.profile.alias",
+      "text": "xXDecionXx",
+      "span": "xXDecionXx",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.bio",
+      "text": "feylolmae77 has joined the chat",
+      "span": "feylolmae77",
+      "label": "USERNAME"
+     }
+    ]
+   },
+   "raw_score_ece_vs_precision": 0.1225,
+   "raw_score_reliability_bins": [
+    {
+     "bin": "[0.1,0.2)",
+     "n": 1,
+     "mean_score": 0.102,
+     "precision": 0.0
+    },
+    {
+     "bin": "[0.2,0.3)",
+     "n": 1,
+     "mean_score": 0.281,
+     "precision": 1.0
+    },
+    {
+     "bin": "[0.3,0.4)",
+     "n": 3,
+     "mean_score": 0.36,
+     "precision": 1.0
+    },
+    {
+     "bin": "[0.4,0.5)",
+     "n": 19,
+     "mean_score": 0.468,
+     "precision": 0.632
+    },
+    {
+     "bin": "[0.5,0.6)",
+     "n": 23,
+     "mean_score": 0.555,
+     "precision": 0.478
+    },
+    {
+     "bin": "[0.6,0.7)",
+     "n": 37,
+     "mean_score": 0.652,
+     "precision": 0.568
+    },
+    {
+     "bin": "[0.7,0.8)",
+     "n": 42,
+     "mean_score": 0.753,
+     "precision": 0.714
+    },
+    {
+     "bin": "[0.8,0.9)",
+     "n": 95,
+     "mean_score": 0.859,
+     "precision": 0.611
+    },
+    {
+     "bin": "[0.9,1.0)",
+     "n": 919,
+     "mean_score": 0.988,
+     "precision": 0.875
+    }
+   ],
+   "cpu_timing": {
+    "single_field_ms": 1.97,
+    "batched_fields_per_sec": 4362.4
+   }
+  }
+ }
+}
