@@ -1,4 +1,5 @@
 {
+ "error_samples_include_text": false,
  "model_version": "bilstm-v1-972a87f2b6db",
  "min_score": 0.25,
  "data_seed": 1234,
@@ -287,356 +288,456 @@
     },
     "sample_false_positives": [
      {
+      "id": "val-00000",
       "kind": "kv",
-      "location": "form.payload",
-      "text": "product=Taeniom Go&page=2",
-      "span": "Taeniom",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 8,
+      "end": 15,
+      "span_length": 7,
+      "text_length": 25
      },
      {
+      "id": "val-00007",
       "kind": "field_person",
-      "location": "query.attendee",
-      "text": "Besarond T. Zobouez",
-      "span": "Zobouez",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 12,
+      "end": 19,
+      "span_length": 7,
+      "text_length": 19
      },
      {
+      "id": "val-00010",
       "kind": "text_neg",
-      "location": "form.message",
-      "text": "Welcome to Gezeyndale!",
-      "span": "Gezeyndale",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 21,
+      "span_length": 10,
+      "text_length": 22
      },
      {
+      "id": "val-00011",
       "kind": "kv",
-      "location": "form.payload",
-      "text": "product=Chibiol Max&page=2",
-      "span": "Chibiol",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 8,
+      "end": 15,
+      "span_length": 7,
+      "text_length": 26
      },
      {
+      "id": "val-00019",
       "kind": "field_user",
-      "location": "json_body.data[0].gamertag",
-      "text": "fgeyaledottir",
-      "span": "fgeyaledottir",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 13,
+      "span_length": 13,
+      "text_length": 13
      },
      {
+      "id": "val-00035",
       "kind": "field_person",
-      "location": "json_body.profile.attendee",
-      "text": "Niodaesios H. Deneyxsen",
-      "span": "Deneyxsen",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 14,
+      "end": 23,
+      "span_length": 9,
+      "text_length": 23
      },
      {
+      "id": "val-00037",
       "kind": "text_neg",
-      "location": "form.message",
-      "text": "Welcome to Göteborg!",
-      "span": "Göteborg",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 19,
+      "span_length": 8,
+      "text_length": 20
      },
      {
+      "id": "val-00069",
       "kind": "text_user",
-      "location": "json_body.comment",
-      "text": "Account xXBrishaXx was locked after 5 attempts",
-      "span": "Account",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 7,
+      "span_length": 7,
+      "text_length": 46
      },
      {
+      "id": "val-00105",
       "kind": "text_neg",
-      "location": "json_body.text",
-      "text": "Welcome to moleyburg!",
-      "span": "moleyburg",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 20,
+      "span_length": 9,
+      "text_length": 21
      },
      {
+      "id": "val-00115",
       "kind": "kv",
-      "location": "header.cookie",
-      "text": "product=Taeniom Go&page=2",
-      "span": "Taeniom Go",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 8,
+      "end": 18,
+      "span_length": 10,
+      "text_length": 25
      },
      {
+      "id": "val-00140",
       "kind": "field_neg",
-      "location": "json_body.customer.store_name",
-      "text": "preylouk group",
-      "span": "preylouk",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 8,
+      "span_length": 8,
+      "text_length": 14
      },
      {
+      "id": "val-00155",
       "kind": "field_neg",
-      "location": "json_body.account.name",
-      "text": "arobrating",
-      "span": "arobrating",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
      },
      {
+      "id": "val-00160",
       "kind": "field_neg",
-      "location": "json_body.profile.name",
-      "text": "CHEYMEL MOTORS",
-      "span": "CHEYMEL MOTORS",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 14,
+      "span_length": 14,
+      "text_length": 14
      },
      {
+      "id": "val-00172",
       "kind": "kv",
-      "location": "json_body.log",
-      "text": "product=Stuwim Pro&page=2",
-      "span": "Stuwim",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 8,
+      "end": 14,
+      "span_length": 6,
+      "text_length": 25
      },
      {
+      "id": "val-00192",
       "kind": "text_mixed",
-      "location": "json_body.comment",
-      "text": "Welcome Douaren, your handle is @douarensti85",
-      "span": "Welcome Douaren",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 15,
+      "span_length": 15,
+      "text_length": 45
      },
      {
+      "id": "val-00208",
       "kind": "text_neg",
-      "location": "json_body.items[0].note",
-      "text": "Welcome to Nagraethmouth!",
-      "span": "Nagraethmouth",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 24,
+      "span_length": 13,
+      "text_length": 25
      },
      {
+      "id": "val-00210",
       "kind": "field_neg",
-      "location": "form.name",
-      "text": "graemaerly",
-      "span": "graemaerly",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
      },
      {
+      "id": "val-00235",
       "kind": "field_person",
-      "location": "json_body.account.name",
-      "text": "FLOWIPAET S. FLAPIAKIĆ",
-      "span": "FLOWIPAET S. FLAPIAKIĆ",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 22,
+      "span_length": 22,
+      "text_length": 22
      },
      {
+      "id": "val-00238",
       "kind": "text_neg",
-      "location": "json_body.items[0].note",
-      "text": "Welcome to Nialouford!",
-      "span": "Nialouford",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 21,
+      "span_length": 10,
+      "text_length": 22
      },
      {
+      "id": "val-00241",
       "kind": "text_person",
-      "location": "form.message",
-      "text": "cc: WEYVEYN DIALEYMSKI",
-      "span": "WEYVEYN",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 4,
+      "end": 11,
+      "span_length": 7,
+      "text_length": 22
      },
      {
+      "id": "val-00241",
       "kind": "text_person",
-      "location": "form.message",
-      "text": "cc: WEYVEYN DIALEYMSKI",
-      "span": "DIALEYMSKI",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 12,
+      "end": 22,
+      "span_length": 10,
+      "text_length": 22
      },
      {
+      "id": "val-00254",
       "kind": "field_neg",
-      "location": "json_body.account.store_name",
-      "text": "STEBRAR INC",
-      "span": "STEBRAR",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 7,
+      "span_length": 7,
+      "text_length": 11
      },
      {
+      "id": "val-00255",
       "kind": "text_user",
-      "location": "json_body.comment",
-      "text": "Account prejeyl-dous39 was locked after 5 attempts",
-      "span": "Account prejeyl",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 15,
+      "span_length": 15,
+      "text_length": 50
      },
      {
+      "id": "val-00263",
       "kind": "field_person",
-      "location": "json_body.payload.user.passenger",
-      "text": "peto c. choletov",
-      "span": "choletov",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 8,
+      "end": 16,
+      "span_length": 8,
+      "text_length": 16
      },
      {
+      "id": "val-00320",
       "kind": "field_neg",
-      "location": "json_body.data[0].brand",
-      "text": "Diame Foods",
-      "span": "Diame Foods",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 11
      }
     ],
     "sample_false_negatives": [
      {
+      "id": "val-00007",
       "kind": "field_person",
-      "location": "query.attendee",
-      "text": "Besarond T. Zobouez",
-      "span": "Besarond T. Zobouez",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 19,
+      "span_length": 19,
+      "text_length": 19
      },
      {
+      "id": "val-00014",
       "kind": "text_person",
-      "location": "json_body.message",
-      "text": "Hello Troualok! Your ticket is open.",
-      "span": "Troualok",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 6,
+      "end": 14,
+      "span_length": 8,
+      "text_length": 36
      },
      {
+      "id": "val-00019",
       "kind": "field_user",
-      "location": "json_body.data[0].gamertag",
-      "text": "fgeyaledottir",
-      "span": "fgeyaledottir",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 13,
+      "span_length": 13,
+      "text_length": 13
      },
      {
+      "id": "val-00025",
       "kind": "text_person",
-      "location": "json_body.comment",
-      "text": "Ticket reassigned from Jürgen Stacexini to Vudey Zeykuov",
-      "span": "Jürgen Stacexini",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 23,
+      "end": 39,
+      "span_length": 16,
+      "text_length": 56
      },
      {
+      "id": "val-00025",
       "kind": "text_person",
-      "location": "json_body.comment",
-      "text": "Ticket reassigned from Jürgen Stacexini to Vudey Zeykuov",
-      "span": "Vudey Zeykuov",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 43,
+      "end": 56,
+      "span_length": 13,
+      "text_length": 56
      },
      {
+      "id": "val-00035",
       "kind": "field_person",
-      "location": "json_body.profile.attendee",
-      "text": "Niodaesios H. Deneyxsen",
-      "span": "Niodaesios H. Deneyxsen",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 23,
+      "span_length": 23,
+      "text_length": 23
      },
      {
+      "id": "val-00049",
       "kind": "field_user",
-      "location": "json_body.data[0].nick",
-      "text": "Xxwuthxx",
-      "span": "Xxwuthxx",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 8,
+      "span_length": 8,
+      "text_length": 8
      },
      {
+      "id": "val-00061",
       "kind": "kv",
-      "location": "form.payload",
-      "text": "Username: zupriomaes.shiliorić\nRole: member",
-      "span": "zupriomaes.shiliorić",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 10,
+      "end": 30,
+      "span_length": 20,
+      "text_length": 43
      },
      {
+      "id": "val-00068",
       "kind": "text_person",
-      "location": "json_body.description",
-      "text": "Hello felot! Your ticket is open.",
-      "span": "felot",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 6,
+      "end": 11,
+      "span_length": 5,
+      "text_length": 33
      },
      {
+      "id": "val-00075",
       "kind": "text_mixed",
-      "location": "json_body.notes",
-      "text": "Raeemetoth Flapiakić aka xXWuthXx posted a reply",
-      "span": "xXWuthXx",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 25,
+      "end": 33,
+      "span_length": 8,
+      "text_length": 48
      },
      {
+      "id": "val-00079",
       "kind": "text_mixed",
-      "location": "form.message",
-      "text": "Welcome gaemios, your handle is @garianumford",
-      "span": "garianumford",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 33,
+      "end": 45,
+      "span_length": 12,
+      "text_length": 45
      },
      {
+      "id": "val-00080",
       "kind": "field_user",
-      "location": "gamertag",
-      "text": "bhumulson",
-      "span": "bhumulson",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 9,
+      "span_length": 9,
+      "text_length": 9
      },
      {
+      "id": "val-00090",
       "kind": "field_user",
-      "location": "json_body.payload.user.nick",
-      "text": "greyniath_1976",
-      "span": "greyniath_1976",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 14,
+      "span_length": 14,
+      "text_length": 14
      },
      {
+      "id": "val-00091",
       "kind": "kv",
-      "location": "header.cookie",
-      "text": "Username: xxflulxx\nRole: member",
-      "span": "xxflulxx",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 10,
+      "end": 18,
+      "span_length": 8,
+      "text_length": 31
      },
      {
+      "id": "val-00095",
       "kind": "field_user",
-      "location": "json_body.payload.user.nick",
-      "text": "xXTifluXx",
-      "span": "xXTifluXx",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 9,
+      "span_length": 9,
+      "text_length": 9
      },
      {
+      "id": "val-00098",
       "kind": "text_person",
-      "location": "json_body.bio",
-      "text": "Ticket reassigned from Naepremeyn Piacaeman to Raeemetoth Faejendson",
-      "span": "Naepremeyn Piacaeman",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 23,
+      "end": 43,
+      "span_length": 20,
+      "text_length": 68
      },
      {
+      "id": "val-00098",
       "kind": "text_person",
-      "location": "json_body.bio",
-      "text": "Ticket reassigned from Naepremeyn Piacaeman to Raeemetoth Faejendson",
-      "span": "Raeemetoth Faejendson",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 47,
+      "end": 68,
+      "span_length": 21,
+      "text_length": 68
      },
      {
+      "id": "val-00099",
       "kind": "field_person",
-      "location": "body.passenger",
-      "text": "Ciprouwiox A. Diopanez",
-      "span": "Ciprouwiox A. Diopanez",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 22,
+      "span_length": 22,
+      "text_length": 22
      },
      {
+      "id": "val-00118",
       "kind": "text_person",
-      "location": "json_body.message",
-      "text": "Hello Jürgen! Your ticket is open.",
-      "span": "Jürgen",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 6,
+      "end": 12,
+      "span_length": 6,
+      "text_length": 34
      },
      {
+      "id": "val-00119",
       "kind": "field_person",
-      "location": "json_body.name",
-      "text": "Dawouner P. Woseytford",
-      "span": "Dawouner P. Woseytford",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 22,
+      "span_length": 22,
+      "text_length": 22
      },
      {
+      "id": "val-00134",
       "kind": "field_person",
-      "location": "json_body.user.name",
-      "text": "Baechiatria P. Zinatford",
-      "span": "Baechiatria P. Zinatford",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 24,
+      "span_length": 24,
+      "text_length": 24
      },
      {
+      "id": "val-00138",
       "kind": "kv",
-      "location": "body.raw",
-      "text": "Username: pguvamman\nRole: member",
-      "span": "pguvamman",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 10,
+      "end": 19,
+      "span_length": 9,
+      "text_length": 32
      },
      {
+      "id": "val-00143",
       "kind": "text_user",
-      "location": "json_body.description",
-      "text": "Account pox_pachoun was locked after 5 attempts",
-      "span": "pox_pachoun",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 8,
+      "end": 19,
+      "span_length": 11,
+      "text_length": 47
      },
      {
+      "id": "val-00144",
       "kind": "field_user",
-      "location": "nick",
-      "text": "aliapir.shamisberg",
-      "span": "aliapir.shamisberg",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 18,
+      "span_length": 18,
+      "text_length": 18
      },
      {
+      "id": "val-00147",
       "kind": "text_person",
-      "location": "json_body.comment",
-      "text": "Hello JEYSHIAN! Your ticket is open.",
-      "span": "JEYSHIAN",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 6,
+      "end": 14,
+      "span_length": 8,
+      "text_length": 36
      }
     ]
    },
@@ -704,8 +805,8 @@
     }
    ],
    "cpu_timing": {
-    "single_field_ms": 2.5,
-    "batched_fields_per_sec": 2925.4
+    "single_field_ms": 3.27,
+    "batched_fields_per_sec": 2424.7
    }
   },
   "calib": {
@@ -986,356 +1087,456 @@
     },
     "sample_false_positives": [
      {
+      "id": "calib-00002",
       "kind": "text_person",
-      "location": "json_body.text",
-      "text": "Best wishes, Ceychu",
-      "span": "wishes, Ceychu",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 5,
+      "end": 19,
+      "span_length": 14,
+      "text_length": 19
      },
      {
+      "id": "calib-00003",
       "kind": "text_user",
-      "location": "form.comment",
-      "text": "Xxkiabeytxx has joined the chat",
-      "span": "Xxkiabeytxx",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
      },
      {
+      "id": "calib-00022",
       "kind": "text_neg",
-      "location": "json_body.bio",
-      "text": "Flights to Kevikmouth are delayed.",
-      "span": "Kevikmouth",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 21,
+      "span_length": 10,
+      "text_length": 34
      },
      {
+      "id": "calib-00044",
       "kind": "text_user",
-      "location": "json_body.description",
-      "text": "breygriancua50 has joined the chat",
-      "span": "breygriancua50",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 14,
+      "span_length": 14,
+      "text_length": 34
      },
      {
+      "id": "calib-00045",
       "kind": "text_neg",
-      "location": "json_body.items[0].note",
-      "text": "Flights to Paemeyndale are delayed.",
-      "span": "Paemeyndale",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 22,
+      "span_length": 11,
+      "text_length": 35
      },
      {
+      "id": "calib-00050",
       "kind": "text_neg",
-      "location": "json_body.description",
-      "text": "Flights to Mastialport are delayed.",
-      "span": "Mastialport",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 22,
+      "span_length": 11,
+      "text_length": 35
      },
      {
+      "id": "calib-00067",
       "kind": "url",
-      "location": "json_body.redirect_uri",
-      "text": "/docs/Chealorer_Prod",
-      "span": "Chealorer_Prod",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 6,
+      "end": 20,
+      "span_length": 14,
+      "text_length": 20
      },
      {
+      "id": "calib-00073",
       "kind": "text_neg",
-      "location": "form.comment",
-      "text": "Review Raechio Pro before buying.",
-      "span": "Review",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 6,
+      "span_length": 6,
+      "text_length": 33
      },
      {
+      "id": "calib-00075",
       "kind": "text_person",
-      "location": "json_body.notes",
-      "text": "Best wishes, Geyaris",
-      "span": "wishes, Geyaris",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 5,
+      "end": 20,
+      "span_length": 15,
+      "text_length": 20
      },
      {
+      "id": "calib-00078",
       "kind": "text_neg",
-      "location": "query.q",
-      "text": "Flights to Vienna are delayed.",
-      "span": "Vienna",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 17,
+      "span_length": 6,
+      "text_length": 30
      },
      {
+      "id": "calib-00084",
       "kind": "text_user",
-      "location": "json_body.notes",
-      "text": "wshopioxsen has joined the chat",
-      "span": "wshopioxsen",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
      },
      {
+      "id": "calib-00100",
       "kind": "field_neg",
-      "location": "json_body.customer.description",
-      "text": "Flights to Tribriford are delayed.",
-      "span": "Tribriford",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 21,
+      "span_length": 10,
+      "text_length": 34
      },
      {
+      "id": "calib-00102",
       "kind": "field_neg",
-      "location": "form.theme",
-      "text": "quarry_beta",
-      "span": "quarry_beta",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 11
      },
      {
+      "id": "calib-00114",
       "kind": "url",
-      "location": "header.referer",
-      "text": "/docs/ZIOKIOXMENT_PROD",
-      "span": "ZIOKIOXMENT_PROD",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 6,
+      "end": 22,
+      "span_length": 16,
+      "text_length": 22
      },
      {
+      "id": "calib-00121",
       "kind": "text_neg",
-      "location": "json_body.items[0].note",
-      "text": "Flights to Jeybusville are delayed.",
-      "span": "Jeybusville",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 22,
+      "span_length": 11,
+      "text_length": 35
      },
      {
+      "id": "calib-00128",
       "kind": "text_user",
-      "location": "json_body.comment",
-      "text": "Added hiacaem_15 to the group",
-      "span": "Added hiacaem_15",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 16,
+      "span_length": 16,
+      "text_length": 29
      },
      {
+      "id": "calib-00131",
       "kind": "text_neg",
-      "location": "json_body.text",
-      "text": "Flights to Biaceylville are delayed.",
-      "span": "Biaceylville",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 23,
+      "span_length": 12,
+      "text_length": 36
      },
      {
+      "id": "calib-00134",
       "kind": "url",
-      "location": "header.referer",
-      "text": "/docs/siabaekment_x",
-      "span": "siabaekment_x",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 6,
+      "end": 19,
+      "span_length": 13,
+      "text_length": 19
      },
      {
+      "id": "calib-00144",
       "kind": "url",
-      "location": "json_body.redirect_uri",
-      "text": "/docs/CEALIORLY_X",
-      "span": "CEALIORLY_X",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 6,
+      "end": 17,
+      "span_length": 11,
+      "text_length": 17
      },
      {
+      "id": "calib-00150",
       "kind": "text_neg",
-      "location": "form.comment",
-      "text": "Review Olaaraem Pro before buying.",
-      "span": "Review",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 6,
+      "span_length": 6,
+      "text_length": 34
      },
      {
+      "id": "calib-00158",
       "kind": "text_neg",
-      "location": "json_body.notes",
-      "text": "Flights to Oloushiaxburg are delayed.",
-      "span": "Oloushiaxburg",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 24,
+      "span_length": 13,
+      "text_length": 37
      },
      {
+      "id": "calib-00184",
       "kind": "url",
-      "location": "url.path",
-      "text": "/docs/chaecaning_x",
-      "span": "chaecaning_x",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 6,
+      "end": 18,
+      "span_length": 12,
+      "text_length": 18
      },
      {
+      "id": "calib-00197",
       "kind": "text_person",
-      "location": "json_body.bio",
-      "text": "Best wishes, Braeges",
-      "span": "wishes, Braeges",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 5,
+      "end": 20,
+      "span_length": 15,
+      "text_length": 20
      },
      {
+      "id": "calib-00199",
       "kind": "text_neg",
-      "location": "json_body.message",
-      "text": "Flights to Briciomhaven are delayed.",
-      "span": "Briciomhaven",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 23,
+      "span_length": 12,
+      "text_length": 36
      },
      {
+      "id": "calib-00204",
       "kind": "text_user",
-      "location": "json_body.bio",
-      "text": "feylolmae77 has joined the chat",
-      "span": "feylolmae77",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
      }
     ],
     "sample_false_negatives": [
      {
+      "id": "calib-00002",
       "kind": "text_person",
-      "location": "json_body.text",
-      "text": "Best wishes, Ceychu",
-      "span": "Ceychu",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 13,
+      "end": 19,
+      "span_length": 6,
+      "text_length": 19
      },
      {
+      "id": "calib-00003",
       "kind": "text_user",
-      "location": "form.comment",
-      "text": "Xxkiabeytxx has joined the chat",
-      "span": "Xxkiabeytxx",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
      },
      {
+      "id": "calib-00004",
       "kind": "field_user",
-      "location": "json_body.payload.user.alias",
-      "text": "MoulJi23",
-      "span": "MoulJi23",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 8,
+      "span_length": 8,
+      "text_length": 8
      },
      {
+      "id": "calib-00020",
       "kind": "field_user",
-      "location": "json_body.payload.user.alias",
-      "text": "lebu.cahinsen",
-      "span": "lebu.cahinsen",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 13,
+      "span_length": 13,
+      "text_length": 13
      },
      {
+      "id": "calib-00038",
       "kind": "field_user",
-      "location": "json_body.profile.alias",
-      "text": "TialithSath1984",
-      "span": "TialithSath1984",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 15,
+      "span_length": 15,
+      "text_length": 15
      },
      {
+      "id": "calib-00043",
       "kind": "url",
-      "location": "header.referer",
-      "text": "/profile/xXRedXx/posts",
-      "span": "xXRedXx",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 9,
+      "end": 16,
+      "span_length": 7,
+      "text_length": 22
      },
      {
+      "id": "calib-00044",
       "kind": "text_user",
-      "location": "json_body.description",
-      "text": "breygriancua50 has joined the chat",
-      "span": "breygriancua50",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 14,
+      "span_length": 14,
+      "text_length": 34
      },
      {
+      "id": "calib-00048",
       "kind": "url",
-      "location": "header.referer",
-      "text": "/profile/flachey11/posts",
-      "span": "flachey11",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 9,
+      "end": 18,
+      "span_length": 9,
+      "text_length": 24
      },
      {
+      "id": "calib-00059",
       "kind": "url",
-      "location": "json_body.link",
-      "text": "/profile/flachey_82/posts",
-      "span": "flachey_82",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 9,
+      "end": 19,
+      "span_length": 10,
+      "text_length": 25
      },
      {
+      "id": "calib-00065",
       "kind": "text_user",
-      "location": "json_body.bio",
-      "text": "Added moul_du to the group",
-      "span": "moul_du",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 6,
+      "end": 13,
+      "span_length": 7,
+      "text_length": 26
      },
      {
+      "id": "calib-00068",
       "kind": "url",
-      "location": "json_body.redirect_uri",
-      "text": "/profile/pirate_nocend/posts",
-      "span": "pirate_nocend",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 9,
+      "end": 22,
+      "span_length": 13,
+      "text_length": 28
      },
      {
+      "id": "calib-00072",
       "kind": "field_person",
-      "location": "json_body.payload.user.participant",
-      "text": "Wifour Rossi",
-      "span": "Wifour Rossi",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 12,
+      "span_length": 12,
+      "text_length": 12
      },
      {
+      "id": "calib-00075",
       "kind": "text_person",
-      "location": "json_body.notes",
-      "text": "Best wishes, Geyaris",
-      "span": "Geyaris",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 13,
+      "end": 20,
+      "span_length": 7,
+      "text_length": 20
      },
      {
+      "id": "calib-00084",
       "kind": "text_user",
-      "location": "json_body.notes",
-      "text": "wshopioxsen has joined the chat",
-      "span": "wshopioxsen",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
      },
      {
+      "id": "calib-00085",
       "kind": "url",
-      "location": "header.referer",
-      "text": "/profile/xXJiXx/posts",
-      "span": "xXJiXx",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 9,
+      "end": 15,
+      "span_length": 6,
+      "text_length": 21
      },
      {
+      "id": "calib-00087",
       "kind": "url",
-      "location": "header.referer",
-      "text": "/profile/wneyaliarova/posts",
-      "span": "wneyaliarova",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 9,
+      "end": 21,
+      "span_length": 12,
+      "text_length": 27
      },
      {
+      "id": "calib-00109",
       "kind": "url",
-      "location": "url.path",
-      "text": "/profile/cheverat.flualirman/posts",
-      "span": "cheverat.flualirman",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 9,
+      "end": 28,
+      "span_length": 19,
+      "text_length": 34
      },
      {
+      "id": "calib-00126",
       "kind": "text_user",
-      "location": "body.text",
-      "text": "souge_71 has joined the chat",
-      "span": "souge_71",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 8,
+      "span_length": 8,
+      "text_length": 28
      },
      {
+      "id": "calib-00128",
       "kind": "text_user",
-      "location": "json_body.comment",
-      "text": "Added hiacaem_15 to the group",
-      "span": "hiacaem_15",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 6,
+      "end": 16,
+      "span_length": 10,
+      "text_length": 29
      },
      {
+      "id": "calib-00179",
       "kind": "url",
-      "location": "header.referer",
-      "text": "/profile/mstokioini/posts",
-      "span": "mstokioini",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 9,
+      "end": 19,
+      "span_length": 10,
+      "text_length": 25
      },
      {
+      "id": "calib-00180",
       "kind": "url",
-      "location": "url.path",
-      "text": "/profile/CASAE_68/posts",
-      "span": "CASAE_68",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 9,
+      "end": 17,
+      "span_length": 8,
+      "text_length": 23
      },
      {
+      "id": "calib-00189",
       "kind": "field_user",
-      "location": "json_body.userHandle",
-      "text": "Troulou_58",
-      "span": "Troulou_58",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
      },
      {
+      "id": "calib-00197",
       "kind": "text_person",
-      "location": "json_body.bio",
-      "text": "Best wishes, Braeges",
-      "span": "Braeges",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 13,
+      "end": 20,
+      "span_length": 7,
+      "text_length": 20
      },
      {
+      "id": "calib-00200",
       "kind": "field_user",
-      "location": "json_body.profile.alias",
-      "text": "xXDecionXx",
-      "span": "xXDecionXx",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
      },
      {
+      "id": "calib-00204",
       "kind": "text_user",
-      "location": "json_body.bio",
-      "text": "feylolmae77 has joined the chat",
-      "span": "feylolmae77",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
      }
     ]
    },
@@ -1397,8 +1598,8 @@
     }
    ],
    "cpu_timing": {
-    "single_field_ms": 1.97,
-    "batched_fields_per_sec": 4362.4
+    "single_field_ms": 1.44,
+    "batched_fields_per_sec": 4429.2
    }
   }
  }

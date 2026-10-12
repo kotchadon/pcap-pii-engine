@@ -49,4 +49,6 @@ Span score = mean softmax probability of chosen tags (**uncalibrated**). Expecte
 Single field ~2-3 ms; ~3,000-4,400 short fields/s batched (4 vCPU, this container; synthetic short texts - not a benchmark of long bodies).
 
 ### Data hygiene notes
+Error-analysis samples in `docs/ml/results/*.json` contain **offsets, labels, kinds and lengths only**; raw field text, locations and entity strings are exported only with `evaluate.py --include-text`. `entity_metrics` counts predictions for ids absent from the gold set as false positives. The result files were regenerated from the unchanged checkpoint after these fixes; all metrics, sweeps, baselines and counts are byte-for-byte equal in value to the earlier run (only timings and the sample format differ).
+
 The test split was read only by the final `--final` run. During development the *baselines* were run once on val and test as a sanity check and were not changed afterwards. Two training experiments were run (the allowed maximum); exp 2 was selected against on validation only.

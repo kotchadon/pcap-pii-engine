@@ -14,7 +14,7 @@ import torch
 from packet_pii.ml import data as D
 from packet_pii.ml.baseline import existing_key_rules, majority, strong_rules
 from packet_pii.ml.bilstm import SpanPredictor, load_checkpoint
-from packet_pii.ml.metrics import entity_metrics
+from packet_pii.ml.metrics import entity_metrics, error_samples
 
 
 def slim(m):
@@ -42,6 +42,8 @@ def main():
     ap.add_argument("--splits", default="val,calib")
     ap.add_argument("--data-seed", type=int, default=None)
     ap.add_argument("--final", action="store_true", help="required to evaluate the frozen test split")
+    ap.add_argument("--include-text", action="store_true",
+                    help="export raw field text/locations/entity strings in error samples (default: offsets only)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--threads", type=int, default=4)
     a = ap.parse_args()
@@ -54,7 +56,7 @@ def main():
     ds = D.generate_dataset(seed)
     min_score = meta.get("min_score", 0.0)
     pred = SpanPredictor(model, vocab)
-    result = {"model_version": meta["model_version"], "min_score": min_score, "data_seed": seed,
+    result = {"error_samples_include_text": a.include_text, "model_version": meta["model_version"], "min_score": min_score, "data_seed": seed,
               "torch": torch.__version__, "python": sys.version.split()[0], "threads": a.threads,
               "checkpoint_sha256": meta["model_sha256"], "splits": {}}
     for sp in splits:
@@ -80,8 +82,7 @@ def main():
         gset = {e.id: set(e.spans) for e in exs}
         pairs = [(sc, int((s, t, l) in gset[e.id])) for e, p in zip(exs, raw) for s, t, l, sc in p]
         e_ece, bins = ece(pairs)
-        sample = lambda lst: [{"kind": by_id[x[0]].kind, "location": by_id[x[0]].location, "text": by_id[x[0]].text,
-                               "span": by_id[x[0]].text[x[1]:x[2]], "label": x[3]} for x in lst[:25]]
+        sample = lambda lst: error_samples(lst, by_id, 25, a.include_text)
         # CPU timing (single-field latency and batched throughput)
         pairs_t = [(e.location, e.text) for e in exs[:300]]
         t0 = time.perf_counter()

@@ -1,4 +1,5 @@
 {
+ "error_samples_include_text": false,
  "model_version": "bilstm-v1-972a87f2b6db",
  "min_score": 0.25,
  "data_seed": 1234,
@@ -290,356 +291,456 @@
     },
     "sample_false_positives": [
      {
+      "id": "test-00003",
       "kind": "field_user",
-      "location": "json_body.payload.user.handle",
-      "text": "Aflonoutman",
-      "span": "Aflonoutman",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 11
      },
      {
+      "id": "test-00029",
       "kind": "field_person",
-      "location": "cardholder",
-      "text": "Fougun N. Emouemaelini",
-      "span": "Emouemaelini",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 10,
+      "end": 22,
+      "span_length": 12,
+      "text_length": 22
      },
      {
+      "id": "test-00033",
       "kind": "text_user",
-      "location": "json_body.text",
-      "text": "Signed in as @olianis.flioflosford",
-      "span": "Signed",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 6,
+      "span_length": 6,
+      "text_length": 34
      },
      {
+      "id": "test-00040",
       "kind": "field_neg",
-      "location": "json_body.user.description",
-      "text": "Hi everyone, node-summ32 is down.",
-      "span": "everyone",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 3,
+      "end": 11,
+      "span_length": 8,
+      "text_length": 33
      },
      {
+      "id": "test-00053",
       "kind": "text_person",
-      "location": "json_body.comment",
-      "text": "Congratulations Heyvigrian on the new job!",
-      "span": "Congratulations Heyvigrian",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 26,
+      "span_length": 26,
+      "text_length": 42
      },
      {
+      "id": "test-00054",
       "kind": "text_user",
-      "location": "query.q",
-      "text": "Signed in as @xXRapidXx",
-      "span": "Signed",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 6,
+      "span_length": 6,
+      "text_length": 23
      },
      {
+      "id": "test-00055",
       "kind": "text_neg",
-      "location": "json_body.comment",
-      "text": "Greetings from Cuareystad!",
-      "span": "Cuareystad",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 15,
+      "end": 25,
+      "span_length": 10,
+      "text_length": 26
      },
      {
+      "id": "test-00056",
       "kind": "field_person",
-      "location": "json_body.customer.applicant",
-      "text": "olaenustios l. emouemaelini",
-      "span": "emouemaelini",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 15,
+      "end": 27,
+      "span_length": 12,
+      "text_length": 27
      },
      {
+      "id": "test-00058",
       "kind": "text_person",
-      "location": "form.comment",
-      "text": "Congratulations Roshath on the new job!",
-      "span": "Congratulations",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 15,
+      "span_length": 15,
+      "text_length": 39
      },
      {
+      "id": "test-00059",
       "kind": "text_neg",
-      "location": "json_body.items[0].note",
-      "text": "Hi everyone, db-brae90 is down.",
-      "span": "everyone",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 3,
+      "end": 11,
+      "span_length": 8,
+      "text_length": 31
      },
      {
+      "id": "test-00069",
       "kind": "text_neg",
-      "location": "json_body.items[0].note",
-      "text": "Hi everyone, srv-aree83 is down.",
-      "span": "everyone",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 3,
+      "end": 11,
+      "span_length": 8,
+      "text_length": 32
      },
      {
+      "id": "test-00078",
       "kind": "field_neg",
-      "location": "json_body.payload.user.device_name",
-      "text": "SRV-GREY60",
-      "span": "SRV-GREY60",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
      },
      {
+      "id": "test-00086",
       "kind": "field_neg",
-      "location": "json_body.user.device_name",
-      "text": "web-mike1",
-      "span": "web-mike1",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 9,
+      "span_length": 9,
+      "text_length": 9
      },
      {
+      "id": "test-00096",
       "kind": "field_neg",
-      "location": "description",
-      "text": "Hi everyone, db-grea7 is down.",
-      "span": "everyone",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 3,
+      "end": 11,
+      "span_length": 8,
+      "text_length": 30
      },
      {
+      "id": "test-00107",
       "kind": "field_neg",
-      "location": "body.channel_name",
-      "text": "pragrioring_prod",
-      "span": "pragrioring_prod",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 16,
+      "span_length": 16,
+      "text_length": 16
      },
      {
+      "id": "test-00111",
       "kind": "text_neg",
-      "location": "json_body.message",
-      "text": "Hi everyone, web-oluc21 is down.",
-      "span": "everyone",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 3,
+      "end": 11,
+      "span_length": 8,
+      "text_length": 32
      },
      {
+      "id": "test-00117",
       "kind": "text_user",
-      "location": "json_body.notes",
-      "text": "Hello @ziroul_tru!",
-      "span": "ziroul_tru",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 7,
+      "end": 17,
+      "span_length": 10,
+      "text_length": 18
      },
      {
+      "id": "test-00120",
       "kind": "kv",
-      "location": "header.referer",
-      "text": "first=coemou&last=troumoulman&source=web",
-      "span": "coemou",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 6,
+      "end": 12,
+      "span_length": 6,
+      "text_length": 40
      },
      {
+      "id": "test-00126",
       "kind": "field_neg",
-      "location": "json_body.customer.device_name",
-      "text": "SRV-CUAL90",
-      "span": "SRV-CUAL90",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
      },
      {
+      "id": "test-00133",
       "kind": "url",
-      "location": "json_body.redirect_uri",
-      "text": "/search?q=market&page=2",
-      "span": "market",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 10,
+      "end": 16,
+      "span_length": 6,
+      "text_length": 23
      },
      {
+      "id": "test-00152",
       "kind": "text_user",
-      "location": "query.q",
-      "text": "Signed in as @TinounAlazeyn96",
-      "span": "Signed",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 6,
+      "span_length": 6,
+      "text_length": 29
      },
      {
+      "id": "test-00156",
       "kind": "field_neg",
-      "location": "json_body.data[0].device_name",
-      "text": "WEB-NONA77",
-      "span": "WEB-NONA77",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
      },
      {
+      "id": "test-00163",
       "kind": "text_neg",
-      "location": "json_body.description",
-      "text": "Greetings from DOTIODALE!",
-      "span": "DOTIODALE",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 15,
+      "end": 24,
+      "span_length": 9,
+      "text_length": 25
      },
      {
+      "id": "test-00167",
       "kind": "text_neg",
-      "location": "body.text",
-      "text": "Greetings from Priliorville!",
-      "span": "Priliorville",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 15,
+      "end": 27,
+      "span_length": 12,
+      "text_length": 28
      },
      {
+      "id": "test-00171",
       "kind": "text_neg",
-      "location": "json_body.message",
-      "text": "Hi everyone, db-brae15 is down.",
-      "span": "everyone",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 3,
+      "end": 11,
+      "span_length": 8,
+      "text_length": 31
      }
     ],
     "sample_false_negatives": [
      {
+      "id": "test-00003",
       "kind": "field_user",
-      "location": "json_body.payload.user.handle",
-      "text": "Aflonoutman",
-      "span": "Aflonoutman",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 11
      },
      {
+      "id": "test-00007",
       "kind": "field_user",
-      "location": "display_handle",
-      "text": "GrialBeym8",
-      "span": "GrialBeym8",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
      },
      {
+      "id": "test-00010",
       "kind": "text_person",
-      "location": "json_body.bio",
-      "text": "Shipping to Neytria C. Niolaxberg, 12 High Street",
-      "span": "Neytria C. Niolaxberg",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 12,
+      "end": 33,
+      "span_length": 21,
+      "text_length": 49
      },
      {
+      "id": "test-00011",
       "kind": "url",
-      "location": "json_body.link",
-      "text": "/api/v2/accounts/MeymGreyth25/settings",
-      "span": "MeymGreyth25",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 17,
+      "end": 29,
+      "span_length": 12,
+      "text_length": 38
      },
      {
+      "id": "test-00014",
       "kind": "url",
-      "location": "header.referer",
-      "text": "/api/v2/accounts/to_traarox/settings",
-      "span": "to_traarox",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 17,
+      "end": 27,
+      "span_length": 10,
+      "text_length": 36
      },
      {
+      "id": "test-00015",
       "kind": "field_user",
-      "location": "json_body.user.display_handle",
-      "text": "stoufun65",
-      "span": "stoufun65",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 9,
+      "span_length": 9,
+      "text_length": 9
      },
      {
+      "id": "test-00018",
       "kind": "field_person",
-      "location": "applicant",
-      "text": "GRIAEMOUZOUL D. HEYSOREZ",
-      "span": "GRIAEMOUZOUL D. HEYSOREZ",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 24,
+      "span_length": 24,
+      "text_length": 24
      },
      {
+      "id": "test-00029",
       "kind": "field_person",
-      "location": "cardholder",
-      "text": "Fougun N. Emouemaelini",
-      "span": "Fougun N. Emouemaelini",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 22,
+      "span_length": 22,
+      "text_length": 22
      },
      {
+      "id": "test-00035",
       "kind": "kv",
-      "location": "header.cookie",
-      "text": "Contact: Stiaolia Gaegiotski; Office: Foucheston",
-      "span": "Stiaolia Gaegiotski",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 9,
+      "end": 28,
+      "span_length": 19,
+      "text_length": 48
      },
      {
+      "id": "test-00045",
       "kind": "field_user",
-      "location": "json_body.display_handle",
-      "text": "prafio_tinoun",
-      "span": "prafio_tinoun",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 13,
+      "span_length": 13,
+      "text_length": 13
      },
      {
+      "id": "test-00052",
       "kind": "text_mixed",
-      "location": "json_body.description",
-      "text": "Trehout Naeariandford logged in as to-gogrum38",
-      "span": "Trehout Naeariandford",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 21,
+      "span_length": 21,
+      "text_length": 46
      },
      {
+      "id": "test-00053",
       "kind": "text_person",
-      "location": "json_body.comment",
-      "text": "Congratulations Heyvigrian on the new job!",
-      "span": "Heyvigrian",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 16,
+      "end": 26,
+      "span_length": 10,
+      "text_length": 42
      },
      {
+      "id": "test-00056",
       "kind": "field_person",
-      "location": "json_body.customer.applicant",
-      "text": "olaenustios l. emouemaelini",
-      "span": "olaenustios l. emouemaelini",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 27,
+      "span_length": 27,
+      "text_length": 27
      },
      {
+      "id": "test-00058",
       "kind": "text_person",
-      "location": "form.comment",
-      "text": "Congratulations Roshath on the new job!",
-      "span": "Roshath",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 16,
+      "end": 23,
+      "span_length": 7,
+      "text_length": 39
      },
      {
+      "id": "test-00062",
       "kind": "text_mixed",
-      "location": "json_body.text",
-      "text": "Hi Socefer, your username sceyvomberg is ready.",
-      "span": "sceyvomberg",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 26,
+      "end": 37,
+      "span_length": 11,
+      "text_length": 47
      },
      {
+      "id": "test-00063",
       "kind": "text_user",
-      "location": "form.comment",
-      "text": "Invalid password for aliond_brim",
-      "span": "aliond_brim",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 21,
+      "end": 32,
+      "span_length": 11,
+      "text_length": 32
      },
      {
+      "id": "test-00070",
       "kind": "text_user",
-      "location": "json_body.text",
-      "text": "aloufluren.tifloumez pushed 3 commits to main",
-      "span": "aloufluren.tifloumez",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 0,
+      "end": 20,
+      "span_length": 20,
+      "text_length": 45
      },
      {
+      "id": "test-00072",
       "kind": "text_user",
-      "location": "json_body.description",
-      "text": "Invalid password for stibraaratrav1983",
-      "span": "stibraaratrav1983",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 21,
+      "end": 38,
+      "span_length": 17,
+      "text_length": 38
      },
      {
+      "id": "test-00075",
       "kind": "text_person",
-      "location": "json_body.notes",
-      "text": "I spoke with Proujeystin yesterday about the refund.",
-      "span": "Proujeystin",
-      "label": "PERSON_NAME"
+      "label": "PERSON_NAME",
+      "start": 13,
+      "end": 24,
+      "span_length": 11,
+      "text_length": 52
      },
      {
+      "id": "test-00076",
       "kind": "url",
-      "location": "url.path",
-      "text": "/api/v2/accounts/kex_rieman/settings",
-      "span": "kex_rieman",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 17,
+      "end": 27,
+      "span_length": 10,
+      "text_length": 36
      },
      {
+      "id": "test-00094",
       "kind": "text_user",
-      "location": "json_body.notes",
-      "text": "Invalid password for BrimTreyr33",
-      "span": "BrimTreyr33",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 21,
+      "end": 32,
+      "span_length": 11,
+      "text_length": 32
      },
      {
+      "id": "test-00098",
       "kind": "url",
-      "location": "json_body.redirect_uri",
-      "text": "/api/v2/accounts/juvos-hougrae2/settings",
-      "span": "juvos-hougrae2",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 17,
+      "end": 31,
+      "span_length": 14,
+      "text_length": 40
      },
      {
+      "id": "test-00100",
       "kind": "url",
-      "location": "url.path",
-      "text": "/api/v2/accounts/wearouga_31/settings",
-      "span": "wearouga_31",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 17,
+      "end": 28,
+      "span_length": 11,
+      "text_length": 37
      },
      {
+      "id": "test-00104",
       "kind": "text_user",
-      "location": "json_body.notes",
-      "text": "Invalid password for satraen_siak",
-      "span": "satraen_siak",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 21,
+      "end": 33,
+      "span_length": 12,
+      "text_length": 33
      },
      {
+      "id": "test-00105",
       "kind": "text_mixed",
-      "location": "json_body.message",
-      "text": "Hi Liolon, your username lstouflaendman is ready.",
-      "span": "lstouflaendman",
-      "label": "USERNAME"
+      "label": "USERNAME",
+      "start": 25,
+      "end": 39,
+      "span_length": 14,
+      "text_length": 49
      }
     ]
    },
@@ -707,8 +808,8 @@
     }
    ],
    "cpu_timing": {
-    "single_field_ms": 2.65,
-    "batched_fields_per_sec": 3012.6
+    "single_field_ms": 1.84,
+    "batched_fields_per_sec": 3454.2
    }
   }
  }
