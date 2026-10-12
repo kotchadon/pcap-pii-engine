@@ -3,89 +3,308 @@
   "$id": "https://example.invalid/pcap-pii-engine/schemas/report-v1.schema.json",
   "title": "PCAP PII Engine report v1",
   "type": "object",
-  "required": ["metadata", "summary", "flows", "findings", "limitations"],
+  "required": [
+    "metadata",
+    "summary",
+    "flows",
+    "findings",
+    "limitations"
+  ],
   "properties": {
     "metadata": {
       "type": "object",
-      "required": ["engine", "version", "report_schema_version", "detection_method", "confidence_type", "threshold", "raw_values_included", "scope"],
+      "required": [
+        "engine",
+        "version",
+        "report_schema_version",
+        "detection_method",
+        "confidence_type",
+        "threshold",
+        "raw_values_included",
+        "scope"
+      ],
       "properties": {
-        "engine": {"const": "pcap-pii-engine"},
-        "version": {"type": "string"},
-        "report_schema_version": {"const": "1.0.0"},
-        "detection_method": {"type": "string"},
-        "confidence_type": {"type": "string"},
-        "threshold": {"type": "number", "minimum": 0, "maximum": 1},
-        "raw_values_included": {"type": "boolean"},
-        "scope": {"type": "string"}
+        "engine": {
+          "const": "pcap-pii-engine"
+        },
+        "version": {
+          "type": "string"
+        },
+        "report_schema_version": {
+          "const": "1.0.0"
+        },
+        "detection_method": {
+          "type": "string"
+        },
+        "confidence_type": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "raw_values_included": {
+          "type": "boolean"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "analysis_limits": {
+          "type": "object",
+          "properties": {
+            "max_capture_bytes": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            },
+            "max_packets": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            },
+            "max_flows": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            },
+            "max_tcp_payload_bytes": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            }
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": true
     },
     "summary": {
       "type": "object",
-      "required": ["packets_captured", "non_tcp_or_unsupported_packets", "flows_processed", "http_flows", "http_messages", "http_transactions", "unpaired_requests", "unpaired_responses", "total_data_bytes", "processing_time_seconds", "potential_leaks", "stream_gaps"],
+      "required": [
+        "packets_captured",
+        "non_tcp_or_unsupported_packets",
+        "flows_processed",
+        "http_flows",
+        "http_messages",
+        "http_transactions",
+        "unpaired_requests",
+        "unpaired_responses",
+        "total_data_bytes",
+        "processing_time_seconds",
+        "potential_leaks",
+        "stream_gaps"
+      ],
       "properties": {
-        "packets_captured": {"$ref": "#/$defs/nonnegativeInteger"},
-        "non_tcp_or_unsupported_packets": {"$ref": "#/$defs/nonnegativeInteger"},
-        "flows_processed": {"$ref": "#/$defs/nonnegativeInteger"},
-        "http_flows": {"$ref": "#/$defs/nonnegativeInteger"},
-        "http_messages": {"$ref": "#/$defs/nonnegativeInteger"},
-        "http_transactions": {"$ref": "#/$defs/nonnegativeInteger"},
-        "unpaired_requests": {"$ref": "#/$defs/nonnegativeInteger"},
-        "unpaired_responses": {"$ref": "#/$defs/nonnegativeInteger"},
-        "total_data_bytes": {"$ref": "#/$defs/nonnegativeInteger"},
-        "processing_time_seconds": {"type": "number", "minimum": 0},
-        "potential_leaks": {"$ref": "#/$defs/nonnegativeInteger"},
-        "stream_gaps": {"$ref": "#/$defs/nonnegativeInteger"}
+        "packets_captured": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "non_tcp_or_unsupported_packets": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "flows_processed": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "http_flows": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "http_messages": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "http_transactions": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "unpaired_requests": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "unpaired_responses": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "total_data_bytes": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "processing_time_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "potential_leaks": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "stream_gaps": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "capture_truncated_records": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "capture_malformed_records": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "analysis_incomplete": {
+          "type": "boolean"
+        }
       },
       "additionalProperties": true
     },
-    "flows": {"type": "array", "items": {"$ref": "#/$defs/flow"}},
-    "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
-    "limitations": {"type": "array", "items": {"type": "string"}}
+    "flows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/flow"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
   },
   "$defs": {
-    "nonnegativeInteger": {"type": "integer", "minimum": 0},
+    "nonnegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
     "endpoint": {
-      "type": "object", "required": ["ip", "port"],
+      "type": "object",
+      "required": [
+        "ip",
+        "port"
+      ],
       "properties": {
-        "ip": {"type": "string"},
-        "port": {"type": "integer", "minimum": 0, "maximum": 65535}
-      }, "additionalProperties": true
+        "ip": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      },
+      "additionalProperties": true
     },
     "flow": {
       "type": "object",
-      "required": ["flow_id", "endpoints", "packets", "http_messages", "http_transactions", "unpaired_requests", "unpaired_responses", "stream_gaps"],
+      "required": [
+        "flow_id",
+        "endpoints",
+        "packets",
+        "http_messages",
+        "http_transactions",
+        "unpaired_requests",
+        "unpaired_responses",
+        "stream_gaps"
+      ],
       "properties": {
-        "flow_id": {"type": "string"},
-        "endpoints": {"type": "array", "items": {"$ref": "#/$defs/endpoint"}, "minItems": 2, "maxItems": 2},
-        "packets": {"$ref": "#/$defs/nonnegativeInteger"},
-        "http_messages": {"$ref": "#/$defs/nonnegativeInteger"},
-        "http_transactions": {"$ref": "#/$defs/nonnegativeInteger"},
-        "unpaired_requests": {"$ref": "#/$defs/nonnegativeInteger"},
-        "unpaired_responses": {"$ref": "#/$defs/nonnegativeInteger"},
-        "stream_gaps": {"$ref": "#/$defs/nonnegativeInteger"}
-      }, "additionalProperties": true
+        "flow_id": {
+          "type": "string"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/endpoint"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "packets": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "http_messages": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "http_transactions": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "unpaired_requests": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "unpaired_responses": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "stream_gaps": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        }
+      },
+      "additionalProperties": true
     },
     "finding": {
       "type": "object",
-      "required": ["pii_type", "location", "confidence", "value", "detector", "flow_id", "http_message_id", "http_request_id", "http_message_type", "timestamp", "source_ip", "source_port", "destination_ip", "destination_port", "http_start_line"],
+      "required": [
+        "pii_type",
+        "location",
+        "confidence",
+        "value",
+        "detector",
+        "flow_id",
+        "http_message_id",
+        "http_request_id",
+        "http_message_type",
+        "timestamp",
+        "source_ip",
+        "source_port",
+        "destination_ip",
+        "destination_port",
+        "http_start_line"
+      ],
       "properties": {
-        "pii_type": {"type": "string", "minLength": 1},
-        "location": {"type": "string"},
-        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-        "value": {"type": "string"},
-        "detector": {"type": "string"},
-        "flow_id": {"type": "string"},
-        "http_message_id": {"type": "string"},
-        "http_request_id": {"type": ["string", "null"]},
-        "http_message_type": {"enum": ["request", "response"]},
-        "timestamp": {"type": "string", "format": "date-time"},
-        "source_ip": {"type": "string"},
-        "source_port": {"type": "integer", "minimum": 0, "maximum": 65535},
-        "destination_ip": {"type": "string"},
-        "destination_port": {"type": "integer", "minimum": 0, "maximum": 65535},
-        "http_start_line": {"type": "string"}
-      }, "additionalProperties": true
+        "pii_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "location": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "value": {
+          "type": "string"
+        },
+        "detector": {
+          "type": "string"
+        },
+        "flow_id": {
+          "type": "string"
+        },
+        "http_message_id": {
+          "type": "string"
+        },
+        "http_request_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "http_message_type": {
+          "enum": [
+            "request",
+            "response"
+          ]
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_ip": {
+          "type": "string"
+        },
+        "source_port": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "destination_ip": {
+          "type": "string"
+        },
+        "destination_port": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "http_start_line": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
     }
   },
   "additionalProperties": true

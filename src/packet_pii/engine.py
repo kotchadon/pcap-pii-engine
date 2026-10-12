@@ -14,9 +14,32 @@ import re
 import time
 from urllib.parse import urlsplit
 
-from .capture import read_frames, decode_tcp, endpoint_key, reassemble, TcpPacket
+from .capture import (CaptureDiagnostics, read_frames, decode_tcp,
+                      endpoint_key, reassemble, TcpPacket)
 from .http_extract import HttpMessage, parse_http_stream_with_spans, extract_fields
 from .detect import detect_fields
+
+
+class AnalysisLimitError(ValueError):
+    """The analysis exceeded configured resources; no partial report is returned."""
+
+
+@dataclass(frozen=True)
+class AnalysisLimits:
+    """Safe resource defaults for laptop-scale, local-only capture analysis.
+
+    These are not a streaming or constant-memory implementation. Override
+    deliberately for trusted environments with sufficient RAM.
+    """
+    max_capture_bytes: int = 128 * 1024 * 1024
+    max_packets: int = 100_000
+    max_flows: int = 20_000
+    max_tcp_payload_bytes: int = 64 * 1024 * 1024
+
+    def __post_init__(self) -> None:
+        for key, value in asdict(self).items():
+            if type(value) is not int or value <= 0:
+                raise ValueError(f'{key} must be a positive integer')
 
 
 @dataclass
@@ -128,18 +151,32 @@ def _pair_requests(records: list[_Record], fid: str) -> tuple[int, int, int]:
 
 
 def analyze(path: str | Path, threshold: float = 0.8,
-            include_values: bool = False) -> dict:
+            include_values: bool = False, *,
+            limits: AnalysisLimits | None = None) -> dict:
     if not 0 <= threshold <= 1:
         raise ValueError('Confidence threshold must be in [0,1]')
+    budget = limits if limits is not None else AnalysisLimits()
+    if not isinstance(budget, AnalysisLimits):
+        raise TypeError('limits must be AnalysisLimits')
     started = time.monotonic()
+    diagnostics = CaptureDiagnostics()
     flow_packets: dict[tuple, list[TcpPacket]] = defaultdict(list)
-    frames = bytes_processed = ignored = 0
-    for frame in read_frames(path):
+    frames = bytes_processed = ignored = buffered_tcp_bytes = 0
+    for frame in read_frames(path, diagnostics=diagnostics,
+                             max_file_bytes=budget.max_capture_bytes):
+        if frames >= budget.max_packets:
+            raise AnalysisLimitError('Capture exceeds configured packet limit')
         frames += 1
         bytes_processed += len(frame.data)
         packet = decode_tcp(frame)
         if packet:
-            flow_packets[endpoint_key(packet)].append(packet)
+            key = endpoint_key(packet)
+            if key not in flow_packets and len(flow_packets) >= budget.max_flows:
+                raise AnalysisLimitError('Capture exceeds configured flow limit')
+            if len(packet.payload) > budget.max_tcp_payload_bytes - buffered_tcp_bytes:
+                raise AnalysisLimitError('Capture exceeds configured buffered TCP payload limit')
+            buffered_tcp_bytes += len(packet.payload)
+            flow_packets[key].append(packet)
         else:
             ignored += 1
 
@@ -222,6 +259,7 @@ def analyze(path: str | Path, threshold: float = 0.8,
             'confidence_type': 'heuristic_not_calibrated',
             'threshold': threshold, 'raw_values_included': include_values,
             'scope': 'unencrypted HTTP/1.x over TCP',
+            'analysis_limits': asdict(budget),
         },
         'summary': {
             'packets_captured': frames,
@@ -236,6 +274,9 @@ def analyze(path: str | Path, threshold: float = 0.8,
             'processing_time_seconds': round(time.monotonic() - started, 4),
             'potential_leaks': len(findings),
             'stream_gaps': gaps,
+            'capture_truncated_records': diagnostics.truncated_records,
+            'capture_malformed_records': diagnostics.malformed_records,
+            'analysis_incomplete': diagnostics.incomplete or gaps > 0,
         },
         'flows': flow_summaries, 'findings': findings,
         'limitations': [
@@ -244,7 +285,9 @@ def analyze(path: str | Path, threshold: float = 0.8,
             'HTTP/2 and HTTP/3 not decoded; incomplete streams are ignored',
             'HTTP/1.x request-response pairing is best-effort (direction, stream order, packet timing)',
             'Rule-based detection only; contextual ML is not yet integrated',
-            'Packets are buffered in memory; not for production-scale captures',
+            'Processing is memory-buffered and resource-limited; not for production-scale captures',
             'Findings mean possible PII exposure, not proof of exfiltration',
+            *(['Capture corruption/truncation or missing TCP data: analysis is incomplete']
+              if diagnostics.incomplete or gaps > 0 else []),
         ],
     }

@@ -7,6 +7,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import ipaddress
+import math
+import os
+import stat
 import struct
 from typing import Iterator
 
@@ -31,10 +34,25 @@ class TcpPacket:
 
 
 class CaptureFormatError(ValueError):
-    pass
+    """The input capture is unreadable or not a supported PCAP/PCAPNG."""
 
 
-def _read_pcap(stream) -> Iterator[RawFrame]:
+MAX_CAPTURE_FILE_BYTES = 128 * 1024 * 1024
+MAX_RECORD_BYTES = 16 * 1024 * 1024
+
+
+@dataclass
+class CaptureDiagnostics:
+    """Nonfatal capture corruption; an otherwise valid report may be incomplete."""
+    truncated_records: int = 0
+    malformed_records: int = 0
+
+    @property
+    def incomplete(self) -> bool:
+        return bool(self.truncated_records or self.malformed_records)
+
+
+def _read_pcap(stream, diagnostics: CaptureDiagnostics) -> Iterator[RawFrame]:
     magic = stream.read(4)
     formats = {
         b'\xd4\xc3\xb2\xa1': ('<', 1_000_000),
@@ -48,19 +66,27 @@ def _read_pcap(stream) -> Iterator[RawFrame]:
     header = stream.read(20)
     if len(header) != 20:
         raise CaptureFormatError('Truncated PCAP header')
-    _ver_maj, _ver_min, _tz, _sig, _snaplen, linktype = struct.unpack(endian+'HHiIII', header)
+    major, minor, _tz, _sig, snaplen, linktype = struct.unpack(endian+'HHiIII', header)
+    if major != 2 or minor != 4 or snaplen == 0:
+        raise CaptureFormatError('Unsupported or invalid PCAP global header')
     linktype &= 0xFFFF
     while True:
         header = stream.read(16)
         if not header:
             break
         if len(header) != 16:
+            diagnostics.truncated_records += 1
             break
-        sec, frac, included_len, _original_len = struct.unpack(endian+'IIII', header)
-        if included_len > 16 * 1024 * 1024:
+        sec, frac, included_len, original_len = struct.unpack(endian+'IIII', header)
+        if included_len > MAX_RECORD_BYTES:
+            diagnostics.malformed_records += 1
+            break  # Refuse attacker-sized allocation; no partial record accepted.
+        if included_len > snaplen or included_len > original_len or frac >= denominator:
+            diagnostics.malformed_records += 1
             break
         data = stream.read(included_len)
         if len(data) != included_len:
+            diagnostics.truncated_records += 1
             break
         yield RawFrame(sec + frac / denominator, linktype, data)
 
@@ -78,7 +104,7 @@ def _options(data: bytes, endian: str) -> Iterator[tuple[int, bytes]]:
         offset += (length+3) & ~3
 
 
-def _read_pcapng(stream) -> Iterator[RawFrame]:
+def _read_pcapng(stream, diagnostics: CaptureDiagnostics) -> Iterator[RawFrame]:
     endian = None
     interfaces: list[tuple[int, float, float]] = []
     while True:
@@ -86,6 +112,7 @@ def _read_pcapng(stream) -> Iterator[RawFrame]:
         if not header:
             break
         if len(header) != 8:
+            diagnostics.truncated_records += 1
             break
         if header[:4] == b'\x0a\x0d\x0d\x0a':
             bom = stream.read(4)
@@ -96,25 +123,35 @@ def _read_pcapng(stream) -> Iterator[RawFrame]:
             else:
                 raise CaptureFormatError('Invalid PCAPNG byte order magic')
             block_len = struct.unpack(endian+'I', header[4:])[0]
-            if block_len < 28 or block_len > 16*1024*1024:
+            if block_len < 28 or block_len > MAX_RECORD_BYTES or block_len % 4:
                 raise CaptureFormatError('Invalid PCAPNG section header length')
             rest = stream.read(block_len-12)
             if len(rest) != block_len-12:
+                diagnostics.truncated_records += 1
                 break
+            if struct.unpack_from(endian+'I', rest, len(rest)-4)[0] != block_len:
+                diagnostics.malformed_records += 1
+                break  # A broken section cannot safely establish byte order.
             interfaces = []
             continue
         if endian is None:
             raise CaptureFormatError('PCAPNG needs a section header block')
         kind, block_len = struct.unpack(endian+'II', header)
-        if block_len < 12 or block_len > 16*1024*1024 or block_len % 4:
+        if block_len < 12 or block_len > MAX_RECORD_BYTES or block_len % 4:
+            diagnostics.malformed_records += 1
             break
         remainder = stream.read(block_len-8)
         if len(remainder) != block_len-8:
+            diagnostics.truncated_records += 1
             break
         if struct.unpack_from(endian+'I', remainder, len(remainder)-4)[0] != block_len:
+            diagnostics.malformed_records += 1
             continue
         body = remainder[:-4]
-        if kind == 1 and len(body) >= 8:  # Interface Description Block
+        if kind == 1:  # Interface Description Block
+            if len(body) < 8:
+                diagnostics.malformed_records += 1
+                continue
             linktype = struct.unpack_from(endian+'H', body, 0)[0]
             resolution, offset = 1e-6, 0.0
             for code, value in _options(body[8:], endian):
@@ -123,23 +160,50 @@ def _read_pcapng(stream) -> Iterator[RawFrame]:
                 elif code == 14 and len(value) == 8:
                     offset = float(struct.unpack(endian+'q',value)[0])
             interfaces.append((linktype, resolution, offset))
-        elif kind == 6 and len(body) >= 20:  # Enhanced Packet Block
-            interface, high, low, caplen, _wirelen = struct.unpack_from(endian+'IIIII', body, 0)
-            if interface >= len(interfaces) or caplen > len(body)-20:
+        elif kind == 6:  # Enhanced Packet Block
+            if len(body) < 20:
+                diagnostics.malformed_records += 1
+                continue
+            interface, high, low, caplen, wirelen = struct.unpack_from(endian+'IIIII', body, 0)
+            if interface >= len(interfaces) or caplen > wirelen or caplen > len(body)-20:
+                diagnostics.malformed_records += 1
                 continue
             linktype, resolution, offset = interfaces[interface]
             stamp = ((high << 32)|low) * resolution + offset
+            # Reject invalid/out-of-range clocks before datetime processing.
+            if not math.isfinite(stamp) or not (-62135596800 <= stamp <= 253402300799):
+                diagnostics.malformed_records += 1
+                continue
             yield RawFrame(stamp, linktype, body[20:20+caplen])
 
 
-def read_frames(path: str | Path) -> Iterator[RawFrame]:
+def read_frames(path: str | Path, *,
+                diagnostics: CaptureDiagnostics | None = None,
+                max_file_bytes: int = MAX_CAPTURE_FILE_BYTES) -> Iterator[RawFrame]:
+    """Read capture records, rejecting large/non-regular inputs before reading.
+
+    A truncated trailing record is ignored but surfaced via `diagnostics`;
+    downstream reports must not suggest the entire capture was processed.
+    Limits apply to the input file, including non-payload record overhead.
+    """
+    if type(max_file_bytes) is not int or max_file_bytes <= 0:
+        raise ValueError('max_file_bytes must be a positive integer')
+    diag = diagnostics if diagnostics is not None else CaptureDiagnostics()
+    # Preflight prevents opening a FIFO/device from blocking indefinitely.
+    if not stat.S_ISREG(Path(path).stat().st_mode):
+        raise CaptureFormatError('Capture must be a regular file')
     with open(path, 'rb') as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode):
+            raise CaptureFormatError('Capture must be a regular file')
+        if info.st_size > max_file_bytes:
+            raise CaptureFormatError('Capture exceeds configured file-size limit')
         magic = stream.read(4)
         stream.seek(0)
         if magic == b'\x0a\x0d\x0d\x0a':
-            yield from _read_pcapng(stream)
+            yield from _read_pcapng(stream, diag)
         else:
-            yield from _read_pcap(stream)
+            yield from _read_pcap(stream, diag)
 
 
 def decode_tcp(frame: RawFrame) -> TcpPacket | None:

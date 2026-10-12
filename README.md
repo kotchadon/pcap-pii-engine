@@ -52,7 +52,9 @@ After installing, the CLI also works with `pcap-pii demo.pcap -o demo-report.jso
 
 - `--threshold 0.8`: ignore detections with heuristic score below 0.8
 - `--output report.json`: location of report
-- `--include-values`: **SENSITIVE**: include complete detected secrets/PII. **Never use on real captures unless expressly approved and handled securely.** By default, values are masked and fingerprinted.
+- `--include-values`: **SENSITIVE**: include complete detected secrets/PII. **Never use on real captures unless expressly approved and handled securely.** By default, values are masked. Reports do not export unkeyed secret fingerprints.
+- `--max-capture-mib`, `--max-packets`, `--max-flows`, `--max-tcp-mib`: cap file size, total records, endpoint-pair flows and buffered TCP payloads. Defaults: 128 MiB, 100000, 20000, and 64 MiB respectively. Exceeding a limit aborts without publishing a partial report.
+- `summary.analysis_incomplete`: true if corruption/truncation was observed or reconstructed TCP data has gaps. See `summary.capture_truncated_records` and `summary.capture_malformed_records`. Details: `docs/milestone3b-input-robustness.md`.
 
 ## What works (and what doesn't)
 
