@@ -10,6 +10,7 @@ from collections import defaultdict
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+import re
 import time
 from urllib.parse import urlsplit
 
@@ -44,6 +45,28 @@ def safe_http_start_line(line: str, include_path: bool = False) -> str:
     if line.startswith('HTTP/'):
         return ' '.join(parts[:2])[:300]
     return line[:300]
+
+
+_SAFE_FIELD_SEGMENT = re.compile(r'[A-Za-z_][A-Za-z0-9_-]{0,63}(?:\[[0-9]{1,8}\])*\Z')
+
+
+def safe_field_location(location: str, include_values: bool = False) -> str:
+    """Preserve useful paths while redacting suspicious attacker-controlled keys.
+
+    JSON keys, query parameter names and multipart field names may themselves
+    contain secrets or PII. The original path is still used by the detector;
+    only its exported representation is redacted. This is a conservative
+    syntactic filter, not a proof of complete anonymization.
+    """
+    if include_values:
+        return location
+    # A dot inside an email/identifier could masquerade as path nesting.
+    # Collapse the entire attacker-controlled suffix rather than exposing it.
+    if '@' in location or any(ord(c) < 32 for c in location):
+        prefix = location.split('.', 1)[0]
+        return f'{prefix}.[redacted-key]'
+    return '.'.join(segment if _SAFE_FIELD_SEGMENT.fullmatch(segment)
+                    else '[redacted-key]' for segment in location.split('.'))
 
 
 def _timestamp_for_byte(segments: list[TcpPacket], offset: int) -> float:
@@ -162,7 +185,13 @@ def analyze(path: str | Path, threshold: float = 0.8,
             src, sport, dst, dport = record.direction
             timestamp = datetime.fromtimestamp(record.timestamp, timezone.utc).isoformat()
             for detected in detect_fields(extract_fields(record.message), threshold, include_values):
+                # Do not publish unsalted deterministic hashes of PII/credentials.
+                # Low-entropy values could be recovered by offline guessing.
+                # The detector may retain internal fingerprints for deduplication,
+                # but the public report deliberately excludes them.
                 entry = asdict(detected)
+                entry.pop('fingerprint', None)
+                entry['location'] = safe_field_location(detected.location, include_values)
                 entry.update({
                     'flow_id': fid,
                     'http_message_id': record.message_id,
@@ -188,6 +217,7 @@ def analyze(path: str | Path, threshold: float = 0.8,
     return {
         'metadata': {
             'engine': 'pcap-pii-engine', 'version': '0.1.0',
+            'report_schema_version': '1.0.0',
             'detection_method': 'rules_only',
             'confidence_type': 'heuristic_not_calibrated',
             'threshold': threshold, 'raw_values_included': include_values,
