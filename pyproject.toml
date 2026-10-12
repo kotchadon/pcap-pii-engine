@@ -9,6 +9,9 @@ description = "Local-first PCAP/PCAPNG PII audit prototype"
 requires-python = ">=3.10"
 license = {text = "Proprietary - all rights reserved"}
 
+[project.optional-dependencies]
+ml = ["torch>=2.2"]  # optional: BiLSTM contextual detector (packet_pii.ml.bilstm)
+
 [project.scripts]
 pcap-pii = "packet_pii.cli:main"
 
