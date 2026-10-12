@@ -38,6 +38,14 @@ class HttpMessage:
     is_request: bool
 
 
+@dataclass(frozen=True)
+class HttpSpan:
+    """A parsed HTTP message and its byte boundaries in one TCP direction."""
+    message: HttpMessage
+    start_offset: int
+    end_offset: int
+
+
 def _parse_headers(raw: bytes) -> tuple[str, dict[str, str], bool] | None:
     lines = raw.split(b'\r\n')
     if not lines or len(lines) > 201:
@@ -100,9 +108,13 @@ def _chunked(data: bytes, position: int) -> tuple[bytes, int] | None:
     return None
 
 
-def parse_http_stream(data: bytes) -> list[HttpMessage]:
-    """Parse a contiguous TCP-direction byte stream; stop at uncertain framing."""
-    messages: list[HttpMessage] = []
+def parse_http_stream_with_spans(data: bytes) -> list[HttpSpan]:
+    """Parse a contiguous TCP stream and preserve each message's byte span.
+
+    Offsets allow packet provenance to be associated with the correct message,
+    including HTTP pipelining where multiple messages share a TCP segment.
+    """
+    messages: list[HttpSpan] = []
     offset = 0
     while offset < len(data) and len(messages) < MAX_MESSAGES:
         header_end = data.find(b'\r\n\r\n', offset,
@@ -143,13 +155,19 @@ def parse_http_stream(data: bytes) -> list[HttpMessage]:
             # No close-delimited response reconstruction without connection state.
             # HTTP/1.0 close-delimited bodies are deliberately not inferred.
             body, next_at = b'', body_at
-        messages.append(HttpMessage(first, headers, body, is_request))
+        messages.append(HttpSpan(HttpMessage(first, headers, body, is_request),
+                                 offset, next_at))
         if next_at <= offset:
             break
         offset = next_at
         if unframed_response:
             break  # Cannot determine end of close-delimited response body.
     return messages
+
+
+def parse_http_stream(data: bytes) -> list[HttpMessage]:
+    """Backwards-compatible HTTP parser API without byte offsets."""
+    return [span.message for span in parse_http_stream_with_spans(data)]
 
 
 def _decompress_body(message: HttpMessage) -> bytes | None:
