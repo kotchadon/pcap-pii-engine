@@ -1,0 +1,715 @@
+{
+ "model_version": "bilstm-v1-972a87f2b6db",
+ "min_score": 0.25,
+ "data_seed": 1234,
+ "torch": "2.14.1+cu130",
+ "python": "3.13.16",
+ "threads": 4,
+ "checkpoint_sha256": "972a87f2b6db8b701ba43a63d1949ca0dc7684ec67c2c2a304ebbbaa19495d6a",
+ "splits": {
+  "test": {
+   "examples": 2500,
+   "entities": 1942,
+   "bilstm_at_min_score": {
+    "micro": {
+     "precision": 0.802547770700637,
+     "recall": 0.713697219361483,
+     "f1": 0.7555192150449713,
+     "tp": 1386,
+     "fp": 341,
+     "fn": 556,
+     "support": 1942
+    },
+    "macro_f1": 0.7531896666181948,
+    "per_class": {
+     "PERSON_NAME": {
+      "precision": 0.7660510114335972,
+      "recall": 0.7593722755013078,
+      "f1": 0.7626970227670753,
+      "tp": 871,
+      "fp": 266,
+      "fn": 276,
+      "support": 1147
+     },
+     "USERNAME": {
+      "precision": 0.8728813559322034,
+      "recall": 0.6477987421383647,
+      "f1": 0.7436823104693141,
+      "tp": 515,
+      "fp": 75,
+      "fn": 280,
+      "support": 795
+     }
+    }
+   },
+   "threshold_sweep": {
+    "0.00": {
+     "precision": 0.7994,
+     "recall": 0.7163,
+     "f1": 0.7556
+    },
+    "0.05": {
+     "precision": 0.8003,
+     "recall": 0.7163,
+     "f1": 0.756
+    },
+    "0.10": {
+     "precision": 0.8022,
+     "recall": 0.7163,
+     "f1": 0.7568
+    },
+    "0.15": {
+     "precision": 0.802,
+     "recall": 0.7152,
+     "f1": 0.7561
+    },
+    "0.20": {
+     "precision": 0.8017,
+     "recall": 0.7142,
+     "f1": 0.7554
+    },
+    "0.25": {
+     "precision": 0.8025,
+     "recall": 0.7137,
+     "f1": 0.7555
+    },
+    "0.30": {
+     "precision": 0.8023,
+     "recall": 0.7106,
+     "f1": 0.7537
+    },
+    "0.35": {
+     "precision": 0.8022,
+     "recall": 0.708,
+     "f1": 0.7522
+    },
+    "0.40": {
+     "precision": 0.8028,
+     "recall": 0.7044,
+     "f1": 0.7504
+    },
+    "0.45": {
+     "precision": 0.8032,
+     "recall": 0.6998,
+     "f1": 0.7479
+    },
+    "0.50": {
+     "precision": 0.8047,
+     "recall": 0.6916,
+     "f1": 0.7438
+    },
+    "0.55": {
+     "precision": 0.81,
+     "recall": 0.6849,
+     "f1": 0.7422
+    },
+    "0.60": {
+     "precision": 0.8144,
+     "recall": 0.6735,
+     "f1": 0.7373
+    },
+    "0.65": {
+     "precision": 0.8234,
+     "recall": 0.6627,
+     "f1": 0.7344
+    },
+    "0.70": {
+     "precision": 0.837,
+     "recall": 0.6529,
+     "f1": 0.7336
+    },
+    "0.75": {
+     "precision": 0.8508,
+     "recall": 0.6401,
+     "f1": 0.7305
+    },
+    "0.80": {
+     "precision": 0.861,
+     "recall": 0.6282,
+     "f1": 0.7264
+    },
+    "0.85": {
+     "precision": 0.8786,
+     "recall": 0.6184,
+     "f1": 0.7259
+    },
+    "0.90": {
+     "precision": 0.899,
+     "recall": 0.6004,
+     "f1": 0.72
+    },
+    "0.95": {
+     "precision": 0.9223,
+     "recall": 0.5623,
+     "f1": 0.6987
+    },
+    "0.97": {
+     "precision": 0.9365,
+     "recall": 0.5391,
+     "f1": 0.6843
+    },
+    "0.99": {
+     "precision": 0.9481,
+     "recall": 0.4892,
+     "f1": 0.6454
+    }
+   },
+   "baselines": {
+    "majority(no_entities)": {
+     "micro": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 1942,
+      "support": 1942
+     },
+     "macro_f1": 0.0,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 1147,
+       "support": 1147
+      },
+      "USERNAME": {
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 795,
+       "support": 795
+      }
+     }
+    },
+    "existing_detect_key_rules": {
+     "micro": {
+      "precision": 1.0,
+      "recall": 0.18486096807415037,
+      "f1": 0.31203824424163407,
+      "tp": 359,
+      "fp": 0,
+      "fn": 1583,
+      "support": 1942
+     },
+     "macro_f1": 0.32371068612344783,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 1.0,
+       "recall": 0.13164777680906714,
+       "f1": 0.23266563944530047,
+       "tp": 151,
+       "fp": 0,
+       "fn": 996,
+       "support": 1147
+      },
+      "USERNAME": {
+       "precision": 1.0,
+       "recall": 0.26163522012578616,
+       "f1": 0.4147557328015952,
+       "tp": 208,
+       "fp": 0,
+       "fn": 587,
+       "support": 795
+      }
+     }
+    },
+    "strong_key_aware_rules": {
+     "micro": {
+      "precision": 0.9729093050647821,
+      "recall": 0.850669412976313,
+      "f1": 0.9076923076923077,
+      "tp": 1652,
+      "fp": 46,
+      "fn": 290,
+      "support": 1942
+     },
+     "macro_f1": 0.913835760046593,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 0.9529652351738241,
+       "recall": 0.8125544899738448,
+       "f1": 0.8771764705882353,
+       "tp": 932,
+       "fp": 46,
+       "fn": 215,
+       "support": 1147
+      },
+      "USERNAME": {
+       "precision": 1.0,
+       "recall": 0.9056603773584906,
+       "f1": 0.9504950495049505,
+       "tp": 720,
+       "fp": 0,
+       "fn": 75,
+       "support": 795
+      }
+     }
+    }
+   },
+   "errors": {
+    "false_positives": 341,
+    "false_negatives": 556,
+    "fp_by_kind": {
+     "field_user": 2,
+     "field_person": 43,
+     "text_user": 63,
+     "field_neg": 51,
+     "text_person": 54,
+     "text_neg": 89,
+     "kv": 8,
+     "url": 11,
+     "text_mixed": 18,
+     "field_last": 2
+    },
+    "fn_by_kind": {
+     "field_user": 96,
+     "text_person": 132,
+     "url": 32,
+     "field_person": 67,
+     "kv": 37,
+     "text_mixed": 92,
+     "text_user": 97,
+     "field_last": 3
+    },
+    "recall_by_kind": {
+     "field_first": 1.0,
+     "field_last": 0.97,
+     "field_person": 0.769,
+     "field_user": 0.701,
+     "kv": 0.82,
+     "text_mixed": 0.623,
+     "text_person": 0.66,
+     "text_user": 0.573,
+     "url": 0.467
+    },
+    "sample_false_positives": [
+     {
+      "kind": "field_user",
+      "location": "json_body.payload.user.handle",
+      "text": "Aflonoutman",
+      "span": "Aflonoutman",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "cardholder",
+      "text": "Fougun N. Emouemaelini",
+      "span": "Emouemaelini",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.text",
+      "text": "Signed in as @olianis.flioflosford",
+      "span": "Signed",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "json_body.user.description",
+      "text": "Hi everyone, node-summ32 is down.",
+      "span": "everyone",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.comment",
+      "text": "Congratulations Heyvigrian on the new job!",
+      "span": "Congratulations Heyvigrian",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "query.q",
+      "text": "Signed in as @xXRapidXx",
+      "span": "Signed",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.comment",
+      "text": "Greetings from Cuareystad!",
+      "span": "Cuareystad",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "json_body.customer.applicant",
+      "text": "olaenustios l. emouemaelini",
+      "span": "emouemaelini",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "form.comment",
+      "text": "Congratulations Roshath on the new job!",
+      "span": "Congratulations",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.items[0].note",
+      "text": "Hi everyone, db-brae90 is down.",
+      "span": "everyone",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.items[0].note",
+      "text": "Hi everyone, srv-aree83 is down.",
+      "span": "everyone",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "json_body.payload.user.device_name",
+      "text": "SRV-GREY60",
+      "span": "SRV-GREY60",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "json_body.user.device_name",
+      "text": "web-mike1",
+      "span": "web-mike1",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "description",
+      "text": "Hi everyone, db-grea7 is down.",
+      "span": "everyone",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "body.channel_name",
+      "text": "pragrioring_prod",
+      "span": "pragrioring_prod",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.message",
+      "text": "Hi everyone, web-oluc21 is down.",
+      "span": "everyone",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.notes",
+      "text": "Hello @ziroul_tru!",
+      "span": "ziroul_tru",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "kv",
+      "location": "header.referer",
+      "text": "first=coemou&last=troumoulman&source=web",
+      "span": "coemou",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "json_body.customer.device_name",
+      "text": "SRV-CUAL90",
+      "span": "SRV-CUAL90",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "json_body.redirect_uri",
+      "text": "/search?q=market&page=2",
+      "span": "market",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "query.q",
+      "text": "Signed in as @TinounAlazeyn96",
+      "span": "Signed",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_neg",
+      "location": "json_body.data[0].device_name",
+      "text": "WEB-NONA77",
+      "span": "WEB-NONA77",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.description",
+      "text": "Greetings from DOTIODALE!",
+      "span": "DOTIODALE",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "body.text",
+      "text": "Greetings from Priliorville!",
+      "span": "Priliorville",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_neg",
+      "location": "json_body.message",
+      "text": "Hi everyone, db-brae15 is down.",
+      "span": "everyone",
+      "label": "PERSON_NAME"
+     }
+    ],
+    "sample_false_negatives": [
+     {
+      "kind": "field_user",
+      "location": "json_body.payload.user.handle",
+      "text": "Aflonoutman",
+      "span": "Aflonoutman",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "display_handle",
+      "text": "GrialBeym8",
+      "span": "GrialBeym8",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.bio",
+      "text": "Shipping to Neytria C. Niolaxberg, 12 High Street",
+      "span": "Neytria C. Niolaxberg",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "url",
+      "location": "json_body.link",
+      "text": "/api/v2/accounts/MeymGreyth25/settings",
+      "span": "MeymGreyth25",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "header.referer",
+      "text": "/api/v2/accounts/to_traarox/settings",
+      "span": "to_traarox",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.user.display_handle",
+      "text": "stoufun65",
+      "span": "stoufun65",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "applicant",
+      "text": "GRIAEMOUZOUL D. HEYSOREZ",
+      "span": "GRIAEMOUZOUL D. HEYSOREZ",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "cardholder",
+      "text": "Fougun N. Emouemaelini",
+      "span": "Fougun N. Emouemaelini",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "kv",
+      "location": "header.cookie",
+      "text": "Contact: Stiaolia Gaegiotski; Office: Foucheston",
+      "span": "Stiaolia Gaegiotski",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_user",
+      "location": "json_body.display_handle",
+      "text": "prafio_tinoun",
+      "span": "prafio_tinoun",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_mixed",
+      "location": "json_body.description",
+      "text": "Trehout Naeariandford logged in as to-gogrum38",
+      "span": "Trehout Naeariandford",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.comment",
+      "text": "Congratulations Heyvigrian on the new job!",
+      "span": "Heyvigrian",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "field_person",
+      "location": "json_body.customer.applicant",
+      "text": "olaenustios l. emouemaelini",
+      "span": "olaenustios l. emouemaelini",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "form.comment",
+      "text": "Congratulations Roshath on the new job!",
+      "span": "Roshath",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "text_mixed",
+      "location": "json_body.text",
+      "text": "Hi Socefer, your username sceyvomberg is ready.",
+      "span": "sceyvomberg",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "form.comment",
+      "text": "Invalid password for aliond_brim",
+      "span": "aliond_brim",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.text",
+      "text": "aloufluren.tifloumez pushed 3 commits to main",
+      "span": "aloufluren.tifloumez",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.description",
+      "text": "Invalid password for stibraaratrav1983",
+      "span": "stibraaratrav1983",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_person",
+      "location": "json_body.notes",
+      "text": "I spoke with Proujeystin yesterday about the refund.",
+      "span": "Proujeystin",
+      "label": "PERSON_NAME"
+     },
+     {
+      "kind": "url",
+      "location": "url.path",
+      "text": "/api/v2/accounts/kex_rieman/settings",
+      "span": "kex_rieman",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.notes",
+      "text": "Invalid password for BrimTreyr33",
+      "span": "BrimTreyr33",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "json_body.redirect_uri",
+      "text": "/api/v2/accounts/juvos-hougrae2/settings",
+      "span": "juvos-hougrae2",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "url",
+      "location": "url.path",
+      "text": "/api/v2/accounts/wearouga_31/settings",
+      "span": "wearouga_31",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_user",
+      "location": "json_body.notes",
+      "text": "Invalid password for satraen_siak",
+      "span": "satraen_siak",
+      "label": "USERNAME"
+     },
+     {
+      "kind": "text_mixed",
+      "location": "json_body.message",
+      "text": "Hi Liolon, your username lstouflaendman is ready.",
+      "span": "lstouflaendman",
+      "label": "USERNAME"
+     }
+    ]
+   },
+   "raw_score_ece_vs_precision": 0.1339,
+   "raw_score_reliability_bins": [
+    {
+     "bin": "[0.0,0.1)",
+     "n": 6,
+     "mean_score": 0.06,
+     "precision": 0.0
+    },
+    {
+     "bin": "[0.1,0.2)",
+     "n": 4,
+     "mean_score": 0.147,
+     "precision": 1.0
+    },
+    {
+     "bin": "[0.2,0.3)",
+     "n": 10,
+     "mean_score": 0.256,
+     "precision": 0.7
+    },
+    {
+     "bin": "[0.3,0.4)",
+     "n": 16,
+     "mean_score": 0.357,
+     "precision": 0.75
+    },
+    {
+     "bin": "[0.4,0.5)",
+     "n": 35,
+     "mean_score": 0.459,
+     "precision": 0.714
+    },
+    {
+     "bin": "[0.5,0.6)",
+     "n": 63,
+     "mean_score": 0.556,
+     "precision": 0.556
+    },
+    {
+     "bin": "[0.6,0.7)",
+     "n": 91,
+     "mean_score": 0.651,
+     "precision": 0.44
+    },
+    {
+     "bin": "[0.7,0.8)",
+     "n": 98,
+     "mean_score": 0.75,
+     "precision": 0.49
+    },
+    {
+     "bin": "[0.8,0.9)",
+     "n": 120,
+     "mean_score": 0.853,
+     "precision": 0.45
+    },
+    {
+     "bin": "[0.9,1.0)",
+     "n": 1297,
+     "mean_score": 0.989,
+     "precision": 0.899
+    }
+   ],
+   "cpu_timing": {
+    "single_field_ms": 2.65,
+    "batched_fields_per_sec": 3012.6
+   }
+  }
+ }
+}

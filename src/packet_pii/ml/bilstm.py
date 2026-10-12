@@ -115,7 +115,7 @@ class BiLSTMTagger(nn.Module):
 
 # ------------------------------------------------------------------ batching
 def collate(batch: Sequence[Encoded], max_seq: int, unk_id: int = 1, word_dropout: float = 0.0,
-            rng: random.Random | None = None) -> dict:
+            rng: random.Random | None = None, ctx_dropout: float = 0.0) -> dict:
     lens = [len(e) for e in batch]
     if not lens or max(lens) > max_seq:
         raise ValueError("batch empty or sequence longer than max_seq (chunk before encoding)")
@@ -130,6 +130,10 @@ def collate(batch: Sequence[Encoded], max_seq: int, unk_id: int = 1, word_dropou
         if word_dropout > 0 and rng is not None:  # train the <unk> embedding on realistic OOV contexts
             for k in range(e.n_ctx, n):
                 if rng.random() < word_dropout:
+                    wids[k] = unk_id
+        if ctx_dropout > 0 and rng is not None:  # simulate unseen field keys (not the <sep> marker at n_ctx-1)
+            for k in range(e.n_ctx - 1):
+                if rng.random() < ctx_dropout:
                     wids[k] = unk_id
         word[i, :n] = torch.tensor(wids); shape[i, :n] = torch.tensor(e.shape_ids)
         ctx[i, :n] = torch.tensor(e.ctx_flags)
@@ -196,7 +200,7 @@ def evaluate_examples(predictor: SpanPredictor, examples: Sequence, min_score: f
 # ------------------------------------------------------------------ training
 def train_model(train_ex: Sequence, val_ex: Sequence, vocab: Vocab, cfg: ModelConfig, *, seed: int = 1337,
                 epochs: int = 30, patience: int = 6, batch_size: int = 64, lr: float = 2e-3,
-                weight_decay: float = 1e-2, clip: float = 1.0, word_dropout: float = 0.15,
+                weight_decay: float = 1e-2, clip: float = 1.0, word_dropout: float = 0.15, ctx_dropout: float = 0.0,
                 max_minutes: float = 20.0, log: Callable[[str], None] = print) -> tuple[BiLSTMTagger, dict]:
     """Mini-batch training with val-entity-F1 checkpoint selection, early stopping and a wall-clock limit."""
     from .encoding import encode_example
@@ -214,7 +218,7 @@ def train_model(train_ex: Sequence, val_ex: Sequence, vocab: Vocab, cfg: ModelCo
         order = list(range(len(enc_train))); rng.shuffle(order)
         tot, n = 0.0, 0
         for i in range(0, len(order), batch_size):
-            b = collate([enc_train[j] for j in order[i:i + batch_size]], cfg.max_seq, vocab.words[UNK], word_dropout, rng)
+            b = collate([enc_train[j] for j in order[i:i + batch_size]], cfg.max_seq, vocab.words[UNK], word_dropout, rng, ctx_dropout)
             logits = _forward(model, b)
             loss = loss_fn(logits.reshape(-1, cfg.n_tags), b["labels"].reshape(-1))
             opt.zero_grad(); loss.backward()
@@ -241,7 +245,7 @@ def train_model(train_ex: Sequence, val_ex: Sequence, vocab: Vocab, cfg: ModelCo
     model.eval()
     return model, {"history": history, "best_val_micro_f1": best, "epochs_run": len(history),
                    "seed": seed, "batch_size": batch_size, "lr": lr, "weight_decay": weight_decay, "clip": clip,
-                   "word_dropout": word_dropout, "patience": patience, "wall_seconds": round(time.time() - t0, 1)}
+                   "word_dropout": word_dropout, "ctx_dropout": ctx_dropout, "patience": patience, "wall_seconds": round(time.time() - t0, 1)}
 
 
 # ------------------------------------------------------------------ checkpoint I/O

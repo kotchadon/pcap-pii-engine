@@ -27,6 +27,7 @@ def main():
     ap.add_argument("--word-dim", type=int, default=64)
     ap.add_argument("--char-filters", type=int, default=48)
     ap.add_argument("--word-dropout", type=float, default=0.15)
+    ap.add_argument("--ctx-dropout", type=float, default=0.0, help="prob. of masking each field-key token (simulates unseen keys)")
     ap.add_argument("--min-word-count", type=int, default=2)
     ap.add_argument("--threads", type=int, default=4)
     a = ap.parse_args()
@@ -37,7 +38,7 @@ def main():
                       char_filters=a.char_filters).validate()
     print(f"train={len(ds['train'])} val={len(ds['val'])} vocab={len(vocab.words)} chars={len(vocab.chars)}", flush=True)
     model, rec = train_model(ds["train"], ds["val"], vocab, cfg, seed=a.seed, epochs=a.epochs, patience=a.patience,
-                             word_dropout=a.word_dropout, max_minutes=a.max_minutes)
+                             word_dropout=a.word_dropout, ctx_dropout=a.ctx_dropout, max_minutes=a.max_minutes)
     # operating threshold from the CALIBRATION split (never val/test)
     pred = SpanPredictor(model, vocab)
     sweep = {}
