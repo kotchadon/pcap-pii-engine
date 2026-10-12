@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .engine import analyze
+from .engine import AnalysisLimits, analyze
 from .reporting import write_private_report
 
 
@@ -22,6 +22,14 @@ def main(argv=None) -> int:
                         help='Explicitly replace an existing output report')
     parser.add_argument('--include-values', action='store_true',
                         help='Include raw detected data (SENSITIVE; local only)')
+    parser.add_argument('--max-capture-mib', type=int, default=128,
+                        help='Maximum input capture size in MiB (default 128)')
+    parser.add_argument('--max-packets', type=int, default=100000,
+                        help='Maximum packets to process (default 100000)')
+    parser.add_argument('--max-flows', type=int, default=20000,
+                        help='Maximum distinct TCP endpoint pairs (default 20000)')
+    parser.add_argument('--max-tcp-mib', type=int, default=64,
+                        help='Maximum buffered TCP payload MiB (default 64)')
     args = parser.parse_args(argv)
     try:
         # Prevent self-destruction if --output points at the capture file,
@@ -36,7 +44,13 @@ def main(argv=None) -> int:
             raise FileExistsError('Output already exists (use --overwrite explicitly)')
         if not args.overwrite and output_path.exists():
             raise FileExistsError('Output already exists (use --overwrite explicitly)')
-        report = analyze(input_path, args.threshold, args.include_values)
+        limits = AnalysisLimits(
+            max_capture_bytes=args.max_capture_mib * 1024 * 1024,
+            max_packets=args.max_packets,
+            max_flows=args.max_flows,
+            max_tcp_payload_bytes=args.max_tcp_mib * 1024 * 1024,
+        )
+        report = analyze(input_path, args.threshold, args.include_values, limits=limits)
         write_private_report(report, output_path, overwrite=args.overwrite)
         if args.include_values:
             print('WARNING: report contains unmasked PII/credentials; restrict its distribution.',
