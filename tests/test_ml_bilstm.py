@@ -207,3 +207,18 @@ def test_rules_only_engine_does_not_need_torch():
     """)
     r = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, text=True)
     assert r.returncode == 0 and r.stdout.strip() == "ok", r.stderr
+
+
+ARTIFACT = os.path.join(os.path.dirname(__file__), "..", "src", "packet_pii", "ml", "artifacts", "bilstm_v1")
+
+
+def test_committed_checkpoint_loads_on_cpu_and_is_deterministic():
+    if not os.path.isdir(ARTIFACT):
+        pytest.skip("trained artifact not present")
+    d1, d2 = BiLSTMDetector(ARTIFACT), BiLSTMDetector(ARTIFACT)
+    assert d1.model_version.startswith("bilstm-v1-") and 0.0 <= d1.min_score <= 1.0
+    f = [FieldInput(0, "json_body.user.username", "mkowalski88"), FieldInput(1, "json_body.message", "Hi Maria, thanks!")]
+    a = run_detector(d1, f)
+    assert a == run_detector(d2, f) == run_detector(d1, f)
+    assert any(s.field_index == 0 and s.label is EntityLabel.USERNAME for s in a)
+    assert all(s.model_version == d1.model_version for s in a)

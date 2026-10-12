@@ -1,0 +1,106 @@
+{
+ "entity_strings_shared_with_train": {
+  "calib": 0,
+  "test": 0,
+  "val": 0
+ },
+ "leakage_report": {
+  "exact_duplicates": 0,
+  "family_overlap": 0,
+  "field_skeleton_overlap_expected": 1309,
+  "lexical_overlap": 0,
+  "skeleton_overlap": 0,
+  "template_overlap": 0
+ },
+ "seed": 1234,
+ "splits": {
+  "calib": {
+   "by_kind": {
+    "field_first": 68,
+    "field_last": 66,
+    "field_neg": 212,
+    "field_person": 168,
+    "field_user": 192,
+    "kv": 144,
+    "text_mixed": 54,
+    "text_neg": 169,
+    "text_person": 220,
+    "text_user": 144,
+    "url": 63
+   },
+   "entities": {
+    "PERSON_NAME": 630,
+    "USERNAME": 476
+   },
+   "examples": 1500,
+   "no_entity_examples": 448,
+   "sha256": "c6013b9750982c8a587a2b744824366b259288a5dbd51f27fe4fe8d353febc24"
+  },
+  "test": {
+   "by_kind": {
+    "field_first": 106,
+    "field_last": 100,
+    "field_neg": 320,
+    "field_person": 290,
+    "field_user": 321,
+    "kv": 240,
+    "text_mixed": 122,
+    "text_neg": 284,
+    "text_person": 388,
+    "text_user": 227,
+    "url": 102
+   },
+   "entities": {
+    "PERSON_NAME": 1147,
+    "USERNAME": 795
+   },
+   "examples": 2500,
+   "no_entity_examples": 707,
+   "sha256": "57b69caad125ff40b653043b3341513e95da7668c138214f26493470836ac442"
+  },
+  "train": {
+   "by_kind": {
+    "field_first": 390,
+    "field_last": 407,
+    "field_neg": 1290,
+    "field_person": 959,
+    "field_user": 1066,
+    "kv": 909,
+    "text_mixed": 376,
+    "text_neg": 859,
+    "text_person": 1479,
+    "text_user": 891,
+    "url": 374
+   },
+   "entities": {
+    "PERSON_NAME": 4050,
+    "USERNAME": 2823
+   },
+   "examples": 9000,
+   "no_entity_examples": 2598,
+   "sha256": "cd22480b09752d043be41a17bf6b450e697382fa11be5b02d4246a2140651872"
+  },
+  "val": {
+   "by_kind": {
+    "field_first": 53,
+    "field_last": 59,
+    "field_neg": 222,
+    "field_person": 143,
+    "field_user": 184,
+    "kv": 161,
+    "text_mixed": 64,
+    "text_neg": 166,
+    "text_person": 242,
+    "text_user": 153,
+    "url": 53
+   },
+   "entities": {
+    "PERSON_NAME": 633,
+    "USERNAME": 512
+   },
+   "examples": 1500,
+   "no_entity_examples": 452,
+   "sha256": "115b3bba4d16f11985bafc7011677f61753b604b3a7f28b340e85895d375fd3f"
+  }
+ }
+}
