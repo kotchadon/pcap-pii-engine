@@ -235,20 +235,22 @@ def decode_tcp(frame: RawFrame) -> TcpPacket | None:
                 return None
             ihl = (data[0] & 15) * 4
             total = int.from_bytes(data[2:4], 'big')
-            if ihl < 20 or len(data) < ihl or data[9] != 6:
+            if ihl < 20 or total < ihl or len(data) < total or data[9] != 6:
                 return None
             frag = int.from_bytes(data[6:8], 'big')
             if frag & 0x3FFF:  # fragment: no IP reassembly in MVP
                 return None
             src = str(ipaddress.IPv4Address(data[12:16]))
             dst = str(ipaddress.IPv4Address(data[16:20]))
-            transport = data[ihl:min(len(data),total)]
+            transport = data[ihl:total]
         elif proto == 0x86DD:
             if len(data) < 40 or data[0] >> 4 != 6 or data[6] != 6:
                 return None  # IPv6 extension headers currently not supported
             src = str(ipaddress.IPv6Address(data[8:24]))
             dst = str(ipaddress.IPv6Address(data[24:40]))
             payload_len = int.from_bytes(data[4:6], 'big')
+            if len(data) < 40 + payload_len:
+                return None
             transport = data[40:40+payload_len]
         else:
             return None
@@ -267,39 +269,45 @@ def endpoint_key(pkt: TcpPacket) -> tuple[tuple[str,int],tuple[str,int]]:
     return tuple(sorted(((pkt.src,pkt.sport),(pkt.dst,pkt.dport))))  # type: ignore[return-value]
 
 
+def sequence_offset(seq: int, base: int) -> int:
+    """Signed TCP serial distance; callers must keep a window below 2**31."""
+    return ((seq - base + (1 << 31)) & 0xffffffff) - (1 << 31)
+
+
 def reassemble(segments: list[TcpPacket]) -> tuple[bytes, bool]:
-    """Return the contiguous TCP payload prefix and whether reconstruction was unsafe.
+    """Return contiguous observed payload and an unsafe-reconstruction flag.
 
-    Identical retransmissions are deduplicated; gaps or conflicting overlaps
-    stop reconstruction. Sequence wraparound and reuse of
-    the same 4-tuple for separate connections are limitations of this MVP.
+    SYN consumes one sequence number, including when it carries data. Sequence
+    arithmetic wraps at 2**32 within a bounded window. A missing handshake does
+    not prove the initial payload was captured. FIN can prove a trailing gap;
+    without FIN or later data, absence of a final segment cannot be inferred.
     """
-    data_segs = sorted(
-        ((p.seq, p.payload) for p in segments if p.payload),
-        key=lambda segment: segment[0],
-    )
-    if not data_segs:
+    data_segs = [((p.seq + bool(p.flags & 2)) & 0xffffffff, p.payload)
+                 for p in segments if p.payload]
+    syn_starts = {(p.seq + 1) & 0xffffffff for p in segments if p.flags & 2}
+    if len(syn_starts) > 1:
+        return b'', True  # Distinct observed handshakes must not be concatenated.
+    if not data_segs and not syn_starts:
         return b'', False
-
-    # A SYN consumes one TCP sequence number. When observed, it gives us the
-    # expected start of the byte stream, so missing initial data is visible.
-    # Without a SYN, the capture may begin mid-stream; the first observed
-    # payload is our best available starting point, not proof of completeness.
-    syn_starts = [p.seq + 1 for p in segments if p.flags & 0x02]
-    base = min(syn_starts) if syn_starts else data_segs[0][0]
+    anchor = next(iter(syn_starts)) if syn_starts else data_segs[0][0]
+    offsets = [(sequence_offset(seq, anchor), payload) for seq, payload in data_segs]
+    base_offset = 0 if syn_starts else min(at for at, _ in offsets)
+    base = (anchor + base_offset) & 0xffffffff
     out = bytearray()
-    for seq, payload in data_segs:
-        start = seq - base
+    for at, payload in sorted(offsets, key=lambda item: item[0]):
+        start = at - base_offset
         if start < 0 or start > len(out):
             return bytes(out), True
-
         overlap = min(len(payload), len(out) - start)
-        # A conflicting retransmission makes the stream ambiguous. Do not
-        # silently choose one version and risk reporting invented content.
         if overlap and out[start:start + overlap] != payload[:overlap]:
             return bytes(out), True
         extension = payload[overlap:]
         if len(out) + len(extension) > 16 * 1024 * 1024:
             return bytes(out), True
         out.extend(extension)
+    for p in segments:
+        if p.flags & 1:
+            fin_at = sequence_offset(p.seq + bool(p.flags & 2) + len(p.payload), base)
+            if fin_at != len(out):
+                return bytes(out), True
     return bytes(out), False
