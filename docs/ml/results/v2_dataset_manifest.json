@@ -1,12 +1,12 @@
 {
  "common_cue_example_share": {
-  "calib": 0.329,
-  "train": 0.301,
-  "val": 0.36
+  "calib": 0.335,
+  "train": 0.302,
+  "val": 0.377
  },
  "leakage_report": {
-  "entity_string_overlap": 4,
-  "entity_token_overlap": 160,
+  "entity_string_overlap": 2,
+  "entity_token_overlap": 163,
   "exact_text_duplicates": 27,
   "exact_text_duplicates_with_entities": 0,
   "shared_negative_lexicon_items": 0,
@@ -34,22 +34,22 @@
     "text_user": 269,
     "url": 127
    },
-   "distinct_entity_strings": 2157,
+   "distinct_entity_strings": 2224,
    "entities": {
-    "PERSON_NAME": 1322,
-    "USERNAME": 1129
+    "PERSON_NAME": 1367,
+    "USERNAME": 1131
    },
    "examples": 3000,
-   "no_entity_examples": 879,
-   "sha256_jsonl": "30890e48eae1837527f63ee5e5f3e23ed4a0c5120ad2f4fd5b7db28640380dd9",
+   "no_entity_examples": 842,
+   "sha256_jsonl": "0f700db03b546df3cd136bc26fe5ee5026e851cf349c1429f0861a6668c3d110",
    "tags": {
-    "exclusive_template": 813,
-    "hard_negative": 910,
-    "multi_entity": 243,
-    "no_entity": 15,
+    "exclusive_template": 810,
+    "hard_negative": 845,
+    "multi_entity": 251,
+    "no_entity": 19,
     "replacement_char": 17,
-    "truncated": 98,
-    "unicode": 695
+    "truncated": 101,
+    "unicode": 732
    }
   },
   "train": {
@@ -64,29 +64,29 @@
     "kv": 2380,
     "log": 1147,
     "markup": 599,
-    "narrative": 1584,
+    "narrative": 1585,
     "text_mixed": 860,
     "text_neg": 1424,
-    "text_person": 3930,
+    "text_person": 3929,
     "text_user": 2783,
     "url": 1248
    },
-   "distinct_entity_strings": 21906,
+   "distinct_entity_strings": 22193,
    "entities": {
-    "PERSON_NAME": 13569,
-    "USERNAME": 11306
+    "PERSON_NAME": 13934,
+    "USERNAME": 11340
    },
    "examples": 30000,
-   "no_entity_examples": 9083,
-   "sha256_jsonl": "a149648a55db77b1d35cfd55f9387181d3e026f39e6bce168a43cb94a800e877",
+   "no_entity_examples": 8620,
+   "sha256_jsonl": "066eeab368566956d5e655460ff1800b3e83779e4180f041399e7ccf0e76f7c6",
    "tags": {
     "exclusive_template": 8392,
-    "hard_negative": 9330,
-    "multi_entity": 2808,
-    "no_entity": 129,
-    "replacement_char": 250,
+    "hard_negative": 8647,
+    "multi_entity": 2879,
+    "no_entity": 117,
+    "replacement_char": 241,
     "truncated": 999,
-    "unicode": 6435
+    "unicode": 6557
    }
   },
   "val": {
@@ -95,7 +95,7 @@
     "field_first_last": 169,
     "field_neg": 367,
     "field_neutral": 163,
-    "field_person": 302,
+    "field_person": 301,
     "field_user": 246,
     "header": 113,
     "kv": 243,
@@ -104,26 +104,26 @@
     "narrative": 148,
     "text_mixed": 86,
     "text_neg": 149,
-    "text_person": 380,
+    "text_person": 381,
     "text_user": 268,
     "url": 132
    },
-   "distinct_entity_strings": 2198,
+   "distinct_entity_strings": 2212,
    "entities": {
-    "PERSON_NAME": 1338,
-    "USERNAME": 1112
+    "PERSON_NAME": 1361,
+    "USERNAME": 1113
    },
    "examples": 3000,
-   "no_entity_examples": 906,
-   "sha256_jsonl": "5af529dd882048b001994a9d8a40ca2fe756e7f01b6f56ec9041d5b39a6449c3",
+   "no_entity_examples": 873,
+   "sha256_jsonl": "5026c7157c63831615dedd67488efc902a5f3a1af95c8140d94a460698761850",
    "tags": {
-    "exclusive_template": 764,
-    "hard_negative": 929,
-    "multi_entity": 251,
-    "no_entity": 13,
-    "replacement_char": 16,
-    "truncated": 96,
-    "unicode": 666
+    "exclusive_template": 749,
+    "hard_negative": 873,
+    "multi_entity": 256,
+    "no_entity": 15,
+    "replacement_char": 18,
+    "truncated": 100,
+    "unicode": 671
    }
   }
  }

@@ -373,7 +373,7 @@ PERSON_STRONG = _bank((),
     "Invoice for {P}", "Order placed by {P}", "Applicant: {P}", "Witness: {P}", "Patient {P}, age {NUM}",
     "{P} created the repository", "Message from {P}: see you at {TIME}", "{P} has been added to the project",
     "Next of kin: {P}", "Guardian: {P}, phone {PHONE}", "Spouse: {P}", "Referred by {P}", "Interviewer: {P}",
-    "{P} requested a refund of {NUM}", "Please welcome {P}!", "Student: {P}, grade {NUM}", "Mr. {L} and Mrs. {L2}",
+    "Please welcome {P}!", "Student: {P}, grade {NUM}", "Mr. {L} and Mrs. {L2}",
     "Dear Mr. {P},", "RSVP: {P} (+{NUM})", "Name on card: {P}", "Account holder: {P}", "Signature of {P}",
     "{P} is the new {JOB}", "{F} {L}")
 USER_WEAK_NEG = ("ORG", "CITY", "PROD", "TEAM")
@@ -397,6 +397,44 @@ MIXED = _bank((),
     "Hi {F}, your username {U} is ready.", "{U} ({P}) joined the team", "Profile: {P} / @{U}", "{P} logged in as {U}",
     "From: {P} (@{U})", "Welcome {F}, your handle is @{U}", "Owner {P}, login {U}", "{P} <@{U}>",
     "Account {U} belongs to {P}", "Contact {P} or ping @{U}", "{U} ({P}) — admin")
+
+# ---- v2.2: subject-position / mid-sentence frames (V2.1 diagnostics: spans over-extended onto a following verb, e.g.
+#      "<Name> requested a refund" -> "<Name> requested"). Every predicate is its own hash-partitioned cue.
+_PREDICATES = ["requested a refund of {NUM}", "asked about {WORD}", "booked a table for {NUM}", "cancelled the order", "uploaded {FILE}",
+               "sent you a message", "will be late", "approved the request", "is out of office until {DATE}", "left a review",
+               "paid {NUM} on {DATE}", "ordered {PROD}", "called yesterday", "emailed {ORG}", "has not responded", "signed the contract",
+               "moved to {CITY}", "works at {ORG}", "reported a bug in {PROD}", "joined at {TIME}", "left the meeting", "shared {FILE}",
+               "declined the invitation", "is waiting at reception", "changed the password", "opened ticket #{NUM}", "deleted {FILE}",
+               "was added to {ORG}", "visited {CITY} last week", "rated the service 5 stars", "forgot the badge", "expects delivery on {DATE}",
+               "submitted the form", "needs access to {PROD}", "replied within {NUM} minutes", "attended the webinar", "owes {NUM}",
+               "completed the survey", "requested a callback", "is the account owner", "confirmed the booking", "wants to cancel",
+               "reviewed {FILE}", "transferred {NUM} credits", "has been promoted", "uploaded a photo", "joined the {WORD} group",
+               "scheduled a call for {DATE}", "returned the {PROD}", "is traveling to {CITY}", "filed a complaint", "paid the invoice",
+               "downloaded {FILE}", "applied for the {JOB} role", "is on holiday", "created ticket {HEX}", "verified the email address",
+               "ordered {NUM} units", "logged a support request", "accepted the offer"]
+PERSON_SUBJ = _bank((), *[f"{{P}} {p}" for p in _PREDICATES[:40]] + [f"{{F}} {p}" for p in _PREDICATES[40:]])
+USER_SUBJ = _bank((), *[f"{{U}} {p}" for p in ["opened an issue in {PROD}", "starred the repository", "commented on #{NUM}", "forked {SLUG}",
+                                             "pushed to {SLUG}", "closed the pull request", "reacted with a thumbs up", "went offline", "is now online",
+                                             "created channel #{WORD}", "was muted for {NUM} minutes", "uploaded {FILE}", "left a comment",
+                                             "requested to join {ORG}", "deleted the branch", "logged in from {IP}", "triggered a build",
+                                             "followed you", "submitted a patch", "changed the topic", "blocked {U2}", "reported {U2}",
+                                             "opened a session on {HOST}", "gained {NUM} followers"]])
+PERSON_MID = _bank((),
+    "The invoice from {P} was paid", "Thanks to {P} and {P2} for the help", "Spoke to {P} about the {WORD}", "Ask {P} or {P2} to approve",
+    "Email {P} the {FILE}", "According to {P}, the {WORD} is ready", "Feedback from {P}: great service", "Please CC {P} on the reply",
+    "Support ticket opened by {P} regarding {WORD}", "A call was scheduled with {P} for {DATE}", "Photo by {P}", "Directed by {P}",
+    "Licensed to {P}", "Registered to {P}", "Delivered to {P}, {CITY}", "Our driver {F} will arrive at {TIME}", "I met {P} at the conference",
+    "Handled by agent {F} {L}", "Dear colleagues, {P} has joined {ORG}", "Statement issued to {P} on {DATE}", "Transfer approved by {P} ({NUM})",
+    "Order for {P} shipped to {CITY}", "Written permission from {P}", "Referral: {P} \u2192 {P2}", "Please welcome our new {JOB}, {P}",
+    "Meet the team: {P}, {JOB}", "Customer {P} reported an outage", "Account manager {F} {L} can help", "Thank you {P} for contacting {ORG}",
+    "Guest {P} checked in at {TIME}", "Patient {P} was discharged on {DATE}", "Case assigned to officer {L}")
+USER_MID = _bank((),
+    "Thanks to {U} for the patch", "Cloned from {U}'s repo", "The PR by {U} was merged", "Review requested from @{U}", "ping {U} when ready",
+    "Transferred ownership to {U}", "Invite sent to {U}", "Welcome to the server, {U}", "Message deleted by moderator {U}",
+    "Access granted to {U} until {DATE}", "{NUM} points awarded to {U}", "Top contributor: {U} ({NUM} commits)", "Token revoked for {U}",
+    "2FA enabled for account {U}", "Mute {U} for {NUM} minutes", "Direct message to {U} failed", "Friend request from {U}",
+    "Leaderboard #{NUM}: {U}", "Last seen: {U} at {TIME}", "Collaborator {U} removed", "Quota exceeded for {U}", "Watching {U}'s timeline")
+
 FILLER = ["Please review the attached {FILE} before {DATE}.", "Your order #{NUM} has shipped.",
           "The {PROD} is now available in stores.", "{ORG} announced quarterly results.", "Visit {CITY} this summer!",
           "See you at {TIME}.", "Server {HOST} restarted at {TIME}.", "Thanks for choosing {ORG}!", "Error code {NUM}: timeout",
@@ -516,7 +554,7 @@ def _finish(rng: random.Random, pieces: list, tags: set) -> tuple[str, list]:
     return text, spans
 
 
-def _frame(ctx: Ctx, bank, split: str, salt: str, p_neg: float = .30):
+def _frame(ctx: Ctx, bank, split: str, salt: str, p_neg: float = .22):
     rng = ctx.rng
     tpl, neg = _pick_template(rng, bank, split, salt)
     pieces, any_neg = render_template(tpl, ctx, neg, p_neg)
@@ -570,15 +608,16 @@ def build_example(rng: random.Random, split: str) -> tuple[str, str, list, list,
     elif kind in ("text_person", "text_user", "text_mixed", "text_neg", "narrative"):
         loc = _loc(rng)
         if kind == "text_person":
-            bank, salt = (PERSON_WEAK, "pw") if rng.random() < .55 else (PERSON_STRONG, "ps")
-        elif kind == "text_user": bank, salt = (USER_EXPLICIT, "ue") if rng.random() < .7 else (USER_WEAK, "uw")
+            bank, salt = rng.choices([(PERSON_WEAK, "pw"), (PERSON_STRONG, "ps"), (PERSON_SUBJ, "psj"), (PERSON_MID, "pmd")], [35, 25, 25, 15])[0]
+        elif kind == "text_user":
+            bank, salt = rng.choices([(USER_EXPLICIT, "ue"), (USER_WEAK, "uw"), (USER_SUBJ, "usj"), (USER_MID, "umd")], [55, 25, 10, 10])[0]
         elif kind == "text_mixed": bank, salt = MIXED, "mx"
         else: bank, salt = None, ""
         if kind == "text_neg":
             tid = rng.choice(NEG_ONLY_TEXT); pieces, _ = render_template(tid, ctx); tags.add("hard_negative")
         elif kind == "narrative":
             parts = []
-            for b, s in rng.sample([(PERSON_WEAK, "pw"), (PERSON_STRONG, "ps"), (USER_EXPLICIT, "ue"), (USER_WEAK, "uw"), (MIXED, "mx")], rng.choice((2, 2, 3))):
+            for b, s in rng.sample([(PERSON_WEAK, "pw"), (PERSON_STRONG, "ps"), (PERSON_SUBJ, "psj"), (PERSON_MID, "pmd"), (USER_EXPLICIT, "ue"), (USER_WEAK, "uw"), (USER_SUBJ, "usj"), (USER_MID, "umd"), (MIXED, "mx")], rng.choice((2, 2, 3))):
                 t, pc = _frame(ctx, b, split, s); parts.append(pc); tid = "narr"
                 if rng.random() < .5: parts.append(_filler(ctx))
             for i, pc in enumerate(parts):
@@ -706,7 +745,8 @@ def leakage_report(ds: dict[str, list[Example2]]) -> dict:
 
 
 CUE_SALT: dict[str, str] = {}
-for _bank_, _salt in ((PERSON_WEAK, "pw"), (PERSON_STRONG, "ps"), (USER_EXPLICIT, "ue"), (USER_WEAK, "uw"), (MIXED, "mx"),
+for _bank_, _salt in ((PERSON_WEAK, "pw"), (PERSON_STRONG, "ps"), (PERSON_SUBJ, "psj"), (PERSON_MID, "pmd"), (USER_EXPLICIT, "ue"),
+                      (USER_WEAK, "uw"), (USER_SUBJ, "usj"), (USER_MID, "umd"), (MIXED, "mx"),
                       (LOG_TPLS, "lg"), (URL_TPLS, "ur"), (MARKUP, "mk")):
     for _t, _n in _bank_:
         CUE_SALT[_t] = _salt
