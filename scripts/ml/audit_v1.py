@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Diagnostic audit of the V1 checkpoint on V1 TRAIN/VAL/CALIB data only (the frozen V1 test is NOT read).
+"""Diagnostic audit of a checkpoint (V1 or V2) on V1 TRAIN/VAL/CALIB data only (the frozen V1 test is NOT read).
 
   python scripts/ml/audit_v1.py --checkpoint src/packet_pii/ml/artifacts/bilstm_v1 --out docs/ml/results/v2_audit_v1.json
 
@@ -12,7 +12,7 @@ from statistics import mean, pstdev
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 import torch
 from packet_pii.ml import data as D
-from packet_pii.ml.bilstm import SpanPredictor, load_checkpoint
+from packet_pii.ml.bilstm import load_predictor
 from packet_pii.ml.encoding import location_tokens
 from packet_pii.ml.metrics import entity_metrics
 from packet_pii.ml.spans import tokenize
@@ -30,9 +30,9 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--checkpoint", required=True); ap.add_argument("--out", required=True)
     a = ap.parse_args()
     torch.set_num_threads(4)
-    model, vocab, meta = load_checkpoint(a.checkpoint)
-    th = meta["min_score"]; P = SpanPredictor(model, vocab)
-    ds = D.generate_dataset(meta["training"]["data_seed"])
+    P, meta = load_predictor(a.checkpoint); vocab = P.vocab
+    th = meta["min_score"]
+    ds = D.generate_dataset(meta.get("training", {}).get("data_seed", 1234))
     out = {"checkpoint": meta["model_version"], "min_score": th}
     rng = random.Random(0)
 
@@ -52,9 +52,9 @@ def main():
         "ambiguous_keys": {k: dict(c) for k, c in keys.items() if len(c) > 1},
         "entity_types_in_train": dict(Counter(l for e in tr for *_, l in e.spans)),
         "distinct_entity_strings_train": len({e.text[s:t].lower() for e in tr for s, t, _ in e.spans}),
-        "train_loss_last_epoch": meta["training"]["history"][-1]["train_loss"],
-        "val_f1_last10_mean": round(mean(h["val_micro_f1"] for h in meta["training"]["history"][-10:]), 4),
-        "val_f1_last10_std": round(pstdev(h["val_micro_f1"] for h in meta["training"]["history"][-10:]), 4)}
+        **({"train_loss_last_epoch": meta["training"]["history"][-1]["train_loss"],
+            "val_f1_last10_mean": round(mean(h["val_micro_f1"] for h in meta["training"]["history"][-10:]), 4),
+            "val_f1_last10_std": round(pstdev(h["val_micro_f1"] for h in meta["training"]["history"][-10:]), 4)} if meta.get("training", {}).get("history") else {})}
     cap = lambda s: s[:1].isupper()
     out["A_surface_shortcuts_train"] = {
         "person_spans_capitalised": round(mean(cap(e.text[s:t]) for e in tr for s, t, l in e.spans if l == "PERSON_NAME"), 3),

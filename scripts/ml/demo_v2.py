@@ -15,11 +15,11 @@ from packet_pii.ml.input_policy import run_with_policy
 HERE = os.path.dirname(__file__)
 CASES = [
     ("person name", FieldInput(0, "json_body.shipping.recipient", "Priyanka Venkataraman")),
-    ("person in prose", FieldInput(1, "body.text", "Thanks for the quick turnaround, Mateus.")),
+    ("person in prose (KNOWN MISS, see V2_EVALUATION)", FieldInput(1, "body.text", "Thanks for the quick turnaround, Mateus.")),
     ("username", FieldInput(2, "json_body.audit.actor", "night_owl_77")),
     ("username in log", FieldInput(3, "body.text", "Accepted password for kfitzgerald from 10.1.2.3 port 52814 ssh2")),
     ("hard negative (company)", FieldInput(4, "json_body.invoice.billed_to", "Johnson & Johnson")),
-    ("hard negative (city named like a person)", FieldInput(5, "json_body.geo.place", "Madison")),
+    ("hard negative: city named like a person (KNOWN FALSE POSITIVE)", FieldInput(5, "json_body.geo.place", "Madison")),
     ("excluded by input policy (secret-bearing key)", FieldInput(6, "json_body.password", "Maria Garcia")),
 ]
 

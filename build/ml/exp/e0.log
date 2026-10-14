@@ -1,0 +1,13 @@
+[e0_v1arch] epoch 01 loss 0.2564 val_f1 0.8936 (P 0.878 R 0.910) 120.6s
+[e0_v1arch] epoch 02 loss 0.0799 val_f1 0.9251 (P 0.930 R 0.920) 189.0s
+[e0_v1arch] epoch 03 loss 0.0537 val_f1 0.9370 (P 0.945 R 0.929) 253.9s
+[e0_v1arch] epoch 04 loss 0.0396 val_f1 0.9302 (P 0.930 R 0.931) 327.2s
+[e0_v1arch] epoch 05 loss 0.0331 val_f1 0.9334 (P 0.940 R 0.927) 403.2s
+[e0_v1arch] epoch 06 loss 0.0279 val_f1 0.9448 (P 0.946 R 0.943) 475.9s
+[e0_v1arch] epoch 07 loss 0.0230 val_f1 0.9458 (P 0.955 R 0.937) 549.8s
+[e0_v1arch] epoch 08 loss 0.0208 val_f1 0.9320 (P 0.944 R 0.920) 615.3s
+[e0_v1arch] epoch 09 loss 0.0198 val_f1 0.9420 (P 0.933 R 0.951) 681.0s
+[e0_v1arch] epoch 10 loss 0.0165 val_f1 0.9416 (P 0.945 R 0.938) 745.1s
+[e0_v1arch] epoch 11 loss 0.0150 val_f1 0.9441 (P 0.950 R 0.938) 808.0s
+[e0_v1arch] early stopping
+{"experiment": "e0_v1arch", "model_version": "bilstm-v2x-ee2fac724d92", "params": 953821, "min_score": 0.4, "best_val_f1": 0.9458, "val": {"precision": 0.9554, "recall": 0.9363, "f1": 0.9458, "tp": 2294, "fp": 107, "fn": 156, "support": 2450}, "calib": {"precision": 0.9529, "recall": 0.9164, "f1": 0.9343, "tp": 2246, "fp": 111, "fn": 205, "support": 2451}, "epochs": 11, "seconds": 808.0}

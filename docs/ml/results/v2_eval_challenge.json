@@ -1,0 +1,5742 @@
+{
+ "datasets": {
+  "challenge": {
+   "bilstm_threshold_sweep": {
+    "s11": {
+     "0.00": {
+      "f1": 0.7904,
+      "precision": 0.8099,
+      "recall": 0.7717
+     },
+     "0.10": {
+      "f1": 0.7896,
+      "precision": 0.8096,
+      "recall": 0.7705
+     },
+     "0.25": {
+      "f1": 0.7901,
+      "precision": 0.8107,
+      "recall": 0.7705
+     },
+     "0.50": {
+      "f1": 0.7935,
+      "precision": 0.8206,
+      "recall": 0.7681
+     },
+     "0.75": {
+      "f1": 0.7846,
+      "precision": 0.8693,
+      "recall": 0.715
+     },
+     "0.90": {
+      "f1": 0.7573,
+      "precision": 0.9145,
+      "recall": 0.6461
+     },
+     "0.97": {
+      "f1": 0.6811,
+      "precision": 0.9483,
+      "recall": 0.5314
+     }
+    },
+    "s12": {
+     "0.00": {
+      "f1": 0.79,
+      "precision": 0.7939,
+      "recall": 0.7862
+     },
+     "0.10": {
+      "f1": 0.79,
+      "precision": 0.7939,
+      "recall": 0.7862
+     },
+     "0.25": {
+      "f1": 0.7893,
+      "precision": 0.7937,
+      "recall": 0.785
+     },
+     "0.50": {
+      "f1": 0.791,
+      "precision": 0.8007,
+      "recall": 0.7814
+     },
+     "0.75": {
+      "f1": 0.7941,
+      "precision": 0.8468,
+      "recall": 0.7476
+     },
+     "0.90": {
+      "f1": 0.7769,
+      "precision": 0.8856,
+      "recall": 0.692
+     },
+     "0.97": {
+      "f1": 0.7476,
+      "precision": 0.9481,
+      "recall": 0.6171
+     }
+    },
+    "s13": {
+     "0.00": {
+      "f1": 0.8072,
+      "precision": 0.8266,
+      "recall": 0.7886
+     },
+     "0.10": {
+      "f1": 0.8072,
+      "precision": 0.8266,
+      "recall": 0.7886
+     },
+     "0.25": {
+      "f1": 0.8077,
+      "precision": 0.8276,
+      "recall": 0.7886
+     },
+     "0.50": {
+      "f1": 0.8077,
+      "precision": 0.8304,
+      "recall": 0.7862
+     },
+     "0.75": {
+      "f1": 0.7955,
+      "precision": 0.8765,
+      "recall": 0.7283
+     },
+     "0.90": {
+      "f1": 0.7787,
+      "precision": 0.911,
+      "recall": 0.68
+     },
+     "0.97": {
+      "f1": 0.717,
+      "precision": 0.9393,
+      "recall": 0.5797
+     }
+    },
+    "v1": {
+     "0.00": {
+      "f1": 0.5578,
+      "precision": 0.6764,
+      "recall": 0.4746
+     },
+     "0.10": {
+      "f1": 0.5586,
+      "precision": 0.6788,
+      "recall": 0.4746
+     },
+     "0.25": {
+      "f1": 0.5592,
+      "precision": 0.6829,
+      "recall": 0.4734
+     },
+     "0.50": {
+      "f1": 0.5557,
+      "precision": 0.6931,
+      "recall": 0.4638
+     },
+     "0.75": {
+      "f1": 0.5292,
+      "precision": 0.7648,
+      "recall": 0.4046
+     },
+     "0.90": {
+      "f1": 0.4936,
+      "precision": 0.8357,
+      "recall": 0.3502
+     },
+     "0.97": {
+      "f1": 0.4394,
+      "precision": 0.8959,
+      "recall": 0.2911
+     }
+    },
+    "v2": {
+     "0.00": {
+      "f1": 0.818,
+      "precision": 0.8361,
+      "recall": 0.8007
+     },
+     "0.10": {
+      "f1": 0.818,
+      "precision": 0.8361,
+      "recall": 0.8007
+     },
+     "0.25": {
+      "f1": 0.818,
+      "precision": 0.8361,
+      "recall": 0.8007
+     },
+     "0.50": {
+      "f1": 0.8132,
+      "precision": 0.8393,
+      "recall": 0.7886
+     },
+     "0.75": {
+      "f1": 0.7951,
+      "precision": 0.8994,
+      "recall": 0.7126
+     },
+     "0.90": {
+      "f1": 0.7567,
+      "precision": 0.949,
+      "recall": 0.6292
+     },
+     "0.97": {
+      "f1": 0.6972,
+      "precision": 0.9761,
+      "recall": 0.5423
+     }
+    }
+   },
+   "bilstm_vs_rules_paired": {
+    "s11": {
+     "ci95": [
+      0.4392,
+      0.5178
+     ],
+     "mean": 0.4773,
+     "p_a_not_better": 0.0
+    },
+    "s12": {
+     "ci95": [
+      0.4331,
+      0.5131
+     ],
+     "mean": 0.4728,
+     "p_a_not_better": 0.0
+    },
+    "s13": {
+     "ci95": [
+      0.4501,
+      0.5291
+     ],
+     "mean": 0.4901,
+     "p_a_not_better": 0.0
+    },
+    "v1": {
+     "ci95": [
+      0.1996,
+      0.2863
+     ],
+     "mean": 0.2418,
+     "p_a_not_better": 0.0
+    },
+    "v2": {
+     "ci95": [
+      0.4589,
+      0.539
+     ],
+     "mean": 0.5007,
+     "p_a_not_better": 0.0
+    }
+   },
+   "cpu_timing": {
+    "s11": {
+     "batched_fields_per_sec": 2190.4,
+     "single_field_ms": 1.8
+    },
+    "s12": {
+     "batched_fields_per_sec": 2397.6,
+     "single_field_ms": 1.65
+    },
+    "s13": {
+     "batched_fields_per_sec": 2573.1,
+     "single_field_ms": 1.53
+    },
+    "v1": {
+     "batched_fields_per_sec": 2475.7,
+     "single_field_ms": 1.98
+    },
+    "v2": {
+     "batched_fields_per_sec": 1216.8,
+     "single_field_ms": 4.26
+    }
+   },
+   "entities": 828,
+   "examples": 1058,
+   "hybrid_vs_rules": {
+    "hybrid_rules_first:v2": {
+     "additional_false_positives": 103,
+     "additional_true_detections": 494,
+     "f1_delta_vs_rules": 0.484,
+     "lost_true_detections": 0,
+     "paired_bootstrap_f1_delta": {
+      "ci95": [
+       0.446,
+       0.5189
+      ],
+      "mean": 0.484,
+      "p_a_not_better": 0.0
+     }
+    },
+    "hybrid_rules_first_veto:v2": {
+     "additional_false_positives": 95,
+     "additional_true_detections": 494,
+     "f1_delta_vs_rules": 0.4879,
+     "lost_true_detections": 0,
+     "paired_bootstrap_f1_delta": {
+      "ci95": [
+       0.4487,
+       0.5224
+      ],
+      "mean": 0.4878,
+      "p_a_not_better": 0.0
+     }
+    },
+    "hybrid_union:v2": {
+     "additional_false_positives": 116,
+     "additional_true_detections": 501,
+     "f1_delta_vs_rules": 0.4828,
+     "lost_true_detections": 0,
+     "paired_bootstrap_f1_delta": {
+      "ci95": [
+       0.4445,
+       0.5183
+      ],
+      "mean": 0.4828,
+      "p_a_not_better": 0.0
+     }
+    }
+   },
+   "no_entity_examples": 313,
+   "raw_score_reliability": {
+    "s11": {
+     "bins": [
+      {
+       "bin": "[0.0,0.1)",
+       "mean_score": 0.058,
+       "n": 1,
+       "precision": 1.0
+      },
+      {
+       "bin": "[0.2,0.3)",
+       "mean_score": 0.227,
+       "n": 1,
+       "precision": 0.0
+      },
+      {
+       "bin": "[0.3,0.4)",
+       "mean_score": 0.388,
+       "n": 1,
+       "precision": 0.0
+      },
+      {
+       "bin": "[0.4,0.5)",
+       "mean_score": 0.463,
+       "n": 11,
+       "precision": 0.182
+      },
+      {
+       "bin": "[0.5,0.6)",
+       "mean_score": 0.545,
+       "n": 35,
+       "precision": 0.371
+      },
+      {
+       "bin": "[0.6,0.7)",
+       "mean_score": 0.653,
+       "n": 39,
+       "precision": 0.487
+      },
+      {
+       "bin": "[0.7,0.8)",
+       "mean_score": 0.752,
+       "n": 46,
+       "precision": 0.609
+      },
+      {
+       "bin": "[0.8,0.9)",
+       "mean_score": 0.85,
+       "n": 70,
+       "precision": 0.586
+      },
+      {
+       "bin": "[0.9,1.0)",
+       "mean_score": 0.982,
+       "n": 585,
+       "precision": 0.915
+      }
+     ],
+     "ece_vs_span_precision": 0.1038
+    },
+    "s12": {
+     "bins": [
+      {
+       "bin": "[0.2,0.3)",
+       "mean_score": 0.268,
+       "n": 3,
+       "precision": 0.667
+      },
+      {
+       "bin": "[0.4,0.5)",
+       "mean_score": 0.483,
+       "n": 9,
+       "precision": 0.222
+      },
+      {
+       "bin": "[0.5,0.6)",
+       "mean_score": 0.557,
+       "n": 22,
+       "precision": 0.273
+      },
+      {
+       "bin": "[0.6,0.7)",
+       "mean_score": 0.654,
+       "n": 39,
+       "precision": 0.359
+      },
+      {
+       "bin": "[0.7,0.8)",
+       "mean_score": 0.754,
+       "n": 35,
+       "precision": 0.514
+      },
+      {
+       "bin": "[0.8,0.9)",
+       "mean_score": 0.855,
+       "n": 65,
+       "precision": 0.554
+      },
+      {
+       "bin": "[0.9,1.0)",
+       "mean_score": 0.986,
+       "n": 647,
+       "precision": 0.886
+      }
+     ],
+     "ece_vs_span_precision": 0.1393
+    },
+    "s13": {
+     "bins": [
+      {
+       "bin": "[0.2,0.3)",
+       "mean_score": 0.245,
+       "n": 2,
+       "precision": 0.0
+      },
+      {
+       "bin": "[0.3,0.4)",
+       "mean_score": 0.327,
+       "n": 1,
+       "precision": 0.0
+      },
+      {
+       "bin": "[0.4,0.5)",
+       "mean_score": 0.463,
+       "n": 3,
+       "precision": 0.667
+      },
+      {
+       "bin": "[0.5,0.6)",
+       "mean_score": 0.555,
+       "n": 38,
+       "precision": 0.474
+      },
+      {
+       "bin": "[0.6,0.7)",
+       "mean_score": 0.647,
+       "n": 43,
+       "precision": 0.558
+      },
+      {
+       "bin": "[0.7,0.8)",
+       "mean_score": 0.749,
+       "n": 34,
+       "precision": 0.471
+      },
+      {
+       "bin": "[0.8,0.9)",
+       "mean_score": 0.859,
+       "n": 51,
+       "precision": 0.588
+      },
+      {
+       "bin": "[0.9,1.0)",
+       "mean_score": 0.986,
+       "n": 618,
+       "precision": 0.911
+      }
+     ],
+     "ece_vs_span_precision": 0.0984
+    },
+    "v1": {
+     "bins": [
+      {
+       "bin": "[0.0,0.1)",
+       "mean_score": 0.057,
+       "n": 2,
+       "precision": 0.0
+      },
+      {
+       "bin": "[0.1,0.2)",
+       "mean_score": 0.131,
+       "n": 5,
+       "precision": 0.2
+      },
+      {
+       "bin": "[0.3,0.4)",
+       "mean_score": 0.337,
+       "n": 4,
+       "precision": 0.0
+      },
+      {
+       "bin": "[0.4,0.5)",
+       "mean_score": 0.459,
+       "n": 16,
+       "precision": 0.5
+      },
+      {
+       "bin": "[0.5,0.6)",
+       "mean_score": 0.545,
+       "n": 35,
+       "precision": 0.286
+      },
+      {
+       "bin": "[0.6,0.7)",
+       "mean_score": 0.651,
+       "n": 57,
+       "precision": 0.404
+      },
+      {
+       "bin": "[0.7,0.8)",
+       "mean_score": 0.748,
+       "n": 48,
+       "precision": 0.521
+      },
+      {
+       "bin": "[0.8,0.9)",
+       "mean_score": 0.855,
+       "n": 67,
+       "precision": 0.537
+      },
+      {
+       "bin": "[0.9,1.0)",
+       "mean_score": 0.982,
+       "n": 347,
+       "precision": 0.836
+      }
+     ],
+     "ece_vs_span_precision": 0.1867
+    },
+    "v2": {
+     "bins": [
+      {
+       "bin": "[0.3,0.4)",
+       "mean_score": 0.385,
+       "n": 3,
+       "precision": 1.0
+      },
+      {
+       "bin": "[0.4,0.5)",
+       "mean_score": 0.468,
+       "n": 12,
+       "precision": 0.583
+      },
+      {
+       "bin": "[0.5,0.6)",
+       "mean_score": 0.543,
+       "n": 42,
+       "precision": 0.476
+      },
+      {
+       "bin": "[0.6,0.7)",
+       "mean_score": 0.653,
+       "n": 49,
+       "precision": 0.449
+      },
+      {
+       "bin": "[0.7,0.8)",
+       "mean_score": 0.747,
+       "n": 57,
+       "precision": 0.632
+      },
+      {
+       "bin": "[0.8,0.9)",
+       "mean_score": 0.85,
+       "n": 81,
+       "precision": 0.667
+      },
+      {
+       "bin": "[0.9,1.0)",
+       "mean_score": 0.985,
+       "n": 549,
+       "precision": 0.949
+      }
+     ],
+     "ece_vs_span_precision": 0.072
+    }
+   },
+   "systems": {
+    "bilstm:s11": {
+     "by_source": {
+      "chat": {
+       "f1": 0.6897,
+       "fn": 11,
+       "fp": 7,
+       "precision": 0.7407,
+       "recall": 0.6452,
+       "tp": 20
+      },
+      "csv": {
+       "f1": 0.3636,
+       "fn": 19,
+       "fp": 2,
+       "precision": 0.75,
+       "recall": 0.24,
+       "tp": 6
+      },
+      "email": {
+       "f1": 0.8406,
+       "fn": 9,
+       "fp": 2,
+       "precision": 0.9355,
+       "recall": 0.7632,
+       "tp": 29
+      },
+      "form": {
+       "f1": 0.9371,
+       "fn": 2,
+       "fp": 7,
+       "precision": 0.9054,
+       "recall": 0.971,
+       "tp": 67
+      },
+      "header": {
+       "f1": 0.955,
+       "fn": 5,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9138,
+       "tp": 53
+      },
+      "json_neg": {
+       "f1": 0.0,
+       "fn": 0,
+       "fp": 27,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_nested": {
+       "f1": 0.9108,
+       "fn": 28,
+       "fp": 11,
+       "precision": 0.9476,
+       "recall": 0.8767,
+       "tp": 199
+      },
+      "log": {
+       "f1": 0.9053,
+       "fn": 6,
+       "fp": 3,
+       "precision": 0.9348,
+       "recall": 0.8776,
+       "tp": 43
+      },
+      "narrative": {
+       "f1": 0.5732,
+       "fn": 97,
+       "fp": 37,
+       "precision": 0.7087,
+       "recall": 0.4813,
+       "tp": 90
+      },
+      "query": {
+       "f1": 0.8511,
+       "fn": 13,
+       "fp": 8,
+       "precision": 0.8824,
+       "recall": 0.8219,
+       "tp": 60
+      },
+      "short": {
+       "f1": 0.9032,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.8235,
+       "tp": 14
+      },
+      "sql": {
+       "f1": 0.5714,
+       "fn": 5,
+       "fp": 7,
+       "precision": 0.5333,
+       "recall": 0.6154,
+       "tp": 8
+      },
+      "vcs": {
+       "f1": 0.88,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.7857,
+       "tp": 11
+      },
+      "xml": {
+       "f1": 0.9231,
+       "fn": 1,
+       "fp": 1,
+       "precision": 0.9231,
+       "recall": 0.9231,
+       "tp": 12
+      },
+      "yaml": {
+       "f1": 0.7333,
+       "fn": 3,
+       "fp": 5,
+       "precision": 0.6875,
+       "recall": 0.7857,
+       "tp": 11
+      }
+     },
+     "ci95_bootstrap": {
+      "f1": [
+       0.77,
+       0.8189
+      ],
+      "precision": [
+       0.8151,
+       0.8664
+      ],
+      "recall": [
+       0.7239,
+       0.7847
+      ]
+     },
+     "error_counts": {
+      "false_negatives": 205,
+      "false_positives": 117
+     },
+     "error_samples_fn": [
+      {
+       "end": 15,
+       "id": "chal-00067",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 9,
+       "id": "chal-00103",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 21,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 21,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 20,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 20,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 6,
+       "id": "chal-00158",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 6,
+       "start": 0,
+       "text_length": 6
+      },
+      {
+       "end": 9,
+       "id": "chal-00162",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 13,
+       "id": "chal-00178",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 9,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 9,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 10,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 30
+      },
+      {
+       "end": 9,
+       "id": "chal-00189",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 13,
+       "id": "chal-00190",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 29
+      },
+      {
+       "end": 9,
+       "id": "chal-00191",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 26
+      },
+      {
+       "end": 11,
+       "id": "chal-00192",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 12,
+       "id": "chal-00193",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      }
+     ],
+     "error_samples_fp": [
+      {
+       "end": 19,
+       "id": "chal-00033",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 19,
+       "start": 0,
+       "text_length": 19
+      },
+      {
+       "end": 17,
+       "id": "chal-00035",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 17,
+       "start": 0,
+       "text_length": 17
+      },
+      {
+       "end": 13,
+       "id": "chal-00037",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 15,
+       "id": "chal-00038",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 13,
+       "id": "chal-00040",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 14,
+       "id": "chal-00041",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 13,
+       "id": "chal-00045",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 12,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 11,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 7,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 7,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 11,
+       "id": "chal-00249",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 12,
+       "id": "chal-00256",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 9,
+       "id": "chal-00268",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 7,
+       "id": "chal-00269",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 7
+      }
+     ],
+     "fp_rate_entity_free_examples": {
+      "n": 313,
+      "rate": 0.1981,
+      "with_false_positive": 62
+     },
+     "fp_rate_hard_negative_examples": {
+      "n": 197,
+      "rate": 0.2386,
+      "with_false_positive": 47
+     },
+     "macro_f1": 0.8053,
+     "micro": {
+      "f1": 0.7946,
+      "fn": 205,
+      "fp": 117,
+      "precision": 0.8419,
+      "recall": 0.7524,
+      "support": 828,
+      "tp": 623
+     },
+     "per_class": {
+      "PERSON_NAME": {
+       "f1": 0.7658,
+       "fn": 123,
+       "fp": 110,
+       "precision": 0.776,
+       "recall": 0.756,
+       "support": 504,
+       "tp": 381
+      },
+      "USERNAME": {
+       "f1": 0.8447,
+       "fn": 82,
+       "fp": 7,
+       "precision": 0.9719,
+       "recall": 0.7469,
+       "support": 324,
+       "tp": 242
+      }
+     },
+     "recall_lowercase_entity": {
+      "n": 252,
+      "recall": 0.7302
+     },
+     "recall_multi_entity_examples": {
+      "n": 160,
+      "recall": 0.4875
+     },
+     "recall_non_ascii": {
+      "n": 68,
+      "recall": 0.6912
+     },
+     "recall_seen_context": {
+      "n": 453,
+      "recall": 0.8874
+     },
+     "recall_seen_key_examples": {
+      "n": 650,
+      "recall": 0.7431
+     },
+     "recall_unseen_context": {
+      "n": 375,
+      "recall": 0.5893
+     },
+     "recall_unseen_key_examples": {
+      "n": 178,
+      "recall": 0.7865
+     }
+    },
+    "bilstm:s12": {
+     "by_source": {
+      "chat": {
+       "f1": 0.5938,
+       "fn": 12,
+       "fp": 14,
+       "precision": 0.5758,
+       "recall": 0.6129,
+       "tp": 19
+      },
+      "csv": {
+       "f1": 0.4737,
+       "fn": 16,
+       "fp": 4,
+       "precision": 0.6923,
+       "recall": 0.36,
+       "tp": 9
+      },
+      "email": {
+       "f1": 0.8056,
+       "fn": 9,
+       "fp": 5,
+       "precision": 0.8529,
+       "recall": 0.7632,
+       "tp": 29
+      },
+      "form": {
+       "f1": 0.8904,
+       "fn": 4,
+       "fp": 12,
+       "precision": 0.8442,
+       "recall": 0.942,
+       "tp": 65
+      },
+      "header": {
+       "f1": 0.9649,
+       "fn": 3,
+       "fp": 1,
+       "precision": 0.9821,
+       "recall": 0.9483,
+       "tp": 55
+      },
+      "json_neg": {
+       "f1": 0.0,
+       "fn": 0,
+       "fp": 30,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_nested": {
+       "f1": 0.9169,
+       "fn": 23,
+       "fp": 14,
+       "precision": 0.9358,
+       "recall": 0.8987,
+       "tp": 204
+      },
+      "log": {
+       "f1": 0.7857,
+       "fn": 5,
+       "fp": 19,
+       "precision": 0.6984,
+       "recall": 0.898,
+       "tp": 44
+      },
+      "narrative": {
+       "f1": 0.6437,
+       "fn": 84,
+       "fp": 30,
+       "precision": 0.7744,
+       "recall": 0.5508,
+       "tp": 103
+      },
+      "query": {
+       "f1": 0.8936,
+       "fn": 10,
+       "fp": 5,
+       "precision": 0.9265,
+       "recall": 0.863,
+       "tp": 63
+      },
+      "short": {
+       "f1": 0.9697,
+       "fn": 1,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9412,
+       "tp": 16
+      },
+      "sql": {
+       "f1": 0.4286,
+       "fn": 4,
+       "fp": 20,
+       "precision": 0.3103,
+       "recall": 0.6923,
+       "tp": 9
+      },
+      "vcs": {
+       "f1": 0.7273,
+       "fn": 2,
+       "fp": 7,
+       "precision": 0.6316,
+       "recall": 0.8571,
+       "tp": 12
+      },
+      "xml": {
+       "f1": 0.96,
+       "fn": 1,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9231,
+       "tp": 12
+      },
+      "yaml": {
+       "f1": 0.6667,
+       "fn": 3,
+       "fp": 8,
+       "precision": 0.5789,
+       "recall": 0.7857,
+       "tp": 11
+      }
+     },
+     "ci95_bootstrap": {
+      "f1": [
+       0.7675,
+       0.8134
+      ],
+      "precision": [
+       0.7669,
+       0.8214
+      ],
+      "recall": [
+       0.7592,
+       0.8192
+      ]
+     },
+     "error_counts": {
+      "false_negatives": 177,
+      "false_positives": 169
+     },
+     "error_samples_fn": [
+      {
+       "end": 16,
+       "id": "chal-00089",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 16,
+       "start": 0,
+       "text_length": 16
+      },
+      {
+       "end": 9,
+       "id": "chal-00103",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 21,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 21,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 20,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 20,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 6,
+       "id": "chal-00158",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 6,
+       "start": 0,
+       "text_length": 6
+      },
+      {
+       "end": 9,
+       "id": "chal-00162",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 13,
+       "id": "chal-00178",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 7,
+       "id": "chal-00185",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 9,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 9,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 10,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 30
+      },
+      {
+       "end": 9,
+       "id": "chal-00189",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 13,
+       "id": "chal-00190",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 29
+      },
+      {
+       "end": 9,
+       "id": "chal-00191",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 26
+      },
+      {
+       "end": 12,
+       "id": "chal-00193",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      }
+     ],
+     "error_samples_fp": [
+      {
+       "end": 19,
+       "id": "chal-00033",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 19,
+       "start": 0,
+       "text_length": 19
+      },
+      {
+       "end": 13,
+       "id": "chal-00037",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 15,
+       "id": "chal-00038",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 13,
+       "id": "chal-00040",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 14,
+       "id": "chal-00041",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 5,
+       "id": "chal-00042",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 5,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 15,
+       "id": "chal-00043",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 13,
+       "id": "chal-00045",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 3,
+       "id": "chal-00089",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 3,
+       "start": 0,
+       "text_length": 16
+      },
+      {
+       "end": 16,
+       "id": "chal-00089",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 4,
+       "text_length": 16
+      },
+      {
+       "end": 12,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 7,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 13,
+       "id": "chal-00198",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 7,
+       "id": "chal-00229",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 10,
+       "id": "chal-00248",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 16
+      }
+     ],
+     "fp_rate_entity_free_examples": {
+      "n": 313,
+      "rate": 0.2173,
+      "with_false_positive": 68
+     },
+     "fp_rate_hard_negative_examples": {
+      "n": 197,
+      "rate": 0.2589,
+      "with_false_positive": 51
+     },
+     "macro_f1": 0.7996,
+     "micro": {
+      "f1": 0.79,
+      "fn": 177,
+      "fp": 169,
+      "precision": 0.7939,
+      "recall": 0.7862,
+      "support": 828,
+      "tp": 651
+     },
+     "per_class": {
+      "PERSON_NAME": {
+       "f1": 0.7625,
+       "fn": 109,
+       "fp": 137,
+       "precision": 0.7425,
+       "recall": 0.7837,
+       "support": 504,
+       "tp": 395
+      },
+      "USERNAME": {
+       "f1": 0.8366,
+       "fn": 68,
+       "fp": 32,
+       "precision": 0.8889,
+       "recall": 0.7901,
+       "support": 324,
+       "tp": 256
+      }
+     },
+     "recall_lowercase_entity": {
+      "n": 252,
+      "recall": 0.7778
+     },
+     "recall_multi_entity_examples": {
+      "n": 160,
+      "recall": 0.5563
+     },
+     "recall_non_ascii": {
+      "n": 68,
+      "recall": 0.75
+     },
+     "recall_seen_context": {
+      "n": 453,
+      "recall": 0.8985
+     },
+     "recall_seen_key_examples": {
+      "n": 650,
+      "recall": 0.7738
+     },
+     "recall_unseen_context": {
+      "n": 375,
+      "recall": 0.6507
+     },
+     "recall_unseen_key_examples": {
+      "n": 178,
+      "recall": 0.8315
+     }
+    },
+    "bilstm:s13": {
+     "by_source": {
+      "chat": {
+       "f1": 0.8421,
+       "fn": 7,
+       "fp": 2,
+       "precision": 0.9231,
+       "recall": 0.7742,
+       "tp": 24
+      },
+      "csv": {
+       "f1": 0.3429,
+       "fn": 19,
+       "fp": 4,
+       "precision": 0.6,
+       "recall": 0.24,
+       "tp": 6
+      },
+      "email": {
+       "f1": 0.7246,
+       "fn": 13,
+       "fp": 6,
+       "precision": 0.8065,
+       "recall": 0.6579,
+       "tp": 25
+      },
+      "form": {
+       "f1": 0.8904,
+       "fn": 4,
+       "fp": 12,
+       "precision": 0.8442,
+       "recall": 0.942,
+       "tp": 65
+      },
+      "header": {
+       "f1": 0.9558,
+       "fn": 4,
+       "fp": 1,
+       "precision": 0.9818,
+       "recall": 0.931,
+       "tp": 54
+      },
+      "json_neg": {
+       "f1": 0.0,
+       "fn": 0,
+       "fp": 27,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_nested": {
+       "f1": 0.9136,
+       "fn": 26,
+       "fp": 12,
+       "precision": 0.9437,
+       "recall": 0.8855,
+       "tp": 201
+      },
+      "log": {
+       "f1": 0.8571,
+       "fn": 7,
+       "fp": 7,
+       "precision": 0.8571,
+       "recall": 0.8571,
+       "tp": 42
+      },
+      "narrative": {
+       "f1": 0.6825,
+       "fn": 72,
+       "fp": 35,
+       "precision": 0.7667,
+       "recall": 0.615,
+       "tp": 115
+      },
+      "query": {
+       "f1": 0.8633,
+       "fn": 13,
+       "fp": 6,
+       "precision": 0.9091,
+       "recall": 0.8219,
+       "tp": 60
+      },
+      "short": {
+       "f1": 0.9032,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.8235,
+       "tp": 14
+      },
+      "sql": {
+       "f1": 0.5882,
+       "fn": 3,
+       "fp": 11,
+       "precision": 0.4762,
+       "recall": 0.7692,
+       "tp": 10
+      },
+      "vcs": {
+       "f1": 0.88,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.7857,
+       "tp": 11
+      },
+      "xml": {
+       "f1": 0.8889,
+       "fn": 1,
+       "fp": 2,
+       "precision": 0.8571,
+       "recall": 0.9231,
+       "tp": 12
+      },
+      "yaml": {
+       "f1": 0.7059,
+       "fn": 2,
+       "fp": 8,
+       "precision": 0.6,
+       "recall": 0.8571,
+       "tp": 12
+      }
+     },
+     "ci95_bootstrap": {
+      "f1": [
+       0.784,
+       0.8288
+      ],
+      "precision": [
+       0.8052,
+       0.8547
+      ],
+      "recall": [
+       0.7562,
+       0.8152
+      ]
+     },
+     "error_counts": {
+      "false_negatives": 177,
+      "false_positives": 133
+     },
+     "error_samples_fn": [
+      {
+       "end": 14,
+       "id": "chal-00028",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 15,
+       "id": "chal-00067",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 15,
+       "id": "chal-00069",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 16,
+       "id": "chal-00089",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 16,
+       "start": 0,
+       "text_length": 16
+      },
+      {
+       "end": 9,
+       "id": "chal-00103",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 21,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 21,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 20,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 20,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 6,
+       "id": "chal-00158",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 6,
+       "start": 0,
+       "text_length": 6
+      },
+      {
+       "end": 9,
+       "id": "chal-00162",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 13,
+       "id": "chal-00178",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 9,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 9,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 10,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 30
+      },
+      {
+       "end": 9,
+       "id": "chal-00189",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 13,
+       "id": "chal-00190",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 29
+      }
+     ],
+     "error_samples_fp": [
+      {
+       "end": 13,
+       "id": "chal-00037",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 15,
+       "id": "chal-00038",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 13,
+       "id": "chal-00040",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 6,
+       "id": "chal-00041",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 6,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 15,
+       "id": "chal-00043",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 4,
+       "id": "chal-00089",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 4,
+       "start": 0,
+       "text_length": 16
+      },
+      {
+       "end": 12,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 11,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 7,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 7,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 9,
+       "id": "chal-00205",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 8,
+       "id": "chal-00229",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 8,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 9,
+       "id": "chal-00268",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 7,
+       "id": "chal-00269",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 7
+      },
+      {
+       "end": 15,
+       "id": "chal-00276",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 24
+      }
+     ],
+     "fp_rate_entity_free_examples": {
+      "n": 313,
+      "rate": 0.2109,
+      "with_false_positive": 66
+     },
+     "fp_rate_hard_negative_examples": {
+      "n": 197,
+      "rate": 0.2538,
+      "with_false_positive": 50
+     },
+     "macro_f1": 0.8194,
+     "micro": {
+      "f1": 0.8077,
+      "fn": 177,
+      "fp": 133,
+      "precision": 0.8304,
+      "recall": 0.7862,
+      "support": 828,
+      "tp": 651
+     },
+     "per_class": {
+      "PERSON_NAME": {
+       "f1": 0.7726,
+       "fn": 115,
+       "fp": 114,
+       "precision": 0.7734,
+       "recall": 0.7718,
+       "support": 504,
+       "tp": 389
+      },
+      "USERNAME": {
+       "f1": 0.8661,
+       "fn": 62,
+       "fp": 19,
+       "precision": 0.9324,
+       "recall": 0.8086,
+       "support": 324,
+       "tp": 262
+      }
+     },
+     "recall_lowercase_entity": {
+      "n": 252,
+      "recall": 0.7937
+     },
+     "recall_multi_entity_examples": {
+      "n": 160,
+      "recall": 0.5625
+     },
+     "recall_non_ascii": {
+      "n": 68,
+      "recall": 0.7353
+     },
+     "recall_seen_context": {
+      "n": 453,
+      "recall": 0.894
+     },
+     "recall_seen_key_examples": {
+      "n": 650,
+      "recall": 0.7846
+     },
+     "recall_unseen_context": {
+      "n": 375,
+      "recall": 0.656
+     },
+     "recall_unseen_key_examples": {
+      "n": 178,
+      "recall": 0.7921
+     }
+    },
+    "bilstm:v1": {
+     "by_source": {
+      "chat": {
+       "f1": 0.5581,
+       "fn": 19,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.3871,
+       "tp": 12
+      },
+      "csv": {
+       "f1": 0.0,
+       "fn": 25,
+       "fp": 7,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "email": {
+       "f1": 0.2264,
+       "fn": 32,
+       "fp": 9,
+       "precision": 0.4,
+       "recall": 0.1579,
+       "tp": 6
+      },
+      "form": {
+       "f1": 0.8189,
+       "fn": 17,
+       "fp": 6,
+       "precision": 0.8966,
+       "recall": 0.7536,
+       "tp": 52
+      },
+      "header": {
+       "f1": 0.6909,
+       "fn": 20,
+       "fp": 14,
+       "precision": 0.7308,
+       "recall": 0.6552,
+       "tp": 38
+      },
+      "json_neg": {
+       "f1": 0.0,
+       "fn": 0,
+       "fp": 36,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_nested": {
+       "f1": 0.7635,
+       "fn": 72,
+       "fp": 24,
+       "precision": 0.8659,
+       "recall": 0.6828,
+       "tp": 155
+      },
+      "log": {
+       "f1": 0.303,
+       "fn": 39,
+       "fp": 7,
+       "precision": 0.5882,
+       "recall": 0.2041,
+       "tp": 10
+      },
+      "narrative": {
+       "f1": 0.2804,
+       "fn": 149,
+       "fp": 46,
+       "precision": 0.4524,
+       "recall": 0.2032,
+       "tp": 38
+      },
+      "query": {
+       "f1": 0.75,
+       "fn": 19,
+       "fp": 17,
+       "precision": 0.7606,
+       "recall": 0.7397,
+       "tp": 54
+      },
+      "short": {
+       "f1": 0.5806,
+       "fn": 8,
+       "fp": 5,
+       "precision": 0.6429,
+       "recall": 0.5294,
+       "tp": 9
+      },
+      "sql": {
+       "f1": 0.5926,
+       "fn": 5,
+       "fp": 6,
+       "precision": 0.5714,
+       "recall": 0.6154,
+       "tp": 8
+      },
+      "vcs": {
+       "f1": 0.0,
+       "fn": 14,
+       "fp": 2,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "xml": {
+       "f1": 0.7,
+       "fn": 6,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.5385,
+       "tp": 7
+      },
+      "yaml": {
+       "f1": 0.3,
+       "fn": 11,
+       "fp": 3,
+       "precision": 0.5,
+       "recall": 0.2143,
+       "tp": 3
+      }
+     },
+     "ci95_bootstrap": {
+      "f1": [
+       0.5226,
+       0.5931
+      ],
+      "precision": [
+       0.6445,
+       0.7213
+      ],
+      "recall": [
+       0.4354,
+       0.5088
+      ]
+     },
+     "error_counts": {
+      "false_negatives": 436,
+      "false_positives": 182
+     },
+     "error_samples_fn": [
+      {
+       "end": 7,
+       "id": "chal-00010",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 7
+      },
+      {
+       "end": 12,
+       "id": "chal-00018",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 10,
+       "id": "chal-00019",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 10
+      },
+      {
+       "end": 10,
+       "id": "chal-00021",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 10
+      },
+      {
+       "end": 17,
+       "id": "chal-00029",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 17,
+       "start": 0,
+       "text_length": 17
+      },
+      {
+       "end": 7,
+       "id": "chal-00074",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 7
+      },
+      {
+       "end": 4,
+       "id": "chal-00080",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 4,
+       "start": 0,
+       "text_length": 4
+      },
+      {
+       "end": 6,
+       "id": "chal-00099",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 6,
+       "start": 0,
+       "text_length": 6
+      },
+      {
+       "end": 11,
+       "id": "chal-00100",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 9,
+       "id": "chal-00103",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 11,
+       "id": "chal-00104",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 11,
+       "id": "chal-00105",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 14,
+       "id": "chal-00106",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 13,
+       "id": "chal-00107",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 12,
+       "id": "chal-00108",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      }
+     ],
+     "error_samples_fp": [
+      {
+       "end": 12,
+       "id": "chal-00018",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 5,
+       "text_length": 12
+      },
+      {
+       "end": 10,
+       "id": "chal-00019",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 5,
+       "start": 5,
+       "text_length": 10
+      },
+      {
+       "end": 19,
+       "id": "chal-00033",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 19,
+       "start": 0,
+       "text_length": 19
+      },
+      {
+       "end": 10,
+       "id": "chal-00035",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 17
+      },
+      {
+       "end": 13,
+       "id": "chal-00037",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 15,
+       "id": "chal-00038",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 17,
+       "id": "chal-00039",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 10,
+       "text_length": 17
+      },
+      {
+       "end": 13,
+       "id": "chal-00040",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 13,
+       "id": "chal-00042",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 5,
+       "start": 8,
+       "text_length": 13
+      },
+      {
+       "end": 5,
+       "id": "chal-00044",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 5,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 13,
+       "id": "chal-00045",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 11,
+       "id": "chal-00100",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 4,
+       "text_length": 11
+      },
+      {
+       "end": 12,
+       "id": "chal-00108",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 20,
+       "id": "chal-00123",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 9,
+       "start": 11,
+       "text_length": 20
+      },
+      {
+       "end": 12,
+       "id": "chal-00128",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 9,
+       "start": 3,
+       "text_length": 12
+      }
+     ],
+     "fp_rate_entity_free_examples": {
+      "n": 313,
+      "rate": 0.2588,
+      "with_false_positive": 81
+     },
+     "fp_rate_hard_negative_examples": {
+      "n": 197,
+      "rate": 0.2893,
+      "with_false_positive": 57
+     },
+     "macro_f1": 0.5606,
+     "micro": {
+      "f1": 0.5592,
+      "fn": 436,
+      "fp": 182,
+      "precision": 0.6829,
+      "recall": 0.4734,
+      "support": 828,
+      "tp": 392
+     },
+     "per_class": {
+      "PERSON_NAME": {
+       "f1": 0.5556,
+       "fn": 254,
+       "fp": 146,
+       "precision": 0.6313,
+       "recall": 0.496,
+       "support": 504,
+       "tp": 250
+      },
+      "USERNAME": {
+       "f1": 0.5657,
+       "fn": 182,
+       "fp": 36,
+       "precision": 0.7978,
+       "recall": 0.4383,
+       "support": 324,
+       "tp": 142
+      }
+     },
+     "recall_lowercase_entity": {
+      "n": 252,
+      "recall": 0.4444
+     },
+     "recall_multi_entity_examples": {
+      "n": 160,
+      "recall": 0.1313
+     },
+     "recall_non_ascii": {
+      "n": 68,
+      "recall": 0.3529
+     },
+     "recall_seen_context": {
+      "n": 453,
+      "recall": 0.6004
+     },
+     "recall_seen_key_examples": {
+      "n": 650,
+      "recall": 0.4092
+     },
+     "recall_unseen_context": {
+      "n": 375,
+      "recall": 0.32
+     },
+     "recall_unseen_key_examples": {
+      "n": 178,
+      "recall": 0.7079
+     }
+    },
+    "bilstm:v2": {
+     "by_source": {
+      "chat": {
+       "f1": 0.678,
+       "fn": 11,
+       "fp": 8,
+       "precision": 0.7143,
+       "recall": 0.6452,
+       "tp": 20
+      },
+      "csv": {
+       "f1": 0.3636,
+       "fn": 19,
+       "fp": 2,
+       "precision": 0.75,
+       "recall": 0.24,
+       "tp": 6
+      },
+      "email": {
+       "f1": 0.8056,
+       "fn": 9,
+       "fp": 5,
+       "precision": 0.8529,
+       "recall": 0.7632,
+       "tp": 29
+      },
+      "form": {
+       "f1": 0.9041,
+       "fn": 3,
+       "fp": 11,
+       "precision": 0.8571,
+       "recall": 0.9565,
+       "tp": 66
+      },
+      "header": {
+       "f1": 0.9735,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9483,
+       "tp": 55
+      },
+      "json_neg": {
+       "f1": 0.0,
+       "fn": 0,
+       "fp": 30,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_nested": {
+       "f1": 0.9186,
+       "fn": 24,
+       "fp": 12,
+       "precision": 0.9442,
+       "recall": 0.8943,
+       "tp": 203
+      },
+      "log": {
+       "f1": 0.88,
+       "fn": 5,
+       "fp": 7,
+       "precision": 0.8627,
+       "recall": 0.898,
+       "tp": 44
+      },
+      "narrative": {
+       "f1": 0.6848,
+       "fn": 74,
+       "fp": 30,
+       "precision": 0.7902,
+       "recall": 0.6043,
+       "tp": 113
+      },
+      "query": {
+       "f1": 0.9028,
+       "fn": 8,
+       "fp": 6,
+       "precision": 0.9155,
+       "recall": 0.8904,
+       "tp": 65
+      },
+      "short": {
+       "f1": 0.9697,
+       "fn": 1,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9412,
+       "tp": 16
+      },
+      "sql": {
+       "f1": 0.5714,
+       "fn": 3,
+       "fp": 12,
+       "precision": 0.4545,
+       "recall": 0.7692,
+       "tp": 10
+      },
+      "vcs": {
+       "f1": 0.88,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.7857,
+       "tp": 11
+      },
+      "xml": {
+       "f1": 0.96,
+       "fn": 1,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9231,
+       "tp": 12
+      },
+      "yaml": {
+       "f1": 0.7647,
+       "fn": 1,
+       "fp": 7,
+       "precision": 0.65,
+       "recall": 0.9286,
+       "tp": 13
+      }
+     },
+     "ci95_bootstrap": {
+      "f1": [
+       0.7944,
+       0.8403
+      ],
+      "precision": [
+       0.8102,
+       0.8608
+      ],
+      "recall": [
+       0.7712,
+       0.8307
+      ]
+     },
+     "error_counts": {
+      "false_negatives": 165,
+      "false_positives": 130
+     },
+     "error_samples_fn": [
+      {
+       "end": 9,
+       "id": "chal-00103",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 21,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 21,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 20,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 20,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 6,
+       "id": "chal-00158",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 6,
+       "start": 0,
+       "text_length": 6
+      },
+      {
+       "end": 9,
+       "id": "chal-00162",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 13,
+       "id": "chal-00178",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 9,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 9,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 10,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 30
+      },
+      {
+       "end": 9,
+       "id": "chal-00189",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 13,
+       "id": "chal-00190",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 29
+      },
+      {
+       "end": 9,
+       "id": "chal-00191",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 26
+      },
+      {
+       "end": 12,
+       "id": "chal-00193",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 15,
+       "id": "chal-00195",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 15,
+       "id": "chal-00196",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      }
+     ],
+     "error_samples_fp": [
+      {
+       "end": 19,
+       "id": "chal-00033",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 19,
+       "start": 0,
+       "text_length": 19
+      },
+      {
+       "end": 13,
+       "id": "chal-00037",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 15,
+       "id": "chal-00038",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 13,
+       "id": "chal-00040",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 14,
+       "id": "chal-00041",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 15,
+       "id": "chal-00043",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 13,
+       "id": "chal-00045",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 12,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 11,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 7,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 7,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 7,
+       "id": "chal-00229",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 11,
+       "id": "chal-00249",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 8,
+       "id": "chal-00266",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 8,
+       "start": 0,
+       "text_length": 8
+      },
+      {
+       "end": 9,
+       "id": "chal-00268",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      }
+     ],
+     "fp_rate_entity_free_examples": {
+      "n": 313,
+      "rate": 0.2173,
+      "with_false_positive": 68
+     },
+     "fp_rate_hard_negative_examples": {
+      "n": 197,
+      "rate": 0.264,
+      "with_false_positive": 52
+     },
+     "macro_f1": 0.8291,
+     "micro": {
+      "f1": 0.818,
+      "fn": 165,
+      "fp": 130,
+      "precision": 0.8361,
+      "recall": 0.8007,
+      "support": 828,
+      "tp": 663
+     },
+     "per_class": {
+      "PERSON_NAME": {
+       "f1": 0.7875,
+       "fn": 100,
+       "fp": 118,
+       "precision": 0.7739,
+       "recall": 0.8016,
+       "support": 504,
+       "tp": 404
+      },
+      "USERNAME": {
+       "f1": 0.8706,
+       "fn": 65,
+       "fp": 12,
+       "precision": 0.9557,
+       "recall": 0.7994,
+       "support": 324,
+       "tp": 259
+      }
+     },
+     "recall_lowercase_entity": {
+      "n": 252,
+      "recall": 0.7897
+     },
+     "recall_multi_entity_examples": {
+      "n": 160,
+      "recall": 0.575
+     },
+     "recall_non_ascii": {
+      "n": 68,
+      "recall": 0.75
+     },
+     "recall_seen_context": {
+      "n": 453,
+      "recall": 0.9095
+     },
+     "recall_seen_key_examples": {
+      "n": 650,
+      "recall": 0.7938
+     },
+     "recall_unseen_context": {
+      "n": 375,
+      "recall": 0.6693
+     },
+     "recall_unseen_key_examples": {
+      "n": 178,
+      "recall": 0.8258
+     }
+    },
+    "host_detect_py": {
+     "by_source": {
+      "chat": {
+       "f1": 0.0,
+       "fn": 31,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "csv": {
+       "f1": 0.0,
+       "fn": 25,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "email": {
+       "f1": 0.0,
+       "fn": 38,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "form": {
+       "f1": 0.4494,
+       "fn": 49,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.2899,
+       "tp": 20
+      },
+      "header": {
+       "f1": 0.0,
+       "fn": 58,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_neg": {
+       "f1": 0.0,
+       "fn": 0,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_nested": {
+       "f1": 0.292,
+       "fn": 187,
+       "fp": 7,
+       "precision": 0.8511,
+       "recall": 0.1762,
+       "tp": 40
+      },
+      "log": {
+       "f1": 0.0,
+       "fn": 49,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "narrative": {
+       "f1": 0.0,
+       "fn": 187,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "query": {
+       "f1": 0.0,
+       "fn": 73,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "short": {
+       "f1": 0.0,
+       "fn": 17,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "sql": {
+       "f1": 0.0,
+       "fn": 13,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "vcs": {
+       "f1": 0.0,
+       "fn": 14,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "xml": {
+       "f1": 0.0,
+       "fn": 13,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "yaml": {
+       "f1": 0.0,
+       "fn": 14,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      }
+     },
+     "ci95_bootstrap": {
+      "f1": [
+       0.1039,
+       0.1668
+      ],
+      "precision": [
+       0.8182,
+       0.9655
+      ],
+      "recall": [
+       0.0555,
+       0.0916
+      ]
+     },
+     "error_counts": {
+      "false_negatives": 768,
+      "false_positives": 7
+     },
+     "error_samples_fn": [
+      {
+       "end": 12,
+       "id": "chal-00009",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 7,
+       "id": "chal-00010",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 7
+      },
+      {
+       "end": 15,
+       "id": "chal-00011",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 15,
+       "id": "chal-00012",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 18,
+       "id": "chal-00013",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 18,
+       "start": 0,
+       "text_length": 18
+      },
+      {
+       "end": 14,
+       "id": "chal-00014",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 13,
+       "id": "chal-00015",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 14,
+       "id": "chal-00016",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 15,
+       "id": "chal-00017",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 12,
+       "id": "chal-00018",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 10,
+       "id": "chal-00019",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 10
+      },
+      {
+       "end": 11,
+       "id": "chal-00020",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 10,
+       "id": "chal-00021",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 10
+      },
+      {
+       "end": 14,
+       "id": "chal-00022",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 18,
+       "id": "chal-00023",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 18,
+       "start": 0,
+       "text_length": 18
+      }
+     ],
+     "error_samples_fp": [
+      {
+       "end": 11,
+       "id": "chal-00185",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 28,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 28,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 27,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 27,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 30,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 30,
+       "start": 0,
+       "text_length": 30
+      },
+      {
+       "end": 28,
+       "id": "chal-00189",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 28,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 29,
+       "id": "chal-00190",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 29,
+       "start": 0,
+       "text_length": 29
+      },
+      {
+       "end": 26,
+       "id": "chal-00191",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 26,
+       "start": 0,
+       "text_length": 26
+      }
+     ],
+     "fp_rate_entity_free_examples": {
+      "n": 313,
+      "rate": 0.0,
+      "with_false_positive": 0
+     },
+     "fp_rate_hard_negative_examples": {
+      "n": 197,
+      "rate": 0.0,
+      "with_false_positive": 0
+     },
+     "macro_f1": 0.141,
+     "micro": {
+      "f1": 0.1341,
+      "fn": 768,
+      "fp": 7,
+      "precision": 0.8955,
+      "recall": 0.0725,
+      "support": 828,
+      "tp": 60
+     },
+     "per_class": {
+      "PERSON_NAME": {
+       "f1": 0.1074,
+       "fn": 475,
+       "fp": 7,
+       "precision": 0.8056,
+       "recall": 0.0575,
+       "support": 504,
+       "tp": 29
+      },
+      "USERNAME": {
+       "f1": 0.1746,
+       "fn": 293,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.0957,
+       "support": 324,
+       "tp": 31
+      }
+     },
+     "recall_lowercase_entity": {
+      "n": 252,
+      "recall": 0.0952
+     },
+     "recall_multi_entity_examples": {
+      "n": 160,
+      "recall": 0.0
+     },
+     "recall_non_ascii": {
+      "n": 68,
+      "recall": 0.0441
+     },
+     "recall_seen_context": {
+      "n": 453,
+      "recall": 0.1325
+     },
+     "recall_seen_key_examples": {
+      "n": 650,
+      "recall": 0.0554
+     },
+     "recall_unseen_context": {
+      "n": 375,
+      "recall": 0.0
+     },
+     "recall_unseen_key_examples": {
+      "n": 178,
+      "recall": 0.1348
+     }
+    },
+    "hybrid_rules_first:v2": {
+     "by_source": {
+      "chat": {
+       "f1": 0.678,
+       "fn": 11,
+       "fp": 8,
+       "precision": 0.7143,
+       "recall": 0.6452,
+       "tp": 20
+      },
+      "csv": {
+       "f1": 0.3636,
+       "fn": 19,
+       "fp": 2,
+       "precision": 0.75,
+       "recall": 0.24,
+       "tp": 6
+      },
+      "email": {
+       "f1": 0.7632,
+       "fn": 9,
+       "fp": 9,
+       "precision": 0.7632,
+       "recall": 0.7632,
+       "tp": 29
+      },
+      "form": {
+       "f1": 0.9041,
+       "fn": 3,
+       "fp": 11,
+       "precision": 0.8571,
+       "recall": 0.9565,
+       "tp": 66
+      },
+      "header": {
+       "f1": 0.9735,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9483,
+       "tp": 55
+      },
+      "json_neg": {
+       "f1": 0.0,
+       "fn": 0,
+       "fp": 39,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_nested": {
+       "f1": 0.8884,
+       "fn": 28,
+       "fp": 22,
+       "precision": 0.9005,
+       "recall": 0.8767,
+       "tp": 199
+      },
+      "log": {
+       "f1": 0.8224,
+       "fn": 5,
+       "fp": 14,
+       "precision": 0.7586,
+       "recall": 0.898,
+       "tp": 44
+      },
+      "narrative": {
+       "f1": 0.6867,
+       "fn": 73,
+       "fp": 31,
+       "precision": 0.7862,
+       "recall": 0.6096,
+       "tp": 114
+      },
+      "query": {
+       "f1": 0.9167,
+       "fn": 7,
+       "fp": 5,
+       "precision": 0.9296,
+       "recall": 0.9041,
+       "tp": 66
+      },
+      "short": {
+       "f1": 0.9697,
+       "fn": 1,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9412,
+       "tp": 16
+      },
+      "sql": {
+       "f1": 0.5714,
+       "fn": 3,
+       "fp": 12,
+       "precision": 0.4545,
+       "recall": 0.7692,
+       "tp": 10
+      },
+      "vcs": {
+       "f1": 0.88,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.7857,
+       "tp": 11
+      },
+      "xml": {
+       "f1": 0.96,
+       "fn": 1,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9231,
+       "tp": 12
+      },
+      "yaml": {
+       "f1": 0.7429,
+       "fn": 1,
+       "fp": 8,
+       "precision": 0.619,
+       "recall": 0.9286,
+       "tp": 13
+      }
+     },
+     "ci95_bootstrap": {
+      "f1": [
+       0.777,
+       0.8237
+      ],
+      "precision": [
+       0.7779,
+       0.8301
+      ],
+      "recall": [
+       0.7691,
+       0.8282
+      ]
+     },
+     "error_counts": {
+      "false_negatives": 167,
+      "false_positives": 161
+     },
+     "error_samples_fn": [
+      {
+       "end": 9,
+       "id": "chal-00103",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 21,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 21,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 20,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 20,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 13,
+       "id": "chal-00178",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 7,
+       "id": "chal-00185",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 9,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 9,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 10,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 30
+      },
+      {
+       "end": 9,
+       "id": "chal-00189",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 13,
+       "id": "chal-00190",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 29
+      },
+      {
+       "end": 9,
+       "id": "chal-00191",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 26
+      },
+      {
+       "end": 12,
+       "id": "chal-00193",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 15,
+       "id": "chal-00195",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 15,
+       "id": "chal-00196",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 12,
+       "id": "chal-00197",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      }
+     ],
+     "error_samples_fp": [
+      {
+       "end": 19,
+       "id": "chal-00033",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 19,
+       "start": 0,
+       "text_length": 19
+      },
+      {
+       "end": 13,
+       "id": "chal-00037",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 15,
+       "id": "chal-00038",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 13,
+       "id": "chal-00040",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 14,
+       "id": "chal-00041",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 15,
+       "id": "chal-00043",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 13,
+       "id": "chal-00045",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 12,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 11,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 11,
+       "id": "chal-00185",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 28,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 28,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 27,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 27,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 30,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 30,
+       "start": 0,
+       "text_length": 30
+      },
+      {
+       "end": 28,
+       "id": "chal-00189",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 28,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 29,
+       "id": "chal-00190",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 29,
+       "start": 0,
+       "text_length": 29
+      }
+     ],
+     "fp_rate_entity_free_examples": {
+      "n": 313,
+      "rate": 0.2524,
+      "with_false_positive": 79
+     },
+     "fp_rate_hard_negative_examples": {
+      "n": 197,
+      "rate": 0.3147,
+      "with_false_positive": 62
+     },
+     "macro_f1": 0.8124,
+     "micro": {
+      "f1": 0.8012,
+      "fn": 167,
+      "fp": 161,
+      "precision": 0.8041,
+      "recall": 0.7983,
+      "support": 828,
+      "tp": 661
+     },
+     "per_class": {
+      "PERSON_NAME": {
+       "f1": 0.7714,
+       "fn": 99,
+       "fp": 141,
+       "precision": 0.7418,
+       "recall": 0.8036,
+       "support": 504,
+       "tp": 405
+      },
+      "USERNAME": {
+       "f1": 0.8533,
+       "fn": 68,
+       "fp": 20,
+       "precision": 0.9275,
+       "recall": 0.7901,
+       "support": 324,
+       "tp": 256
+      }
+     },
+     "recall_lowercase_entity": {
+      "n": 252,
+      "recall": 0.7857
+     },
+     "recall_multi_entity_examples": {
+      "n": 160,
+      "recall": 0.575
+     },
+     "recall_non_ascii": {
+      "n": 68,
+      "recall": 0.75
+     },
+     "recall_seen_context": {
+      "n": 453,
+      "recall": 0.9029
+     },
+     "recall_seen_key_examples": {
+      "n": 650,
+      "recall": 0.7892
+     },
+     "recall_unseen_context": {
+      "n": 375,
+      "recall": 0.672
+     },
+     "recall_unseen_key_examples": {
+      "n": 178,
+      "recall": 0.8315
+     }
+    },
+    "hybrid_rules_first_veto:v2": {
+     "by_source": {
+      "chat": {
+       "f1": 0.678,
+       "fn": 11,
+       "fp": 8,
+       "precision": 0.7143,
+       "recall": 0.6452,
+       "tp": 20
+      },
+      "csv": {
+       "f1": 0.3636,
+       "fn": 19,
+       "fp": 2,
+       "precision": 0.75,
+       "recall": 0.24,
+       "tp": 6
+      },
+      "email": {
+       "f1": 0.7632,
+       "fn": 9,
+       "fp": 9,
+       "precision": 0.7632,
+       "recall": 0.7632,
+       "tp": 29
+      },
+      "form": {
+       "f1": 0.9041,
+       "fn": 3,
+       "fp": 11,
+       "precision": 0.8571,
+       "recall": 0.9565,
+       "tp": 66
+      },
+      "header": {
+       "f1": 0.9735,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9483,
+       "tp": 55
+      },
+      "json_neg": {
+       "f1": 0.0,
+       "fn": 0,
+       "fp": 31,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_nested": {
+       "f1": 0.8884,
+       "fn": 28,
+       "fp": 22,
+       "precision": 0.9005,
+       "recall": 0.8767,
+       "tp": 199
+      },
+      "log": {
+       "f1": 0.8224,
+       "fn": 5,
+       "fp": 14,
+       "precision": 0.7586,
+       "recall": 0.898,
+       "tp": 44
+      },
+      "narrative": {
+       "f1": 0.6867,
+       "fn": 73,
+       "fp": 31,
+       "precision": 0.7862,
+       "recall": 0.6096,
+       "tp": 114
+      },
+      "query": {
+       "f1": 0.9167,
+       "fn": 7,
+       "fp": 5,
+       "precision": 0.9296,
+       "recall": 0.9041,
+       "tp": 66
+      },
+      "short": {
+       "f1": 0.9697,
+       "fn": 1,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9412,
+       "tp": 16
+      },
+      "sql": {
+       "f1": 0.5714,
+       "fn": 3,
+       "fp": 12,
+       "precision": 0.4545,
+       "recall": 0.7692,
+       "tp": 10
+      },
+      "vcs": {
+       "f1": 0.88,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.7857,
+       "tp": 11
+      },
+      "xml": {
+       "f1": 0.96,
+       "fn": 1,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9231,
+       "tp": 12
+      },
+      "yaml": {
+       "f1": 0.7429,
+       "fn": 1,
+       "fp": 8,
+       "precision": 0.619,
+       "recall": 0.9286,
+       "tp": 13
+      }
+     },
+     "ci95_bootstrap": {
+      "f1": [
+       0.7813,
+       0.8277
+      ],
+      "precision": [
+       0.7867,
+       0.8364
+      ],
+      "recall": [
+       0.7691,
+       0.8282
+      ]
+     },
+     "error_counts": {
+      "false_negatives": 167,
+      "false_positives": 153
+     },
+     "error_samples_fn": [
+      {
+       "end": 9,
+       "id": "chal-00103",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 21,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 21,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 20,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 20,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 13,
+       "id": "chal-00178",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 7,
+       "id": "chal-00185",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 9,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 9,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 10,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 30
+      },
+      {
+       "end": 9,
+       "id": "chal-00189",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 13,
+       "id": "chal-00190",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 29
+      },
+      {
+       "end": 9,
+       "id": "chal-00191",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 26
+      },
+      {
+       "end": 12,
+       "id": "chal-00193",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 15,
+       "id": "chal-00195",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 15,
+       "id": "chal-00196",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 12,
+       "id": "chal-00197",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      }
+     ],
+     "error_samples_fp": [
+      {
+       "end": 19,
+       "id": "chal-00033",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 19,
+       "start": 0,
+       "text_length": 19
+      },
+      {
+       "end": 13,
+       "id": "chal-00037",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 15,
+       "id": "chal-00038",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 13,
+       "id": "chal-00040",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 14,
+       "id": "chal-00041",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 15,
+       "id": "chal-00043",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 13,
+       "id": "chal-00045",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 12,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 11,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 11,
+       "id": "chal-00185",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 28,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 28,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 27,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 27,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 30,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 30,
+       "start": 0,
+       "text_length": 30
+      },
+      {
+       "end": 28,
+       "id": "chal-00189",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 28,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 29,
+       "id": "chal-00190",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 29,
+       "start": 0,
+       "text_length": 29
+      }
+     ],
+     "fp_rate_entity_free_examples": {
+      "n": 313,
+      "rate": 0.2268,
+      "with_false_positive": 71
+     },
+     "fp_rate_hard_negative_examples": {
+      "n": 197,
+      "rate": 0.2741,
+      "with_false_positive": 54
+     },
+     "macro_f1": 0.8153,
+     "micro": {
+      "f1": 0.8051,
+      "fn": 167,
+      "fp": 153,
+      "precision": 0.812,
+      "recall": 0.7983,
+      "support": 828,
+      "tp": 661
+     },
+     "per_class": {
+      "PERSON_NAME": {
+       "f1": 0.7774,
+       "fn": 99,
+       "fp": 133,
+       "precision": 0.7528,
+       "recall": 0.8036,
+       "support": 504,
+       "tp": 405
+      },
+      "USERNAME": {
+       "f1": 0.8533,
+       "fn": 68,
+       "fp": 20,
+       "precision": 0.9275,
+       "recall": 0.7901,
+       "support": 324,
+       "tp": 256
+      }
+     },
+     "recall_lowercase_entity": {
+      "n": 252,
+      "recall": 0.7857
+     },
+     "recall_multi_entity_examples": {
+      "n": 160,
+      "recall": 0.575
+     },
+     "recall_non_ascii": {
+      "n": 68,
+      "recall": 0.75
+     },
+     "recall_seen_context": {
+      "n": 453,
+      "recall": 0.9029
+     },
+     "recall_seen_key_examples": {
+      "n": 650,
+      "recall": 0.7892
+     },
+     "recall_unseen_context": {
+      "n": 375,
+      "recall": 0.672
+     },
+     "recall_unseen_key_examples": {
+      "n": 178,
+      "recall": 0.8315
+     }
+    },
+    "hybrid_union:v2": {
+     "by_source": {
+      "chat": {
+       "f1": 0.678,
+       "fn": 11,
+       "fp": 8,
+       "precision": 0.7143,
+       "recall": 0.6452,
+       "tp": 20
+      },
+      "csv": {
+       "f1": 0.3636,
+       "fn": 19,
+       "fp": 2,
+       "precision": 0.75,
+       "recall": 0.24,
+       "tp": 6
+      },
+      "email": {
+       "f1": 0.7595,
+       "fn": 8,
+       "fp": 11,
+       "precision": 0.7317,
+       "recall": 0.7895,
+       "tp": 30
+      },
+      "form": {
+       "f1": 0.9041,
+       "fn": 3,
+       "fp": 11,
+       "precision": 0.8571,
+       "recall": 0.9565,
+       "tp": 66
+      },
+      "header": {
+       "f1": 0.9735,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9483,
+       "tp": 55
+      },
+      "json_neg": {
+       "f1": 0.0,
+       "fn": 0,
+       "fp": 40,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_nested": {
+       "f1": 0.8991,
+       "fn": 22,
+       "fp": 24,
+       "precision": 0.8952,
+       "recall": 0.9031,
+       "tp": 205
+      },
+      "log": {
+       "f1": 0.8224,
+       "fn": 5,
+       "fp": 14,
+       "precision": 0.7586,
+       "recall": 0.898,
+       "tp": 44
+      },
+      "narrative": {
+       "f1": 0.6826,
+       "fn": 73,
+       "fp": 33,
+       "precision": 0.7755,
+       "recall": 0.6096,
+       "tp": 114
+      },
+      "query": {
+       "f1": 0.9041,
+       "fn": 7,
+       "fp": 7,
+       "precision": 0.9041,
+       "recall": 0.9041,
+       "tp": 66
+      },
+      "short": {
+       "f1": 0.9697,
+       "fn": 1,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9412,
+       "tp": 16
+      },
+      "sql": {
+       "f1": 0.5714,
+       "fn": 3,
+       "fp": 12,
+       "precision": 0.4545,
+       "recall": 0.7692,
+       "tp": 10
+      },
+      "vcs": {
+       "f1": 0.88,
+       "fn": 3,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.7857,
+       "tp": 11
+      },
+      "xml": {
+       "f1": 0.96,
+       "fn": 1,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.9231,
+       "tp": 12
+      },
+      "yaml": {
+       "f1": 0.6667,
+       "fn": 1,
+       "fp": 12,
+       "precision": 0.52,
+       "recall": 0.9286,
+       "tp": 13
+      }
+     },
+     "ci95_bootstrap": {
+      "f1": [
+       0.776,
+       0.8231
+      ],
+      "precision": [
+       0.7666,
+       0.8191
+      ],
+      "recall": [
+       0.7786,
+       0.8376
+      ]
+     },
+     "error_counts": {
+      "false_negatives": 160,
+      "false_positives": 174
+     },
+     "error_samples_fn": [
+      {
+       "end": 9,
+       "id": "chal-00103",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 21,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 21,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 20,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 20,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 13,
+       "id": "chal-00178",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 9,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 9,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 10,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 30
+      },
+      {
+       "end": 9,
+       "id": "chal-00189",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 13,
+       "id": "chal-00190",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 29
+      },
+      {
+       "end": 9,
+       "id": "chal-00191",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 26
+      },
+      {
+       "end": 12,
+       "id": "chal-00193",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 15,
+       "id": "chal-00195",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 15,
+       "id": "chal-00196",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 12,
+       "id": "chal-00197",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 13,
+       "id": "chal-00198",
+       "kind": "json_nested",
+       "label": "USERNAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      }
+     ],
+     "error_samples_fp": [
+      {
+       "end": 19,
+       "id": "chal-00033",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 19,
+       "start": 0,
+       "text_length": 19
+      },
+      {
+       "end": 13,
+       "id": "chal-00037",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 15,
+       "id": "chal-00038",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 13,
+       "id": "chal-00040",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 14,
+       "id": "chal-00041",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 15,
+       "id": "chal-00043",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 13,
+       "id": "chal-00045",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 12,
+       "id": "chal-00122",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 21
+      },
+      {
+       "end": 11,
+       "id": "chal-00137",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 20
+      },
+      {
+       "end": 11,
+       "id": "chal-00185",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 7,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 28,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 28,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 7,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 27,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 27,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 30,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 30,
+       "start": 0,
+       "text_length": 30
+      }
+     ],
+     "fp_rate_entity_free_examples": {
+      "n": 313,
+      "rate": 0.2524,
+      "with_false_positive": 79
+     },
+     "fp_rate_hard_negative_examples": {
+      "n": 197,
+      "rate": 0.3147,
+      "with_false_positive": 62
+     },
+     "macro_f1": 0.8139,
+     "micro": {
+      "f1": 0.8,
+      "fn": 160,
+      "fp": 174,
+      "precision": 0.7933,
+      "recall": 0.8068,
+      "support": 828,
+      "tp": 668
+     },
+     "per_class": {
+      "PERSON_NAME": {
+       "f1": 0.7632,
+       "fn": 98,
+       "fp": 154,
+       "precision": 0.725,
+       "recall": 0.8056,
+       "support": 504,
+       "tp": 406
+      },
+      "USERNAME": {
+       "f1": 0.8647,
+       "fn": 62,
+       "fp": 20,
+       "precision": 0.9291,
+       "recall": 0.8086,
+       "support": 324,
+       "tp": 262
+      }
+     },
+     "recall_lowercase_entity": {
+      "n": 252,
+      "recall": 0.8016
+     },
+     "recall_multi_entity_examples": {
+      "n": 160,
+      "recall": 0.5813
+     },
+     "recall_non_ascii": {
+      "n": 68,
+      "recall": 0.75
+     },
+     "recall_seen_context": {
+      "n": 453,
+      "recall": 0.9161
+     },
+     "recall_seen_key_examples": {
+      "n": 650,
+      "recall": 0.7985
+     },
+     "recall_unseen_context": {
+      "n": 375,
+      "recall": 0.6747
+     },
+     "recall_unseen_key_examples": {
+      "n": 178,
+      "recall": 0.8371
+     }
+    },
+    "majority": {
+     "by_source": {
+      "chat": {
+       "f1": 0.0,
+       "fn": 31,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "csv": {
+       "f1": 0.0,
+       "fn": 25,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "email": {
+       "f1": 0.0,
+       "fn": 38,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "form": {
+       "f1": 0.0,
+       "fn": 69,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "header": {
+       "f1": 0.0,
+       "fn": 58,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_neg": {
+       "f1": 0.0,
+       "fn": 0,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_nested": {
+       "f1": 0.0,
+       "fn": 227,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "log": {
+       "f1": 0.0,
+       "fn": 49,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "narrative": {
+       "f1": 0.0,
+       "fn": 187,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "query": {
+       "f1": 0.0,
+       "fn": 73,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "short": {
+       "f1": 0.0,
+       "fn": 17,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "sql": {
+       "f1": 0.0,
+       "fn": 13,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "vcs": {
+       "f1": 0.0,
+       "fn": 14,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "xml": {
+       "f1": 0.0,
+       "fn": 13,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "yaml": {
+       "f1": 0.0,
+       "fn": 14,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      }
+     },
+     "ci95_bootstrap": {
+      "f1": [
+       0.0,
+       0.0
+      ],
+      "precision": [
+       0.0,
+       0.0
+      ],
+      "recall": [
+       0.0,
+       0.0
+      ]
+     },
+     "error_counts": {
+      "false_negatives": 828,
+      "false_positives": 0
+     },
+     "error_samples_fn": [
+      {
+       "end": 10,
+       "id": "chal-00000",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 10
+      },
+      {
+       "end": 15,
+       "id": "chal-00001",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 12,
+       "id": "chal-00002",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 13,
+       "id": "chal-00003",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 11,
+       "id": "chal-00004",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 14,
+       "id": "chal-00005",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 13,
+       "id": "chal-00006",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 10,
+       "id": "chal-00007",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 10
+      },
+      {
+       "end": 13,
+       "id": "chal-00008",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 12,
+       "id": "chal-00009",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 7,
+       "id": "chal-00010",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 7
+      },
+      {
+       "end": 15,
+       "id": "chal-00011",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 15,
+       "id": "chal-00012",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 18,
+       "id": "chal-00013",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 18,
+       "start": 0,
+       "text_length": 18
+      },
+      {
+       "end": 14,
+       "id": "chal-00014",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      }
+     ],
+     "error_samples_fp": [],
+     "fp_rate_entity_free_examples": {
+      "n": 313,
+      "rate": 0.0,
+      "with_false_positive": 0
+     },
+     "fp_rate_hard_negative_examples": {
+      "n": 197,
+      "rate": 0.0,
+      "with_false_positive": 0
+     },
+     "macro_f1": 0.0,
+     "micro": {
+      "f1": 0.0,
+      "fn": 828,
+      "fp": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "support": 828,
+      "tp": 0
+     },
+     "per_class": {
+      "PERSON_NAME": {
+       "f1": 0.0,
+       "fn": 504,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "support": 504,
+       "tp": 0
+      },
+      "USERNAME": {
+       "f1": 0.0,
+       "fn": 324,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "support": 324,
+       "tp": 0
+      }
+     },
+     "recall_lowercase_entity": {
+      "n": 252,
+      "recall": 0.0
+     },
+     "recall_multi_entity_examples": {
+      "n": 160,
+      "recall": 0.0
+     },
+     "recall_non_ascii": {
+      "n": 68,
+      "recall": 0.0
+     },
+     "recall_seen_context": {
+      "n": 453,
+      "recall": 0.0
+     },
+     "recall_seen_key_examples": {
+      "n": 650,
+      "recall": 0.0
+     },
+     "recall_unseen_context": {
+      "n": 375,
+      "recall": 0.0
+     },
+     "recall_unseen_key_examples": {
+      "n": 178,
+      "recall": 0.0
+     }
+    },
+    "rules_strong": {
+     "by_source": {
+      "chat": {
+       "f1": 0.3684,
+       "fn": 24,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.2258,
+       "tp": 7
+      },
+      "csv": {
+       "f1": 0.0,
+       "fn": 25,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "email": {
+       "f1": 0.4211,
+       "fn": 26,
+       "fp": 7,
+       "precision": 0.6316,
+       "recall": 0.3158,
+       "tp": 12
+      },
+      "form": {
+       "f1": 0.7103,
+       "fn": 31,
+       "fp": 0,
+       "precision": 1.0,
+       "recall": 0.5507,
+       "tp": 38
+      },
+      "header": {
+       "f1": 0.0,
+       "fn": 58,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_neg": {
+       "f1": 0.0,
+       "fn": 0,
+       "fp": 17,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "json_nested": {
+       "f1": 0.5155,
+       "fn": 144,
+       "fp": 12,
+       "precision": 0.8737,
+       "recall": 0.3656,
+       "tp": 83
+      },
+      "log": {
+       "f1": 0.2222,
+       "fn": 42,
+       "fp": 7,
+       "precision": 0.5,
+       "recall": 0.1429,
+       "tp": 7
+      },
+      "narrative": {
+       "f1": 0.06,
+       "fn": 181,
+       "fp": 7,
+       "precision": 0.4615,
+       "recall": 0.0321,
+       "tp": 6
+      },
+      "query": {
+       "f1": 0.3111,
+       "fn": 59,
+       "fp": 3,
+       "precision": 0.8235,
+       "recall": 0.1918,
+       "tp": 14
+      },
+      "short": {
+       "f1": 0.0,
+       "fn": 17,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "sql": {
+       "f1": 0.0,
+       "fn": 13,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "vcs": {
+       "f1": 0.0,
+       "fn": 14,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "xml": {
+       "f1": 0.0,
+       "fn": 13,
+       "fp": 0,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      },
+      "yaml": {
+       "f1": 0.0,
+       "fn": 14,
+       "fp": 5,
+       "precision": 0.0,
+       "recall": 0.0,
+       "tp": 0
+      }
+     },
+     "ci95_bootstrap": {
+      "f1": [
+       0.279,
+       0.3525
+      ],
+      "precision": [
+       0.6818,
+       0.7992
+      ],
+      "recall": [
+       0.174,
+       0.2286
+      ]
+     },
+     "error_counts": {
+      "false_negatives": 661,
+      "false_positives": 58
+     },
+     "error_samples_fn": [
+      {
+       "end": 10,
+       "id": "chal-00000",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 10
+      },
+      {
+       "end": 15,
+       "id": "chal-00001",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 12,
+       "id": "chal-00002",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 13,
+       "id": "chal-00003",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 11,
+       "id": "chal-00004",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 14,
+       "id": "chal-00005",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 13,
+       "id": "chal-00006",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 10,
+       "id": "chal-00007",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 10,
+       "start": 0,
+       "text_length": 10
+      },
+      {
+       "end": 13,
+       "id": "chal-00008",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 12,
+       "id": "chal-00009",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 7,
+       "id": "chal-00010",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 7,
+       "start": 0,
+       "text_length": 7
+      },
+      {
+       "end": 15,
+       "id": "chal-00011",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 15,
+       "id": "chal-00012",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 18,
+       "id": "chal-00013",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 18,
+       "start": 0,
+       "text_length": 18
+      },
+      {
+       "end": 14,
+       "id": "chal-00014",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      }
+     ],
+     "error_samples_fp": [
+      {
+       "end": 11,
+       "id": "chal-00185",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 11,
+       "start": 0,
+       "text_length": 11
+      },
+      {
+       "end": 28,
+       "id": "chal-00186",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 28,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 27,
+       "id": "chal-00187",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 27,
+       "start": 0,
+       "text_length": 27
+      },
+      {
+       "end": 30,
+       "id": "chal-00188",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 30,
+       "start": 0,
+       "text_length": 30
+      },
+      {
+       "end": 28,
+       "id": "chal-00189",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 28,
+       "start": 0,
+       "text_length": 28
+      },
+      {
+       "end": 29,
+       "id": "chal-00190",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 29,
+       "start": 0,
+       "text_length": 29
+      },
+      {
+       "end": 26,
+       "id": "chal-00191",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 26,
+       "start": 0,
+       "text_length": 26
+      },
+      {
+       "end": 16,
+       "id": "chal-00231",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 16,
+       "start": 0,
+       "text_length": 16
+      },
+      {
+       "end": 12,
+       "id": "chal-00232",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 12,
+       "start": 0,
+       "text_length": 12
+      },
+      {
+       "end": 14,
+       "id": "chal-00233",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 14,
+       "start": 0,
+       "text_length": 14
+      },
+      {
+       "end": 9,
+       "id": "chal-00234",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 9,
+       "start": 0,
+       "text_length": 9
+      },
+      {
+       "end": 13,
+       "id": "chal-00235",
+       "kind": "json_nested",
+       "label": "PERSON_NAME",
+       "span_length": 13,
+       "start": 0,
+       "text_length": 13
+      },
+      {
+       "end": 15,
+       "id": "chal-00241",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 15,
+       "start": 0,
+       "text_length": 15
+      },
+      {
+       "end": 17,
+       "id": "chal-00242",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 17,
+       "start": 0,
+       "text_length": 17
+      },
+      {
+       "end": 17,
+       "id": "chal-00244",
+       "kind": "json_neg",
+       "label": "PERSON_NAME",
+       "span_length": 17,
+       "start": 0,
+       "text_length": 17
+      }
+     ],
+     "fp_rate_entity_free_examples": {
+      "n": 313,
+      "rate": 0.1022,
+      "with_false_positive": 32
+     },
+     "fp_rate_hard_negative_examples": {
+      "n": 197,
+      "rate": 0.1371,
+      "with_false_positive": 27
+     },
+     "macro_f1": 0.3317,
+     "micro": {
+      "f1": 0.3172,
+      "fn": 661,
+      "fp": 58,
+      "precision": 0.7422,
+      "recall": 0.2017,
+      "support": 828,
+      "tp": 167
+     },
+     "per_class": {
+      "PERSON_NAME": {
+       "f1": 0.2633,
+       "fn": 420,
+       "fp": 50,
+       "precision": 0.6269,
+       "recall": 0.1667,
+       "support": 504,
+       "tp": 84
+      },
+      "USERNAME": {
+       "f1": 0.4,
+       "fn": 241,
+       "fp": 8,
+       "precision": 0.9121,
+       "recall": 0.2562,
+       "support": 324,
+       "tp": 83
+      }
+     },
+     "recall_lowercase_entity": {
+      "n": 252,
+      "recall": 0.2421
+     },
+     "recall_multi_entity_examples": {
+      "n": 160,
+      "recall": 0.075
+     },
+     "recall_non_ascii": {
+      "n": 68,
+      "recall": 0.1471
+     },
+     "recall_seen_context": {
+      "n": 453,
+      "recall": 0.3289
+     },
+     "recall_seen_key_examples": {
+      "n": 650,
+      "recall": 0.18
+     },
+     "recall_unseen_context": {
+      "n": 375,
+      "recall": 0.048
+     },
+     "recall_unseen_key_examples": {
+      "n": 178,
+      "recall": 0.2809
+     }
+    }
+   }
+  }
+ },
+ "hybrid_thresholds_chosen_on_v2_calib": {
+  "v2": {
+   "tau_add": 0.35,
+   "tau_union": 0.35,
+   "tau_veto": 0.0
+  }
+ },
+ "models": {
+  "s11": {
+   "min_score": 0.6,
+   "model_version": "bilstm-v2x-bebfc0c9afcf",
+   "sha256": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5"
+  },
+  "s12": {
+   "min_score": 0.2,
+   "model_version": "bilstm-v2x-de292058fd26",
+   "sha256": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5"
+  },
+  "s13": {
+   "min_score": 0.5,
+   "model_version": "bilstm-v2x-46bd48b861ab",
+   "sha256": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+  },
+  "v1": {
+   "min_score": 0.25,
+   "model_version": "bilstm-v1-972a87f2b6db",
+   "sha256": "972a87f2b6db8b701ba43a63d1949ca0dc7684ec67c2c2a304ebbbaa19495d6a"
+  },
+  "v2": {
+   "min_score": 0.35,
+   "model_version": "bilstm-v2-d1f9e9fb9a2b",
+   "sha256": "d1f9e9fb9a2bca5de7414e7c09e2860cd58bb1f538d9ca409656a01efc03b6b5"
+  }
+ },
+ "python": "3.13.16",
+ "seed_group": {
+  "challenge": {
+   "bilstm_f1": [
+    0.7946,
+    0.79,
+    0.8077
+   ],
+   "mean": 0.7974,
+   "models": [
+    "s11",
+    "s12",
+    "s13"
+   ],
+   "std": 0.0075
+  }
+ },
+ "threads": 4,
+ "torch": "2.14.1+cu130"
+}
