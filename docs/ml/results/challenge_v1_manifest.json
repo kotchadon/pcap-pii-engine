@@ -1,0 +1,39 @@
+{
+ "by_source": {
+  "chat": 31,
+  "csv": 19,
+  "email": 25,
+  "form": 86,
+  "header": 91,
+  "json_neg": 127,
+  "json_nested": 241,
+  "log": 62,
+  "narrative": 189,
+  "query": 108,
+  "short": 17,
+  "sql": 18,
+  "vcs": 14,
+  "xml": 18,
+  "yaml": 12
+ },
+ "distinct_entity_strings": 763,
+ "entities": {
+  "PERSON_NAME": 504,
+  "USERNAME": 324
+ },
+ "examples": 1058,
+ "kind": "out-of-generator SYNTHETIC validation (not real traffic)",
+ "name": "challenge_v1",
+ "no_entity_examples": 313,
+ "seed": 90210,
+ "sha256_gz": "facb1cbe71b12366cccdaa3da8286ea9c07eb8c784a664cb60e8cdc18d1b8ca7",
+ "sha256_jsonl": "894d8ad7dc7e7d91a24d31233776f78a18bb66f6a70fcf34c5c75e1a8a650df7",
+ "status": "FROZEN: evaluation only; no training / selection / tuning",
+ "tags": {
+  "hard_negative": 197,
+  "multi_entity": 77,
+  "no_entity": 309,
+  "truncated": 27,
+  "unicode": 66
+ }
+}

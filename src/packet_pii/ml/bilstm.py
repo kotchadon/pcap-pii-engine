@@ -50,6 +50,9 @@ class ModelConfig:
     layers: int = 1
     dropout: float = 0.3
     max_seq: int = 192               # context + text tokens per forward pass (hard bound)
+    char_widths: tuple = (3,)        # char-CNN kernel widths (V1: (3,))
+    key_broadcast: bool = False      # V2: summarise the field-key tokens and feed the summary to every text position
+    key_dim: int = 32
 
     def validate(self) -> "ModelConfig":
         ints = {"vocab_size": 4, "char_vocab_size": 2, "n_tags": 2, "word_dim": 1, "shape_dim": 1, "char_dim": 1,
@@ -64,6 +67,12 @@ class ModelConfig:
             raise ValueError("invalid model config: size out of bounds")
         if not isinstance(self.dropout, (int, float)) or not 0.0 <= self.dropout < 1.0:
             raise ValueError("invalid model config: dropout must be in [0, 1)")
+        if not isinstance(self.char_widths, (tuple, list)) or not 1 <= len(self.char_widths) <= 4 \
+                or any(type(w) is not int or not 1 <= w <= 7 for w in self.char_widths):
+            raise ValueError("invalid model config: char_widths must be 1-4 ints in [1, 7]")
+        self.char_widths = tuple(self.char_widths)
+        if type(self.key_broadcast) is not bool or type(self.key_dim) is not int or not 1 <= self.key_dim <= 256:
+            raise ValueError("invalid model config: key_broadcast/key_dim")
         return self
 
     @staticmethod
@@ -88,8 +97,16 @@ class BiLSTMTagger(nn.Module):
         in_dim = cfg.word_dim + cfg.shape_dim + 4
         if cfg.char_filters:
             self.char = nn.Embedding(cfg.char_vocab_size, cfg.char_dim, padding_idx=0)
-            self.conv = nn.Conv1d(cfg.char_dim, cfg.char_filters, kernel_size=3, padding=1)
-            in_dim += cfg.char_filters
+            w0 = cfg.char_widths[0]
+            self.conv = nn.Conv1d(cfg.char_dim, cfg.char_filters, kernel_size=w0, padding=w0 // 2)  # name kept for V1 checkpoints
+            if len(cfg.char_widths) > 1:
+                self.conv_extra = nn.ModuleList([nn.Conv1d(cfg.char_dim, cfg.char_filters, kernel_size=w, padding=w // 2)
+                                                 for w in cfg.char_widths[1:]])
+            in_dim += cfg.char_filters * len(cfg.char_widths)
+        feat_dim = in_dim
+        if cfg.key_broadcast:
+            self.key_proj = nn.Linear(feat_dim, cfg.key_dim)
+            in_dim += cfg.key_dim
         self.drop = nn.Dropout(cfg.dropout)
         self.lstm = nn.LSTM(in_dim, cfg.hidden, num_layers=cfg.layers, bidirectional=True, batch_first=True,
                             dropout=cfg.dropout if cfg.layers > 1 else 0.0)
@@ -101,12 +118,21 @@ class BiLSTMTagger(nn.Module):
         feats = [self.word(word_ids), self.shape(shape_ids), self.ctx(ctx_ids)]
         if self.cfg.char_filters:
             ce = self.char(char_ids.reshape(B * T, -1)).transpose(1, 2)           # [BT, cd, C]
-            h = torch.relu(self.conv(ce))                                          # [BT, F, C]
             mask = (char_ids.reshape(B * T, -1) != 0).unsqueeze(1)
-            h = h.masked_fill(~mask, float("-inf")).amax(dim=2)
-            h = torch.where(torch.isfinite(h), h, torch.zeros_like(h))             # all-pad tokens -> 0
-            feats.append(h.reshape(B, T, -1))
-        x = self.drop(torch.cat(feats, dim=-1))
+            convs = [self.conv] + (list(self.conv_extra) if self.cfg.char_widths[1:] else [])
+            for cv in convs:
+                h = torch.relu(cv(ce))[:, :, :ce.shape[2]]                         # [BT, F, C]
+                h = h.masked_fill(~mask, float("-inf")).amax(dim=2)
+                h = torch.where(torch.isfinite(h), h, torch.zeros_like(h))         # all-pad tokens -> 0
+                feats.append(h.reshape(B, T, -1))
+        x = torch.cat(feats, dim=-1)
+        if self.cfg.key_broadcast:  # masked mean of key/<sep> positions -> broadcast to all positions
+            valid = (torch.arange(T).unsqueeze(0) < lengths.unsqueeze(1))
+            km = ((ctx_ids == 1) & valid).unsqueeze(-1).to(x.dtype)
+            kv = (x * km).sum(1) / km.sum(1).clamp(min=1.0)
+            kv = torch.relu(self.key_proj(kv)).unsqueeze(1).expand(B, T, -1)
+            x = torch.cat([x, kv], dim=-1)
+        x = self.drop(x)
         packed = pack_padded_sequence(x, lengths, batch_first=True, enforce_sorted=False)
         y, _ = self.lstm(packed)
         y, _ = pad_packed_sequence(y, batch_first=True, total_length=T)
@@ -201,6 +227,7 @@ def evaluate_examples(predictor: SpanPredictor, examples: Sequence, min_score: f
 def train_model(train_ex: Sequence, val_ex: Sequence, vocab: Vocab, cfg: ModelConfig, *, seed: int = 1337,
                 epochs: int = 30, patience: int = 6, batch_size: int = 64, lr: float = 2e-3,
                 weight_decay: float = 1e-2, clip: float = 1.0, word_dropout: float = 0.15, ctx_dropout: float = 0.0,
+                hn_boost: int = 0, tag_weights: Sequence[float] | None = None,
                 max_minutes: float = 20.0, log: Callable[[str], None] = print) -> tuple[BiLSTMTagger, dict]:
     """Mini-batch training with val-entity-F1 checkpoint selection, early stopping and a wall-clock limit."""
     from .encoding import encode_example
@@ -208,14 +235,16 @@ def train_model(train_ex: Sequence, val_ex: Sequence, vocab: Vocab, cfg: ModelCo
     rng = random.Random(seed)
     model = BiLSTMTagger(cfg)
     enc_train = [encode_example(vocab, e.location, e.text, e.spans) for e in train_ex]
+    boost = [i for i, e in enumerate(train_ex) if 'hard_negative' in getattr(e, 'tags', ())]  # V2: extra copies of hard negatives
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-    loss_fn = nn.CrossEntropyLoss(ignore_index=IGNORE)
+    w = None if tag_weights is None else torch.tensor(list(tag_weights), dtype=torch.float)
+    loss_fn = nn.CrossEntropyLoss(weight=w, ignore_index=IGNORE)
     predictor = SpanPredictor(model, vocab)
     history, best, best_state, bad = [], -1.0, None, 0
     t0 = time.time()
     for epoch in range(1, epochs + 1):
         model.train()
-        order = list(range(len(enc_train))); rng.shuffle(order)
+        order = list(range(len(enc_train))) + boost * hn_boost; rng.shuffle(order)
         tot, n = 0.0, 0
         for i in range(0, len(order), batch_size):
             b = collate([enc_train[j] for j in order[i:i + batch_size]], cfg.max_seq, vocab.words[UNK], word_dropout, rng, ctx_dropout)
@@ -245,7 +274,7 @@ def train_model(train_ex: Sequence, val_ex: Sequence, vocab: Vocab, cfg: ModelCo
     model.eval()
     return model, {"history": history, "best_val_micro_f1": best, "epochs_run": len(history),
                    "seed": seed, "batch_size": batch_size, "lr": lr, "weight_decay": weight_decay, "clip": clip,
-                   "word_dropout": word_dropout, "ctx_dropout": ctx_dropout, "patience": patience, "wall_seconds": round(time.time() - t0, 1)}
+                   "word_dropout": word_dropout, "ctx_dropout": ctx_dropout, "hn_boost": hn_boost, "tag_weights": None if tag_weights is None else list(tag_weights), "patience": patience, "wall_seconds": round(time.time() - t0, 1)}
 
 
 # ------------------------------------------------------------------ checkpoint I/O

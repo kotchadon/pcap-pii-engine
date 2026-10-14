@@ -1,0 +1,164 @@
+{
+ "A2_entity_in_neutral_frame": {
+  "cases": 1200,
+  "tagged_fraction": 0.239
+ },
+ "A2_frame_reliance": {
+  "any_span_overlapping_replacement": 0.867,
+  "entity_replaced_by_city_name_still_tagged_exact": 0.685,
+  "examples": 362
+ },
+ "A_surface_shortcuts_train": {
+  "negative_field_values_capitalised": 0.463,
+  "person_spans_capitalised": 0.913,
+  "username_spans_capitalised": 0.21
+ },
+ "A_train_structure": {
+  "ambiguous_keys": {
+   "name": {
+    "NONE": 59,
+    "PERSON_NAME": 91
+   }
+  },
+  "distinct_entity_strings_train": 6330,
+  "distinct_field_keys": 46,
+  "distinct_free_text_templates": 44,
+  "entity_types_in_train": {
+   "PERSON_NAME": 4050,
+   "USERNAME": 2823
+  },
+  "examples_per_template_mean": 111.1,
+  "keys_with_single_label_in_train": 45,
+  "train_examples": 9000,
+  "train_loss_last_epoch": 0.0009004696711863998,
+  "val_f1_last10_mean": 0.7379,
+  "val_f1_last10_std": 0.0271
+ },
+ "B_keys": {
+  "field_person_n": 143,
+  "field_user_recall_seen_keys": 1.0,
+  "field_user_recall_unseen_keys": 0.558,
+  "n_seen": 71,
+  "n_unseen": 72,
+  "person_value_under_username_key_labelled_USERNAME": 0.51,
+  "recall_all_key_tokens_in_vocab": 0.746,
+  "recall_key_removed_to_text_only": 0.49,
+  "recall_key_replaced_by_neutral_word": 0.49,
+  "recall_some_key_token_unseen": 0.486
+ },
+ "CD_error_taxonomy": {
+  "calib": {
+   "counts": {
+    "FN_boundary_overlap": 64,
+    "FN_label_confusion_same_span": 13,
+    "FN_missed_entirely": 89,
+    "FP_boundary_overlap_with_gold": 64,
+    "FP_label_confusion_same_span": 13,
+    "FP_no_gold_overlap": 122
+   },
+   "fn_by_case": {
+    "cased": 72,
+    "lower": 84,
+    "upper": 10
+   },
+   "fn_by_script": {
+    "ascii": 162,
+    "non_ascii": 4
+   },
+   "fp_pure_breakdown": {
+    "city_company_product_file_word": 60,
+    "negative_field_value": 9,
+    "other": 53
+   },
+   "support_by_script": {
+    "ascii": 1028,
+    "non_ascii": 78
+   }
+  },
+  "val": {
+   "counts": {
+    "FN_boundary_overlap": 50,
+    "FN_label_confusion_same_span": 13,
+    "FN_missed_entirely": 237,
+    "FP_boundary_overlap_with_gold": 54,
+    "FP_label_confusion_same_span": 13,
+    "FP_no_gold_overlap": 80
+   },
+   "fn_by_case": {
+    "cased": 160,
+    "lower": 114,
+    "upper": 26
+   },
+   "fn_by_script": {
+    "ascii": 282,
+    "non_ascii": 18
+   },
+   "fp_pure_breakdown": {
+    "city_company_product_file_word": 42,
+    "greeting_or_cue_word": 8,
+    "negative_field_value": 6,
+    "other": 24
+   },
+   "support_by_script": {
+    "ascii": 1090,
+    "non_ascii": 55
+   }
+  }
+ },
+ "E_template_recall": {
+  "max": 1.0,
+  "min": 0.0,
+  "per_template": {
+   "calib|/profile/{U}/posts": 0.0,
+   "calib|Added {U} to the group": 0.67,
+   "calib|Best wishes, {F}": 0.07,
+   "calib|Contact: {P}": 1.0,
+   "calib|DM from @{U}": 1.0,
+   "calib|Full name: {P}\nStatus: active": 0.85,
+   "calib|Hello Dr. {L}, results are attached.": 1.0,
+   "calib|Reply to {P} before Friday.": 0.68,
+   "calib|Signed by {P}": 1.0,
+   "calib|Welcome back, {F}!": 1.0,
+   "calib|uid={U} gid=users": 0.96,
+   "calib|{U} ({P}) joined the team": 1.0,
+   "calib|{U} has joined the chat": 0.7,
+   "val|/u/{U}": 1.0,
+   "val|@{U} replied to your post": 1.0,
+   "val|Account {U} was locked after 5 attempts": 0.28,
+   "val|Banned user {U} for spam": 1.0,
+   "val|Booking for {P}, 2 guests": 1.0,
+   "val|Dear Mr. {L}, welcome aboard.": 1.0,
+   "val|Hello {F}! Your ticket is open.": 0.0,
+   "val|Prepared by {P}": 0.96,
+   "val|Sincerely,\n{P}": 0.97,
+   "val|This is {P} calling about the invoice.": 1.0,
+   "val|Ticket reassigned from {P} to {P2}": 0.0,
+   "val|Username: {U}\nRole: member": 0.48,
+   "val|Welcome {F}, your handle is @{U}": 0.74,
+   "val|cc: {P}": 0.85,
+   "val|level=warn msg=\"login failed\" user={U}": 1.0,
+   "val|name={F}&page=2&sort=asc": 1.0,
+   "val|session opened for user {U}": 1.0,
+   "val|{P} aka {U} posted a reply": 0.46
+  },
+  "std": 0.342,
+  "templates_below_0.5": 7,
+  "templates_with_n>=15": 31
+ },
+ "E_threshold_f1": {
+  "calib": {
+   "0.10": 0.837,
+   "0.25": 0.837,
+   "0.50": 0.832,
+   "0.75": 0.82
+  },
+  "val": {
+   "0.10": 0.79,
+   "0.25": 0.791,
+   "0.50": 0.783,
+   "0.75": 0.756
+  }
+ },
+ "checkpoint": "bilstm-v1-972a87f2b6db",
+ "min_score": 0.25
+}
