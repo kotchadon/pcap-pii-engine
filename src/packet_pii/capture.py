@@ -308,8 +308,18 @@ def reassemble_detailed(segments: list[TcpPacket]) -> ReassemblyResult:
 
     def result(data=b'', unsafe=False, reason=None, safe=None):
         labels = notes + ([reason] if reason else [])
-        return ReassemblyResult(data, data if safe is None else safe, unsafe,
-                                tuple(labels), base)
+        usable = data if safe is None else safe
+        # Terminal evidence applies on every path, including an earlier gap or
+        # conflict. Never expose post-FIN bytes just because assembly stopped.
+        if base is not None:
+            ends = [sequence_offset(p.seq + bool(p.flags & 2) + len(p.payload), base)
+                    for p in segments if p.flags & 1]
+            if ends and any(end != len(data) for end in ends):
+                unsafe = True
+                usable = usable[:max(0, min(ends))]
+                if 'fin_boundary_mismatch' not in labels:
+                    labels.append('fin_boundary_mismatch')
+        return ReassemblyResult(data, usable, unsafe, tuple(labels), base)
 
     directions = {(p.src, p.sport, p.dst, p.dport) for p in segments}
     if len(directions) > 1:

@@ -170,7 +170,7 @@ def parse_http_stream_with_spans(data: bytes) -> list[HttpSpan]:
             break
         offset = next_at
         if unframed_response or code == 101:
-            break  # Cannot determine end of close-delimited response body.
+            break  # Unframed body or protocol switch ends supported HTTP parsing.
     return messages
 
 

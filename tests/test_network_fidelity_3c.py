@@ -92,3 +92,16 @@ def test_payload_beyond_fin_is_excluded_from_safe_prefix():
 def test_mixed_direction_reassembly_fails_closed():
     result = reassemble_detailed([pkt(100,b'A'), reverse(pkt(100,b'B'))])
     assert result.safe_prefix == b'' and result.diagnostics == ('mixed_directions',)
+
+
+def test_fin_boundary_still_limits_safe_prefix_when_later_gap_exists():
+    result = reassemble_detailed([pkt(100,flags=2),pkt(101,b'ABCDEF'),
+                                  pkt(104,flags=1),pkt(110,b'X')])
+    assert result.data == b'ABCDEF' and result.safe_prefix == b'ABC'
+    assert 'sequence_gap' in result.diagnostics and 'fin_boundary_mismatch' in result.diagnostics
+
+
+def test_earliest_conflicting_fin_caps_every_result():
+    result = reassemble_detailed([pkt(100,flags=2),pkt(101,b'ABCDEF'),
+                                  pkt(110,flags=1),pkt(104,flags=1)])
+    assert result.safe_prefix == b'ABC' and result.unsafe
