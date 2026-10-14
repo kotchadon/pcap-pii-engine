@@ -1,0 +1,70 @@
+{
+ "checkpoint": "bilstm-v2-d1f9e9fb9a2b",
+ "min_score": 0.35,
+ "dataset": "v2 val single-entity (dev only)",
+ "cases": {
+  "baseline": {
+   "n": 600,
+   "exact": 0.978,
+   "overlap": 0.985,
+   "any_span": 0.985,
+   "label_ok_overlap": 0.977
+  },
+  "clipped_mid_entity": {
+   "n": 590,
+   "exact": 0.736,
+   "overlap": 0.844,
+   "any_span": 0.844,
+   "label_ok_overlap": 0.827
+  },
+  "entity_tail_cut_after_entity": {
+   "n": 600,
+   "exact": 0.93,
+   "overlap": 0.938,
+   "any_span": 0.938,
+   "label_ok_overlap": 0.938
+  },
+  "entity_head_cut_before_entity": {
+   "n": 600,
+   "exact": 0.87,
+   "overlap": 0.877,
+   "any_span": 0.877,
+   "label_ok_overlap": 0.867
+  },
+  "duplicated_value": {
+   "n": 600,
+   "exact": 0.0,
+   "overlap": 0.977,
+   "any_span": 0.977,
+   "label_ok_overlap": 0.952
+  },
+  "gap_inside_entity_fused": {
+   "n": 252,
+   "exact": 0.0,
+   "overlap": 0.0,
+   "any_span": 0.829,
+   "label_ok_overlap": 0.0
+  },
+  "replacement_char_in_entity": {
+   "n": 599,
+   "exact": 0.082,
+   "overlap": 0.726,
+   "any_span": 0.726,
+   "label_ok_overlap": 0.708
+  },
+  "long_field_entity_after_3000_tokens": {
+   "n": 600,
+   "exact": 0.645,
+   "overlap": 0.702,
+   "any_span": 0.878,
+   "label_ok_overlap": 0.698
+  },
+  "fused_with_preceding_word": {
+   "n": 211,
+   "exact": 0.412,
+   "overlap": 0.867,
+   "any_span": 0.867,
+   "label_ok_overlap": 0.844
+  }
+ }
+}
