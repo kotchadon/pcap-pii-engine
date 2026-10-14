@@ -1,0 +1,76 @@
+{
+ "format": 1,
+ "members": [
+  {
+   "dir": "seed11",
+   "member_val_f1_at_own_threshold": 0.944,
+   "member_version": "bilstm-v2x-bebfc0c9afcf",
+   "model_sha256": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+   "seed": 11
+  },
+  {
+   "dir": "seed12",
+   "member_val_f1_at_own_threshold": 0.9368,
+   "member_version": "bilstm-v2x-de292058fd26",
+   "model_sha256": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+   "seed": 12
+  },
+  {
+   "dir": "seed13",
+   "member_val_f1_at_own_threshold": 0.9486,
+   "member_version": "bilstm-v2x-46bd48b861ab",
+   "model_sha256": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262",
+   "seed": 13
+  }
+ ],
+ "min_score": 0.35,
+ "model_version": "bilstm-v2-d1f9e9fb9a2b",
+ "selection": {
+  "calib_at_threshold": {
+   "f1": 0.9459,
+   "fn": 145,
+   "fp": 124,
+   "precision": 0.9499,
+   "recall": 0.942,
+   "support": 2498,
+   "tp": 2353
+  },
+  "calib_threshold_sweep_f1": {
+   "0.00": 0.9457,
+   "0.05": 0.9457,
+   "0.10": 0.9457,
+   "0.15": 0.9457,
+   "0.20": 0.9457,
+   "0.25": 0.9457,
+   "0.30": 0.9457,
+   "0.35": 0.9459,
+   "0.40": 0.9455,
+   "0.45": 0.9455,
+   "0.50": 0.9452,
+   "0.55": 0.9439,
+   "0.60": 0.9431,
+   "0.65": 0.9406,
+   "0.70": 0.9377,
+   "0.75": 0.9314,
+   "0.80": 0.9217,
+   "0.85": 0.9104,
+   "0.90": 0.8906,
+   "0.95": 0.8577
+  },
+  "config_selected_on": "V2 validation micro-F1 (see docs/ml/V2_EXPERIMENTS.md)",
+  "created_utc": "2026-10-14T17:40:53Z",
+  "members_n": 3,
+  "rule": "ensemble of all seeds trained for the selected configuration (no seed cherry-picking); threshold = argmax micro-F1 on V2 calib",
+  "torch": "2.14.1+cu130",
+  "val_at_threshold": {
+   "f1": 0.9582,
+   "fn": 103,
+   "fp": 104,
+   "precision": 0.958,
+   "recall": 0.9584,
+   "support": 2474,
+   "tp": 2371
+  }
+ },
+ "version_prefix": "bilstm-v2"
+}

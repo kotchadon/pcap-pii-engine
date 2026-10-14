@@ -1,0 +1,130 @@
+{
+ "common_cue_example_share": {
+  "calib": 0.335,
+  "train": 0.302,
+  "val": 0.377
+ },
+ "leakage_report": {
+  "entity_string_overlap": 2,
+  "entity_token_overlap": 163,
+  "exact_text_duplicates": 27,
+  "exact_text_duplicates_with_entities": 0,
+  "shared_negative_lexicon_items": 0,
+  "shared_templates_excluding_common": 0
+ },
+ "lexicon_faker_version": "40.43.0",
+ "seed": 20261014,
+ "splits": {
+  "calib": {
+   "by_kind": {
+    "field_display": 68,
+    "field_first_last": 192,
+    "field_neg": 349,
+    "field_neutral": 138,
+    "field_person": 280,
+    "field_user": 236,
+    "header": 108,
+    "kv": 258,
+    "log": 132,
+    "markup": 57,
+    "narrative": 157,
+    "text_mixed": 79,
+    "text_neg": 136,
+    "text_person": 414,
+    "text_user": 269,
+    "url": 127
+   },
+   "distinct_entity_strings": 2224,
+   "entities": {
+    "PERSON_NAME": 1367,
+    "USERNAME": 1131
+   },
+   "examples": 3000,
+   "no_entity_examples": 842,
+   "sha256_jsonl": "0f700db03b546df3cd136bc26fe5ee5026e851cf349c1429f0861a6668c3d110",
+   "tags": {
+    "exclusive_template": 810,
+    "hard_negative": 845,
+    "multi_entity": 251,
+    "no_entity": 19,
+    "replacement_char": 17,
+    "truncated": 101,
+    "unicode": 732
+   }
+  },
+  "train": {
+   "by_kind": {
+    "field_display": 590,
+    "field_first_last": 1753,
+    "field_neg": 3559,
+    "field_neutral": 1489,
+    "field_person": 2992,
+    "field_user": 2482,
+    "header": 1180,
+    "kv": 2380,
+    "log": 1147,
+    "markup": 599,
+    "narrative": 1585,
+    "text_mixed": 860,
+    "text_neg": 1424,
+    "text_person": 3929,
+    "text_user": 2783,
+    "url": 1248
+   },
+   "distinct_entity_strings": 22193,
+   "entities": {
+    "PERSON_NAME": 13934,
+    "USERNAME": 11340
+   },
+   "examples": 30000,
+   "no_entity_examples": 8620,
+   "sha256_jsonl": "066eeab368566956d5e655460ff1800b3e83779e4180f041399e7ccf0e76f7c6",
+   "tags": {
+    "exclusive_template": 8392,
+    "hard_negative": 8647,
+    "multi_entity": 2879,
+    "no_entity": 117,
+    "replacement_char": 241,
+    "truncated": 999,
+    "unicode": 6557
+   }
+  },
+  "val": {
+   "by_kind": {
+    "field_display": 59,
+    "field_first_last": 169,
+    "field_neg": 367,
+    "field_neutral": 163,
+    "field_person": 301,
+    "field_user": 246,
+    "header": 113,
+    "kv": 243,
+    "log": 114,
+    "markup": 61,
+    "narrative": 148,
+    "text_mixed": 86,
+    "text_neg": 149,
+    "text_person": 381,
+    "text_user": 268,
+    "url": 132
+   },
+   "distinct_entity_strings": 2212,
+   "entities": {
+    "PERSON_NAME": 1361,
+    "USERNAME": 1113
+   },
+   "examples": 3000,
+   "no_entity_examples": 873,
+   "sha256_jsonl": "5026c7157c63831615dedd67488efc902a5f3a1af95c8140d94a460698761850",
+   "tags": {
+    "exclusive_template": 749,
+    "hard_negative": 873,
+    "multi_entity": 256,
+    "no_entity": 15,
+    "replacement_char": 18,
+    "truncated": 100,
+    "unicode": 671
+   }
+  }
+ }
+}
