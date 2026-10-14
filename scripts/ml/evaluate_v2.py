@@ -19,7 +19,7 @@ from packet_pii import detect as host_detect
 from packet_pii.ml import data as D1
 from packet_pii.ml import data2 as D2
 from packet_pii.ml.baseline import AMBIGUOUS_PERSON_KEYS, _norm_key, majority, strong_rules
-from packet_pii.ml.bilstm import SpanPredictor, load_checkpoint
+from packet_pii.ml.bilstm import load_predictor
 from packet_pii.ml.evaluation import (TrainContext, bootstrap_ci, hybrid_rules_first, hybrid_union, no_entity_false_positive_rate,
                                       paired_bootstrap_diff, per_example_counts, prf, recall_on, reliability_bins)
 from packet_pii.ml.metrics import entity_metrics, error_samples
@@ -66,7 +66,7 @@ def main():
     models = {}
     for spec in a.models:
         n, p = spec.split("=", 1)
-        m, v, meta = load_checkpoint(p); models[n] = (SpanPredictor(m, v), meta)
+        models[n] = load_predictor(p)
     hyb_names = a.hybrid_models.split(",") if a.hybrid_models else list(models)
     train = D2.read_split(os.path.join(DS, "v2", "train.jsonl.gz")); ctx = TrainContext.build(train)
     calib = load("v2calib"); calib_gold = {e.id: e.spans for e in calib}

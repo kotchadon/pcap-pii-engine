@@ -180,8 +180,12 @@ def _forward(model: BiLSTMTagger, b: dict):
 class SpanPredictor:
     """(location, text) pairs -> unthresholded spans ``(start, end, label, raw_score)``."""
 
-    def __init__(self, model: BiLSTMTagger, vocab: Vocab, batch_size: int = 64):
-        self.model, self.vocab, self.batch_size = model, vocab, batch_size
+    def __init__(self, model, vocab: Vocab, batch_size: int = 64):
+        """``model`` may be one tagger or a list of taggers with identical config/vocab (probability-averaging ensemble)."""
+        self.models = list(model) if isinstance(model, (list, tuple)) else [model]
+        if any(m.cfg != self.models[0].cfg for m in self.models):
+            raise ValueError("ensemble members must share one model configuration")
+        self.model, self.vocab, self.batch_size = self.models[0], vocab, batch_size
 
     def predict_pairs(self, pairs: Sequence[tuple[str, str]]) -> list[list[tuple[int, int, str, float]]]:
         max_seq = self.model.cfg.max_seq
@@ -195,14 +199,18 @@ class SpanPredictor:
                 raise ValueError("location context leaves no room for text tokens")
             for a, b in chunk_ranges(len(toks), room):
                 jobs.append((pi, encode(self.vocab, loc, toks[a:b])))
-        was_training = self.model.training
-        self.model.eval()
+        was_training = [m.training for m in self.models]
+        for m in self.models:
+            m.eval()
         try:
             with torch.inference_mode():
                 for i in range(0, len(jobs), self.batch_size):
                     part = jobs[i:i + self.batch_size]
                     batch = collate([e for _, e in part], max_seq)
-                    lp = torch.log_softmax(_forward(self.model, batch), dim=-1)
+                    if len(self.models) == 1:
+                        lp = torch.log_softmax(_forward(self.models[0], batch), dim=-1)
+                    else:  # average member probabilities, then log
+                        lp = torch.log(torch.stack([torch.softmax(_forward(m, batch), dim=-1) for m in self.models]).mean(0).clamp_min(1e-12))
                     for k, (pi, enc) in enumerate(part):
                         rows = lp[k, enc.n_ctx:len(enc)].tolist()
                         if not rows:
@@ -212,7 +220,8 @@ class SpanPredictor:
                         for s, e, label, sc in tags_to_spans(enc.tokens, path, probs):
                             results[pi].append((s, e, label, min(1.0, max(0.0, float(sc)))))
         finally:
-            self.model.train(was_training)
+            for m, t in zip(self.models, was_training):
+                m.train(t)
         return results
 
 
@@ -331,3 +340,57 @@ def load_checkpoint(directory: str) -> tuple[BiLSTMTagger, Vocab, dict]:
         raise CheckpointError(f"cannot load checkpoint: {type(exc).__name__}") from None
     model.eval()
     return model, vocab, meta
+
+
+# ------------------------------------------------------------------ ensembles (V2)
+ENSEMBLE_FILE = "ensemble.json"
+ENSEMBLE_FORMAT = 1
+MAX_ENSEMBLE_MEMBERS = 8
+
+
+def ensemble_version(member_sha256: list[str], prefix: str = "bilstm-v2") -> str:
+    return f"{prefix}-{hashlib.sha256('|'.join(member_sha256).encode()).hexdigest()[:12]}"
+
+
+def load_predictor(path: str, batch_size: int = 64) -> tuple["SpanPredictor", dict]:
+    """Load a single checkpoint directory OR an ensemble directory (``ensemble.json`` + member subdirectories).
+
+    Returns ``(SpanPredictor, meta)`` where ``meta`` has ``model_version``, ``min_score`` and ``model_sha256`` (ensemble: the
+    sha256 of the member digests). Verifies every member checksum against ensemble.json; members must share config + vocab.
+    """
+    path = str(path)
+    ej = os.path.join(path, ENSEMBLE_FILE)
+    if not os.path.isfile(ej):
+        model, vocab, meta = load_checkpoint(path)
+        return SpanPredictor(model, vocab, batch_size), meta
+    try:
+        with open(ej, encoding="utf-8") as f:
+            ens = json.load(f)
+        if ens.get("format") != ENSEMBLE_FORMAT or not isinstance(ens.get("members"), list) \
+                or not 1 <= len(ens["members"]) <= MAX_ENSEMBLE_MEMBERS:
+            raise CheckpointError("unsupported or malformed ensemble.json")
+        loaded = []
+        for m in ens["members"]:
+            sub = os.path.normpath(os.path.join(path, m["dir"]))
+            if os.path.dirname(sub) != os.path.normpath(path):          # members must be direct children
+                raise CheckpointError("ensemble member path escapes the ensemble directory")
+            model, vocab, meta = load_checkpoint(sub)
+            if meta["model_sha256"] != m["model_sha256"]:
+                raise CheckpointError("ensemble member checksum differs from ensemble.json")
+            loaded.append((model, vocab, meta))
+        if any(l[1].words != loaded[0][1].words or l[1].chars != loaded[0][1].chars or l[0].cfg != loaded[0][0].cfg for l in loaded):
+            raise CheckpointError("ensemble members must share vocabulary and configuration")
+        shas = [m["model_sha256"] for m in ens["members"]]
+        version = ensemble_version(shas, ens.get("version_prefix", "bilstm-v2"))
+        if ens.get("model_version") != version:
+            raise CheckpointError("ensemble model_version does not match its members")
+        ms = ens.get("min_score", 0.0)
+        if type(ms) not in (int, float) or not 0.0 <= ms <= 1.0:
+            raise CheckpointError("invalid ensemble min_score")
+    except CheckpointError:
+        raise
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise CheckpointError(f"cannot load ensemble: {type(exc).__name__}") from None
+    meta = {"model_version": version, "min_score": float(ms), "model_sha256": hashlib.sha256("|".join(shas).encode()).hexdigest(),
+            "members": len(loaded), "score_semantics": "uncalibrated_model_score", "training": ens.get("selection", {})}
+    return SpanPredictor([l[0] for l in loaded], loaded[0][1], batch_size), meta

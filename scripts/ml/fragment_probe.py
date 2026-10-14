@@ -10,7 +10,7 @@ import argparse, json, os, random, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 import torch
 from packet_pii.ml import data2 as D
-from packet_pii.ml.bilstm import SpanPredictor, load_checkpoint
+from packet_pii.ml.bilstm import load_predictor
 
 DS = os.path.join(os.path.dirname(__file__), "..", "..", "src", "packet_pii", "ml", "datasets", "v2")
 
@@ -18,7 +18,7 @@ DS = os.path.join(os.path.dirname(__file__), "..", "..", "src", "packet_pii", "m
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--checkpoint", required=True); ap.add_argument("--out", required=True)
     a = ap.parse_args(); torch.set_num_threads(4)
-    model, vocab, meta = load_checkpoint(a.checkpoint); P = SpanPredictor(model, vocab); th = meta.get("min_score", 0.0)
+    P, meta = load_predictor(a.checkpoint); th = meta.get("min_score", 0.0)
     val = [e for e in D.read_split(os.path.join(DS, "val.jsonl.gz")) if len(e.spans) == 1 and 6 <= len(e.text) <= 160 and "truncated" not in e.tags]
     rng = random.Random(7)
 

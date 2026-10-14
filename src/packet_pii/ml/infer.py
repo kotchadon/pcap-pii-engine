@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from .bilstm import CheckpointError, SpanPredictor, load_checkpoint
+from .bilstm import CheckpointError, load_predictor
 from .schema import EntitySpan, FieldInput, ScoreType, validate_fields
 
 
 class BiLSTMDetector:
-    """Loads a trained BiLSTM checkpoint and returns validated ``EntitySpan`` objects.
+    """Loads a trained BiLSTM checkpoint (single model, or a V2 ensemble directory) and returns validated ``EntitySpan`` objects.
 
     * ``score`` is the mean softmax probability of the chosen BIO tags over the span:
       an UNCALIBRATED raw model score (``ScoreType.UNCALIBRATED_MODEL_SCORE``), not a probability
@@ -19,14 +19,13 @@ class BiLSTMDetector:
     """
 
     def __init__(self, checkpoint_dir: str, min_score: float | None = None, batch_size: int = 64):
-        self._model, self._vocab, self._meta = load_checkpoint(checkpoint_dir)
+        self._predictor, self._meta = load_predictor(checkpoint_dir, batch_size if type(batch_size) is int and batch_size >= 1 else 64)
         ms = self._meta.get("min_score", 0.0) if min_score is None else min_score
         if type(ms) not in (int, float) or not 0.0 <= ms <= 1.0:
             raise CheckpointError("min_score must be a number in [0, 1]")
         if type(batch_size) is not int or batch_size < 1:
             raise ValueError("batch_size must be a positive int")
         self._min_score = float(ms)
-        self._predictor = SpanPredictor(self._model, self._vocab, batch_size)
 
     @property
     def model_version(self) -> str:
