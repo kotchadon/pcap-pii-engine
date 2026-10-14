@@ -1,0 +1,14 @@
+[e2_charwide] epoch 01 loss 0.2265 val_f1 0.8903 (P 0.869 R 0.913) 141.4s
+[e2_charwide] epoch 02 loss 0.0666 val_f1 0.9104 (P 0.919 R 0.902) 269.8s
+[e2_charwide] epoch 03 loss 0.0439 val_f1 0.9295 (P 0.926 R 0.933) 400.9s
+[e2_charwide] epoch 04 loss 0.0331 val_f1 0.9374 (P 0.936 R 0.938) 535.7s
+[e2_charwide] epoch 05 loss 0.0269 val_f1 0.9304 (P 0.941 R 0.920) 668.6s
+[e2_charwide] epoch 06 loss 0.0212 val_f1 0.9311 (P 0.928 R 0.935) 807.2s
+[e2_charwide] epoch 07 loss 0.0184 val_f1 0.9411 (P 0.939 R 0.943) 937.3s
+[e2_charwide] epoch 08 loss 0.0156 val_f1 0.9420 (P 0.949 R 0.935) 1056.2s
+[e2_charwide] epoch 09 loss 0.0143 val_f1 0.9379 (P 0.933 R 0.943) 1190.3s
+[e2_charwide] epoch 10 loss 0.0126 val_f1 0.9354 (P 0.956 R 0.916) 1309.3s
+[e2_charwide] epoch 11 loss 0.0109 val_f1 0.9329 (P 0.938 R 0.928) 1432.5s
+[e2_charwide] epoch 12 loss 0.0107 val_f1 0.9456 (P 0.959 R 0.932) 1556.0s
+[e2_charwide] time limit reached
+{"experiment": "e2_charwide", "model_version": "bilstm-v2x-8a74c4dee768", "params": 1074925, "min_score": 0.6, "best_val_f1": 0.9456, "val": {"precision": 0.9688, "recall": 0.9257, "f1": 0.9468, "tp": 2268, "fp": 73, "fn": 182, "support": 2450}, "calib": {"precision": 0.9666, "recall": 0.9335, "f1": 0.9498, "tp": 2288, "fp": 79, "fn": 163, "support": 2451}, "epochs": 12, "seconds": 1556.1}

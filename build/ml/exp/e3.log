@@ -1,0 +1,15 @@
+[e3_hnboost] epoch 01 loss 0.2131 val_f1 0.8934 (P 0.920 R 0.869) 100.8s
+[e3_hnboost] epoch 02 loss 0.0680 val_f1 0.9246 (P 0.931 R 0.918) 183.3s
+[e3_hnboost] epoch 03 loss 0.0440 val_f1 0.9253 (P 0.946 R 0.905) 268.4s
+[e3_hnboost] epoch 04 loss 0.0333 val_f1 0.9294 (P 0.944 R 0.916) 356.2s
+[e3_hnboost] epoch 05 loss 0.0261 val_f1 0.9366 (P 0.958 R 0.916) 440.7s
+[e3_hnboost] epoch 06 loss 0.0232 val_f1 0.9293 (P 0.939 R 0.920) 530.8s
+[e3_hnboost] epoch 07 loss 0.0186 val_f1 0.9288 (P 0.953 R 0.906) 620.2s
+[e3_hnboost] epoch 08 loss 0.0162 val_f1 0.9264 (P 0.938 R 0.915) 711.2s
+[e3_hnboost] epoch 09 loss 0.0149 val_f1 0.9458 (P 0.955 R 0.937) 806.6s
+[e3_hnboost] epoch 10 loss 0.0135 val_f1 0.9384 (P 0.948 R 0.929) 896.2s
+[e3_hnboost] epoch 11 loss 0.0119 val_f1 0.9292 (P 0.949 R 0.911) 977.2s
+[e3_hnboost] epoch 12 loss 0.0109 val_f1 0.9501 (P 0.951 R 0.949) 1060.7s
+[e3_hnboost] epoch 13 loss 0.0106 val_f1 0.9527 (P 0.968 R 0.938) 1155.4s
+[e3_hnboost] epoch 14 loss 0.0099 val_f1 0.9424 (P 0.950 R 0.935) 1239.3s
+{"experiment": "e3_hnboost", "model_version": "bilstm-v2x-23c39c1140fe", "params": 953821, "min_score": 0.45, "best_val_f1": 0.9527, "val": {"precision": 0.9688, "recall": 0.9376, "f1": 0.9529, "tp": 2297, "fp": 74, "fn": 153, "support": 2450}, "calib": {"precision": 0.9745, "recall": 0.9208, "f1": 0.9469, "tp": 2257, "fp": 59, "fn": 194, "support": 2451}, "epochs": 14, "seconds": 1239.3}

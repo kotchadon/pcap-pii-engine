@@ -68,3 +68,5 @@ Reproducible example (prints offsets only): `python scripts/ml/demo_v2.py` - inc
 * **Errors:** `MlValidationError` (bad input / limits), `CheckpointError` (missing, corrupt, tampered, mismatched ensemble). `import packet_pii.ml` never imports PyTorch.
 * **Retrain / reproduce:** `scripts/ml/build_lexicons.py` (dev-time, needs `faker==40.43.0`; output committed) -> `scripts/ml/make_dataset_v2.py` -> `scripts/ml/train_v2.py --seed {11,12,13}` ->
   `scripts/ml/package_v2.py` -> `scripts/ml/evaluate_v2.py` (frozen sets need `--final`). Exact commands: `V2_EXPERIMENTS.md`, `V2_EVALUATION.md`.
+* **Packaging note:** `artifacts/`, `datasets/` and the frozen lexicons live in the source tree and are *not* installed as package data (`pyproject.toml` is unchanged apart from the optional `ml` extra
+  added in V1). Use a source checkout / editable install (`pip install -e '.[ml]'`) or pass an explicit checkpoint path. CI (`python -m pytest`, no PyTorch) skips the torch-dependent tests.

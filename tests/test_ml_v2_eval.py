@@ -114,3 +114,29 @@ def test_policy_empty_input_and_duplicate_indices():
     with pytest.raises(MlValidationError):
         run_with_policy(FakeDetector(), [FieldInput(0, "a", "bb"), FieldInput(0, "b", "cc")])
     assert screen_field(FieldInput(0, "x", "ok text")).eligible
+
+
+def test_v2_torch_free_modules_import_without_pytorch():
+    import os
+    import subprocess
+    import sys
+    import textwrap
+    src = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
+    code = f"SRC = {src!r}\n" + textwrap.dedent("""
+        import sys
+        sys.path.insert(0, SRC)
+        sys.modules['torch'] = None
+        from packet_pii.ml import data2, challenge, evaluation, input_policy, FieldInput
+        from packet_pii.ml.input_policy import screen_field
+        assert len(data2.generate_split('val', 20, 1)) == 20 and len(challenge.generate()) > 1000
+        assert screen_field(FieldInput(0, 'json_body.password', 'x y')).skip_reasons == ('secret_bearing_key',)
+        try:
+            import packet_pii.ml.infer
+        except ImportError as e:
+            assert 'PyTorch is required' in str(e)
+        else:
+            raise SystemExit('infer must need torch')
+        print('ok')
+    """)
+    r = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, text=True)
+    assert r.returncode == 0 and r.stdout.strip() == "ok", r.stderr
