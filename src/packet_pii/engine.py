@@ -18,6 +18,8 @@ from .capture import (CaptureDiagnostics, read_frames, decode_tcp,
                       endpoint_key, reassemble, TcpPacket)
 from .http_extract import HttpMessage, parse_http_stream_with_spans, extract_fields
 from .detect import detect_fields
+from .ml.detector import ContextualPIIDetector
+from .hybrid import infer_http_fields
 
 
 class AnalysisLimitError(ValueError):
@@ -152,7 +154,8 @@ def _pair_requests(records: list[_Record], fid: str) -> tuple[int, int, int]:
 
 def analyze(path: str | Path, threshold: float = 0.8,
             include_values: bool = False, *,
-            limits: AnalysisLimits | None = None) -> dict:
+            limits: AnalysisLimits | None = None,
+            ml_detector: ContextualPIIDetector | None = None) -> dict:
     if not 0 <= threshold <= 1:
         raise ValueError('Confidence threshold must be in [0,1]')
     budget = limits if limits is not None else AnalysisLimits()
@@ -181,6 +184,7 @@ def analyze(path: str | Path, threshold: float = 0.8,
             ignored += 1
 
     findings = []
+    ml_field_count = ml_skipped_count = ml_excluded_count = ml_finding_count = rules_finding_count = 0
     http_count = http_flows = gaps = 0
     transactions = orphan_requests = orphan_responses = 0
     flow_summaries = []
@@ -221,7 +225,8 @@ def analyze(path: str | Path, threshold: float = 0.8,
         for record in records:
             src, sport, dst, dport = record.direction
             timestamp = datetime.fromtimestamp(record.timestamp, timezone.utc).isoformat()
-            for detected in detect_fields(extract_fields(record.message), threshold, include_values):
+            extracted = extract_fields(record.message)
+            for detected in detect_fields(extracted, threshold, include_values):
                 # Do not publish unsalted deterministic hashes of PII/credentials.
                 # Low-entropy values could be recovered by offline guessing.
                 # The detector may retain internal fingerprints for deduplication,
@@ -240,6 +245,27 @@ def analyze(path: str | Path, threshold: float = 0.8,
                     'http_start_line': safe_http_start_line(record.message.start_line, include_path=include_values),
                 })
                 findings.append(entry)
+                rules_finding_count += 1
+
+            if ml_detector is not None:
+                ml_result = infer_http_fields(extracted, ml_detector, include_values=include_values)
+                ml_field_count += ml_result.fields_evaluated
+                ml_skipped_count += ml_result.fields_skipped
+                ml_excluded_count += ml_result.fields_excluded
+                for entry in ml_result.findings:
+                    entry['location'] = safe_field_location(entry['location'], include_values)
+                    entry.update({
+                        'flow_id': fid,
+                        'http_message_id': record.message_id,
+                        'http_request_id': record.request_id,
+                        'http_message_type': 'request' if record.message.is_request else 'response',
+                        'timestamp': timestamp,
+                        'source_ip': src, 'source_port': sport,
+                        'destination_ip': dst, 'destination_port': dport,
+                        'http_start_line': safe_http_start_line(record.message.start_line, include_path=include_values),
+                    })
+                    findings.append(entry)
+                    ml_finding_count += 1
         flow_summaries.append({
             'flow_id': fid,
             'endpoints': [{'ip': e[0], 'port': e[1]} for e in endpoints],
@@ -255,8 +281,11 @@ def analyze(path: str | Path, threshold: float = 0.8,
         'metadata': {
             'engine': 'pcap-pii-engine', 'version': '0.1.0',
             'report_schema_version': '1.0.0',
-            'detection_method': 'rules_only',
-            'confidence_type': 'heuristic_not_calibrated',
+            'detection_method': 'rules_plus_bilstm' if ml_detector is not None else 'rules_only',
+            'confidence_type': ('separate_rule_heuristic_and_uncalibrated_model_scores'
+                                if ml_detector is not None else 'heuristic_not_calibrated'),
+            **({'ml_model_version': ml_detector.model_version}
+               if ml_detector is not None else {}),
             'threshold': threshold, 'raw_values_included': include_values,
             'scope': 'unencrypted HTTP/1.x over TCP',
             'analysis_limits': asdict(budget),
@@ -273,6 +302,11 @@ def analyze(path: str | Path, threshold: float = 0.8,
             'total_data_bytes': bytes_processed,
             'processing_time_seconds': round(time.monotonic() - started, 4),
             'potential_leaks': len(findings),
+            'rules_findings': rules_finding_count,
+            'ml_findings': ml_finding_count,
+            'ml_fields_evaluated': ml_field_count,
+            'ml_fields_skipped': ml_skipped_count,
+            'ml_fields_excluded_by_policy': ml_excluded_count,
             'stream_gaps': gaps,
             'capture_truncated_records': diagnostics.truncated_records,
             'capture_malformed_records': diagnostics.malformed_records,
@@ -284,7 +318,13 @@ def analyze(path: str | Path, threshold: float = 0.8,
             'No IP fragmentation or TCP sequence wraparound/reused-tuple session separation',
             'HTTP/2 and HTTP/3 not decoded; incomplete streams are ignored',
             'HTTP/1.x request-response pairing is best-effort (direction, stream order, packet timing)',
-            'Rule-based detection only; contextual ML is not yet integrated',
+            ('Experimental BiLSTM enabled: raw model scores are uncalibrated, and '
+             'no real-traffic precision/recall has been established' if ml_detector is not None
+             else 'Rule-based detection only; optional contextual ML is not enabled'),
+            *(['Obvious credential/contact/HTTP header fields were excluded from experimental ML and still evaluated by rules']
+              if ml_detector is not None else []),
+            *(['Some extracted fields exceeded ML limits and were skipped']
+              if ml_skipped_count else []),
             'Processing is memory-buffered and resource-limited; not for production-scale captures',
             'Findings mean possible PII exposure, not proof of exfiltration',
             *(['Capture corruption/truncation or missing TCP data: analysis is incomplete']

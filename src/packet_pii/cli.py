@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .engine import AnalysisLimits, analyze
 from .reporting import write_private_report
+from .hybrid import load_experimental_bilstm
 
 
 def main(argv=None) -> int:
@@ -20,6 +21,8 @@ def main(argv=None) -> int:
                         help='Private JSON report path (refuses overwrite by default)')
     parser.add_argument('--overwrite', action='store_true',
                         help='Explicitly replace an existing output report')
+    parser.add_argument('--ml-checkpoint', default=None,
+                        help='Opt in to experimental BiLSTM inference using this local checkpoint directory')
     parser.add_argument('--include-values', action='store_true',
                         help='Include raw detected data (SENSITIVE; local only)')
     parser.add_argument('--max-capture-mib', type=int, default=128,
@@ -50,7 +53,8 @@ def main(argv=None) -> int:
             max_flows=args.max_flows,
             max_tcp_payload_bytes=args.max_tcp_mib * 1024 * 1024,
         )
-        report = analyze(input_path, args.threshold, args.include_values, limits=limits)
+        model = load_experimental_bilstm(args.ml_checkpoint) if args.ml_checkpoint else None
+        report = analyze(input_path, args.threshold, args.include_values, limits=limits, ml_detector=model)
         write_private_report(report, output_path, overwrite=args.overwrite)
         if args.include_values:
             print('WARNING: report contains unmasked PII/credentials; restrict its distribution.',
@@ -61,7 +65,7 @@ def main(argv=None) -> int:
               f"{report['summary']['potential_leaks']} potential PII findings. "
               f"Report: {args.output}")
         return 0
-    except (OSError, ValueError, TypeError) as exc:
+    except (OSError, ValueError, TypeError, ImportError) as exc:
         print(f'Error: {exc}', file=sys.stderr)
         return 1
 
