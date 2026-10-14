@@ -11,3 +11,8 @@ The connector reads source and can mutate GitHub, but cannot download the binary
 5. Full suite once at final checkpoint; source-scope audit; preserve baseline ML-artifact failures honestly. Commit/push/PR only with correct identity. No merge.
 
 Policy: <2^31 serial-distance window,16MiB reassembled direction bound. Never invent gap bytes. Capture-order lifecycle signals partition sessions; passive traces without handshake cannot prove separation. Conflicts produce diagnostics and safe-prefix boundary. Legacy callers retain their existing return shape, so richer evidence requires engine adoption.
+
+Publication update, 2026-10-15 Perth: the user explicitly approved connector
+commits under the existing profile name advay, associated with kotchadon. This
+resolves the earlier author-name gate. Publish the reviewed trees on the existing
+feature branch using a guarded fast-forward, and open a PR without merging.

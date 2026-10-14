@@ -188,13 +188,14 @@ entry remains in the Git tree, untouched and not staged as deletion. No model wa
 regenerated. A complete authenticated checkout must rerun the full suite before
 integration; this environment does not establish an all-green baseline.
 
-Local commits use Kocha Don and the email verified by the authenticated GitHub
-profile. The remote feature branch was created at the base. Direct Git transport
-has no credentials; the connector's create-commit API has no author override and
-the GitHub profile name is advay. Consequently correctly named local commits
-are packaged for review; publishing them/creating the PR is blocked on an
-attribution-preserving transport or explicit approval for the connector's author.
-No unrelated author history was rewritten.
+Local review commits use Kocha Don and the email verified by the authenticated
+GitHub profile. Direct Git transport has no credentials; the connector's
+create-commit API has no author override and the GitHub profile name is advay.
+On 2026-10-15 (Perth), the user explicitly approved publication with that profile
+name under authenticated account kotchadon. Connector publication creates new
+commit hashes while preserving the reviewed file trees. The earlier ZIP records
+the pre-publication local hashes; use the PR's commits as the published references.
+No unrelated author history is rewritten, and no automatic merge is authorized.
 
 ## Remaining limits and required handoff
 
