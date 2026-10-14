@@ -25,7 +25,11 @@ MAX_TRAILER_BYTES = 16 * 1024
 _REQUEST = re.compile(rb"(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|TRACE|CONNECT) [^\x00-\x20]+ HTTP/1\.[01]\Z")
 _RESPONSE = re.compile(rb"HTTP/1\.[01] [1-5][0-9]{2}(?: [\x20-\x7e]*)?\Z")
 _HEADER_NAME = re.compile(rb"[!#$%&'*+.^_`|~0-9A-Za-z-]+\Z")
-_CHUNK_SIZE = re.compile(rb"[0-9a-fA-F]+\Z")
+_TOKEN = rb"[!#$%&'*+.^_`|~0-9A-Za-z-]+"
+_QUOTED = rb'"(?:[\t !#-\[\]-~\x80-\xff]|\\[\t !-~\x80-\xff])*"'
+_CHUNK_LINE = re.compile(rb'([0-9a-fA-F]+)(?:[ \t]*;[ \t]*' + _TOKEN
+                         + rb'(?:[ \t]*=[ \t]*(?:' + _TOKEN + rb'|' + _QUOTED
+                         + rb'))?)*\Z')
 _BOUNDARY = re.compile(r'boundary=(?:"([^"\r\n]{1,200})"|([^;\s\r\n]{1,200}))', re.I)
 _CHARSET = re.compile(r"charset\s*=\s*[\"']?([\w.-]+)", re.I)
 
@@ -81,10 +85,10 @@ def _chunked(data: bytes, position: int) -> tuple[bytes, int] | None:
         end = data.find(b'\r\n', position, min(len(data), position + 130))
         if end < 0 or end - position > 128:
             return None
-        size_text = data[position:end].split(b';', 1)[0].strip()
-        if not _CHUNK_SIZE.fullmatch(size_text):
+        match = _CHUNK_LINE.fullmatch(data[position:end])
+        if match is None:
             return None
-        size = int(size_text, 16)
+        size = int(match[1], 16)
         position = end + 2
         if size == 0:
             if data[position:position+2] == b'\r\n':
@@ -96,6 +100,11 @@ def _chunked(data: bytes, position: int) -> tuple[bytes, int] | None:
             # Don't trust malformed trailer lines and don't expose them as fields.
             for line in data[position:trailer_end].split(b'\r\n'):
                 if not line or b':' not in line or not _HEADER_NAME.fullmatch(line.split(b':', 1)[0]):
+                    return None
+                name, value = line.split(b':', 1)
+                if name.lower() in (b'content-length', b'transfer-encoding', b'host'):
+                    return None
+                if any(c < 32 and c != 9 or c == 127 for c in value):
                     return None
             return bytes(result), trailer_end + 4
         if size > MAX_HTTP_BODY - len(result) or position + size + 2 > len(data):
@@ -133,7 +142,7 @@ def parse_http_stream_with_spans(data: bytes) -> list[HttpSpan]:
         )
         transfer = headers.get('transfer-encoding', '').strip().lower()
         length = headers.get('content-length')
-        if transfer and length is not None:
+        if 'transfer-encoding' in headers and (not transfer or length is not None):
             break  # Ambiguous framing: fail closed, not vulnerable to CL/TE confusion.
         if no_body:
             body, next_at = b'', body_at
@@ -160,8 +169,8 @@ def parse_http_stream_with_spans(data: bytes) -> list[HttpSpan]:
         if next_at <= offset:
             break
         offset = next_at
-        if unframed_response:
-            break  # Cannot determine end of close-delimited response body.
+        if unframed_response or code == 101:
+            break  # Unframed body or protocol switch ends supported HTTP parsing.
     return messages
 
 

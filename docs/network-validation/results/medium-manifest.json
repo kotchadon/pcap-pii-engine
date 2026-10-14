@@ -1,0 +1,11 @@
+{
+  "generator_version": 1,
+  "seed": 20261014,
+  "requested_mib": 10.0,
+  "capture_bytes": 10604159,
+  "packets": 15333,
+  "flows": 720,
+  "http_messages": 15552,
+  "unique_payload_bytes": 9234079,
+  "sha256": "27318ff35f444962eee95324cc143d705ca3a47a66291f6387bb3b3fce08fe3c"
+}

@@ -1,0 +1,9 @@
+{
+  "flows": 80,
+  "directional_digest_checks": 160,
+  "independent_packet_checks": 1707,
+  "independent_http_boundaries": 1728,
+  "h11_version": "0.16.0",
+  "dpkt_version": "1.9.8",
+  "status": "passed"
+}

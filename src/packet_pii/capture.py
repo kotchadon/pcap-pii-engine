@@ -88,6 +88,8 @@ def _read_pcap(stream, diagnostics: CaptureDiagnostics) -> Iterator[RawFrame]:
         if len(data) != included_len:
             diagnostics.truncated_records += 1
             break
+        if included_len < original_len:
+            diagnostics.truncated_records += 1
         yield RawFrame(sec + frac / denominator, linktype, data)
 
 
@@ -106,7 +108,7 @@ def _options(data: bytes, endian: str) -> Iterator[tuple[int, bytes]]:
 
 def _read_pcapng(stream, diagnostics: CaptureDiagnostics) -> Iterator[RawFrame]:
     endian = None
-    interfaces: list[tuple[int, float, float]] = []
+    interfaces: list[tuple[int, float, float, int]] = []
     while True:
         header = stream.read(8)
         if not header:
@@ -159,7 +161,8 @@ def _read_pcapng(stream, diagnostics: CaptureDiagnostics) -> Iterator[RawFrame]:
                     resolution = (2.0 ** -(value[0] & 0x7f)) if value[0]&0x80 else (10.0 ** -value[0])
                 elif code == 14 and len(value) == 8:
                     offset = float(struct.unpack(endian+'q',value)[0])
-            interfaces.append((linktype, resolution, offset))
+            interfaces.append((linktype, resolution, offset,
+                               struct.unpack_from(endian+'I', body, 4)[0]))
         elif kind == 6:  # Enhanced Packet Block
             if len(body) < 20:
                 diagnostics.malformed_records += 1
@@ -168,7 +171,12 @@ def _read_pcapng(stream, diagnostics: CaptureDiagnostics) -> Iterator[RawFrame]:
             if interface >= len(interfaces) or caplen > wirelen or caplen > len(body)-20:
                 diagnostics.malformed_records += 1
                 continue
-            linktype, resolution, offset = interfaces[interface]
+            linktype, resolution, offset, snaplen = interfaces[interface]
+            if (snaplen and caplen > snaplen) or ((caplen + 3) & ~3) > len(body)-20:
+                diagnostics.malformed_records += 1
+                continue
+            if caplen < wirelen:
+                diagnostics.truncated_records += 1
             stamp = ((high << 32)|low) * resolution + offset
             # Reject invalid/out-of-range clocks before datetime processing.
             if not math.isfinite(stamp) or not (-62135596800 <= stamp <= 253402300799):
@@ -235,20 +243,22 @@ def decode_tcp(frame: RawFrame) -> TcpPacket | None:
                 return None
             ihl = (data[0] & 15) * 4
             total = int.from_bytes(data[2:4], 'big')
-            if ihl < 20 or len(data) < ihl or data[9] != 6:
+            if ihl < 20 or total < ihl or len(data) < total or data[9] != 6:
                 return None
             frag = int.from_bytes(data[6:8], 'big')
             if frag & 0x3FFF:  # fragment: no IP reassembly in MVP
                 return None
             src = str(ipaddress.IPv4Address(data[12:16]))
             dst = str(ipaddress.IPv4Address(data[16:20]))
-            transport = data[ihl:min(len(data),total)]
+            transport = data[ihl:total]
         elif proto == 0x86DD:
             if len(data) < 40 or data[0] >> 4 != 6 or data[6] != 6:
                 return None  # IPv6 extension headers currently not supported
             src = str(ipaddress.IPv6Address(data[8:24]))
             dst = str(ipaddress.IPv6Address(data[24:40]))
             payload_len = int.from_bytes(data[4:6], 'big')
+            if len(data) < 40 + payload_len:
+                return None
             transport = data[40:40+payload_len]
         else:
             return None
@@ -267,39 +277,140 @@ def endpoint_key(pkt: TcpPacket) -> tuple[tuple[str,int],tuple[str,int]]:
     return tuple(sorted(((pkt.src,pkt.sport),(pkt.dst,pkt.dport))))  # type: ignore[return-value]
 
 
-def reassemble(segments: list[TcpPacket]) -> tuple[bytes, bool]:
-    """Return the contiguous TCP payload prefix and whether reconstruction was unsafe.
+def sequence_offset(seq: int, base: int) -> int:
+    """Signed TCP serial distance; callers must keep a window below 2**31."""
+    return ((seq - base + (1 << 31)) & 0xffffffff) - (1 << 31)
 
-    Identical retransmissions are deduplicated; gaps or conflicting overlaps
-    stop reconstruction. Sequence wraparound and reuse of
-    the same 4-tuple for separate connections are limitations of this MVP.
+
+@dataclass(frozen=True)
+class ReassemblyResult:
+    """Observed bytes, conservative usable prefix, and evidence limitations.
+
+    `data` preserves the legacy conflict policy. Only `safe_prefix` excludes
+    ambiguous bytes. Neither implies endpoint acceptance or capture completeness.
+    `base_seq` is the sequence number of offset zero (None for no observed data).
     """
-    data_segs = sorted(
-        ((p.seq, p.payload) for p in segments if p.payload),
-        key=lambda segment: segment[0],
-    )
-    if not data_segs:
-        return b'', False
+    data: bytes
+    safe_prefix: bytes
+    unsafe: bool
+    diagnostics: tuple[str, ...]
+    base_seq: int | None
 
-    # A SYN consumes one TCP sequence number. When observed, it gives us the
-    # expected start of the byte stream, so missing initial data is visible.
-    # Without a SYN, the capture may begin mid-stream; the first observed
-    # payload is our best available starting point, not proof of completeness.
-    syn_starts = [p.seq + 1 for p in segments if p.flags & 0x02]
-    base = min(syn_starts) if syn_starts else data_segs[0][0]
+
+def reassemble_detailed(segments: list[TcpPacket]) -> ReassemblyResult:
+    """Reassemble ONE direction of ONE session within a 16 MiB window.
+
+    Equal-sequence ties retain capture order; overlaps must match exactly. Gaps
+    stop assembly. Missing SYN/FIN are unknown coverage, not inferred loss.
+    """
+    notes: list[str] = []
+    base = None
+
+    def result(data=b'', unsafe=False, reason=None, safe=None):
+        labels = notes + ([reason] if reason else [])
+        usable = data if safe is None else safe
+        # Terminal evidence applies on every path, including an earlier gap or
+        # conflict. Never expose post-FIN bytes just because assembly stopped.
+        if base is not None:
+            ends = [sequence_offset(p.seq + bool(p.flags & 2) + len(p.payload), base)
+                    for p in segments if p.flags & 1]
+            if ends and any(end != len(data) for end in ends):
+                unsafe = True
+                usable = usable[:max(0, min(ends))]
+                if 'fin_boundary_mismatch' not in labels:
+                    labels.append('fin_boundary_mismatch')
+        return ReassemblyResult(data, usable, unsafe, tuple(labels), base)
+
+    directions = {(p.src, p.sport, p.dst, p.dport) for p in segments}
+    if len(directions) > 1:
+        return result(unsafe=True, reason='mixed_directions')
+    data_segs = [((p.seq + bool(p.flags & 2)) & 0xffffffff, p.payload)
+                 for p in segments if p.payload]
+    syn_starts = {(p.seq + 1) & 0xffffffff for p in segments if p.flags & 2}
+    if len(syn_starts) > 1:
+        return result(unsafe=True, reason='multiple_handshakes')
+    if not syn_starts:
+        notes.append('initial_coverage_unknown')
+    if not any(p.flags & 1 for p in segments):
+        notes.append('final_coverage_unknown')
+    reset = any(p.flags & 4 for p in segments)
+    if reset:
+        notes.append('reset_observed')
+    if not data_segs and not syn_starts:
+        return result(unsafe=reset)
+    anchor = next(iter(syn_starts)) if syn_starts else data_segs[0][0]
+    offsets = [(sequence_offset(seq, anchor), payload) for seq, payload in data_segs]
+    base_offset = 0 if syn_starts else min(at for at, _ in offsets)
+    base = (anchor + base_offset) & 0xffffffff
     out = bytearray()
-    for seq, payload in data_segs:
-        start = seq - base
+    for at, payload in sorted(offsets, key=lambda item: item[0]):
+        start = at - base_offset
         if start < 0 or start > len(out):
-            return bytes(out), True
-
+            return result(bytes(out), True, 'sequence_gap')
         overlap = min(len(payload), len(out) - start)
-        # A conflicting retransmission makes the stream ambiguous. Do not
-        # silently choose one version and risk reporting invented content.
         if overlap and out[start:start + overlap] != payload[:overlap]:
-            return bytes(out), True
+            return result(bytes(out), True, 'conflicting_overlap', bytes(out[:start]))
         extension = payload[overlap:]
         if len(out) + len(extension) > 16 * 1024 * 1024:
-            return bytes(out), True
+            return result(bytes(out), True, 'direction_limit')
         out.extend(extension)
-    return bytes(out), False
+    for p in segments:
+        if p.flags & 1:
+            fin_at = sequence_offset(p.seq + bool(p.flags & 2) + len(p.payload), base)
+            if fin_at != len(out):
+                safe = bytes(out[:max(0, fin_at)]) if fin_at < len(out) else bytes(out)
+                return result(bytes(out), True, 'fin_boundary_mismatch', safe)
+    return result(bytes(out), reset)
+
+
+def reassemble(segments: list[TcpPacket]) -> tuple[bytes, bool]:
+    """Legacy tuple API. New callers should inspect reassemble_detailed().
+
+    The returned flag detects observed ambiguity/loss, not unobserved packets.
+    Legacy conflicting-overlap bytes are retained for compatibility; callers
+    needing unambiguous evidence must consume the detailed result's safe_prefix.
+    """
+    result = reassemble_detailed(segments)
+    return result.data, result.unsafe
+
+
+def split_tcp_sessions(packets: list[TcpPacket]) -> list[list[TcpPacket]]:
+    """Partition one four-tuple's bidirectional packets in capture order.
+
+    A changed SYN ISN starts a new epoch; repeated SYNs do not. RST or FIN in
+    both directions closes an epoch. Payload after closure starts an unobserved
+    epoch. A half-close still permits data in the opposite direction.
+
+    This is an observational partition, not a TCP endpoint state machine:
+    delayed old packets and reuse with missing handshakes remain ambiguous.
+    Timestamps are not sorted because capture clocks can move backwards.
+    """
+    if len({endpoint_key(p) for p in packets}) > 1:
+        raise ValueError('split_tcp_sessions requires one endpoint pair')
+    sessions: list[list[TcpPacket]] = []
+    current: list[TcpPacket] = []
+    syns: dict[tuple[str, int], int] = {}
+    fins: set[tuple[str, int]] = set()
+    closed = False
+    has_payload = False
+    for p in packets:
+        direction = (p.src, p.sport)
+        syn = bool(p.flags & 2)
+        new_syn = syn and (
+            closed or (direction in syns and syns[direction] != p.seq) or
+            (not p.flags & 16 and direction not in syns and has_payload)
+        )
+        if current and (new_syn or (closed and p.payload)):
+            sessions.append(current)
+            current, syns, fins = [], {}, set()
+            closed = has_payload = False
+        current.append(p)
+        if syn:
+            syns[direction] = p.seq
+        if p.flags & 1:
+            fins.add(direction)
+        closed = closed or bool(p.flags & 4) or len(fins) == 2
+        has_payload = has_payload or bool(p.payload)
+    if current:
+        sessions.append(current)
+    return sessions

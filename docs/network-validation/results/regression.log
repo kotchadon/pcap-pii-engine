@@ -1,0 +1,65 @@
+........................................................................ [ 34%]
+.......F...............................................FF............... [ 69%]
+...............................................................          [100%]
+=================================== FAILURES ===================================
+_________ test_committed_checkpoint_loads_on_cpu_and_is_deterministic __________
+
+    def test_committed_checkpoint_loads_on_cpu_and_is_deterministic():
+        if not os.path.isdir(ARTIFACT):
+            pytest.skip("trained artifact not present")
+>       d1, d2 = BiLSTMDetector(ARTIFACT), BiLSTMDetector(ARTIFACT)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_ml_bilstm.py:218: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/packet_pii/ml/infer.py:22: in __init__
+    self._model, self._vocab, self._meta = load_checkpoint(checkpoint_dir)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = '/workspace/scratch/28ec9f0f81f9/network-m3c/tests/../src/packet_pii/ml/artifacts/bilstm_v1'
+
+    def load_checkpoint(directory: str) -> tuple[BiLSTMTagger, Vocab, dict]:
+        """Load on CPU. Verifies checksum, config and tensor shapes; no network, no pickle execution."""
+        mp, jp = os.path.join(str(directory), "model.pt"), os.path.join(str(directory), "meta.json")
+        if not (os.path.isfile(mp) and os.path.isfile(jp)):
+>           raise CheckpointError("checkpoint directory must contain model.pt and meta.json")
+E           packet_pii.ml.bilstm.CheckpointError: checkpoint directory must contain model.pt and meta.json
+
+src/packet_pii/ml/bilstm.py:283: CheckpointError
+__________________ test_evaluate_default_exports_no_raw_text ___________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-7/test_evaluate_default_exports_0')
+have_stack = None
+
+    def test_evaluate_default_exports_no_raw_text(tmp_path, have_stack):
+        r, out = _run(tmp_path, "--splits", "calib")
+>       assert r.returncode == 0, r.stderr[-500:]
+E       AssertionError: 9f0f81f9/network-m3c/tests/../scripts/ml/evaluate.py", line 54, in main
+E             model, vocab, meta = load_checkpoint(a.checkpoint)
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/workspace/scratch/28ec9f0f81f9/network-m3c/tests/../scripts/ml/../../src/packet_pii/ml/bilstm.py", line 283, in load_checkpoint
+E             raise CheckpointError("checkpoint directory must contain model.pt and meta.json")
+E         packet_pii.ml.bilstm.CheckpointError: checkpoint directory must contain model.pt and meta.json
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python', '/workspace/scratch....pt and meta.json")\npacket_pii.ml.bilstm.CheckpointError: checkpoint directory must contain model.pt and meta.json\n').returncode
+
+tests/test_ml_metrics_report.py:87: AssertionError
+________________ test_evaluate_include_text_is_explicit_opt_in _________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-7/test_evaluate_include_text_is_0')
+have_stack = None
+
+    def test_evaluate_include_text_is_explicit_opt_in(tmp_path, have_stack):
+        r, out = _run(tmp_path, "--splits", "calib", "--include-text")
+>       assert r.returncode == 0
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python', '/workspace/scratch....pt and meta.json")\npacket_pii.ml.bilstm.CheckpointError: checkpoint directory must contain model.pt and meta.json\n').returncode
+
+tests/test_ml_metrics_report.py:103: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ml_bilstm.py::test_committed_checkpoint_loads_on_cpu_and_is_deterministic
+FAILED tests/test_ml_metrics_report.py::test_evaluate_default_exports_no_raw_text
+FAILED tests/test_ml_metrics_report.py::test_evaluate_include_text_is_explicit_opt_in
+3 failed, 204 passed in 13.47s
