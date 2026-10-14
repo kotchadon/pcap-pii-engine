@@ -1,0 +1,528 @@
+[
+ {
+  "id": "E0",
+  "data": "v2.1",
+  "description": "V1 architecture on V2.1 data (isolates the data effect)",
+  "model_version": "bilstm-v2x-ee2fac724d92",
+  "params": 953821,
+  "epochs_run": 11,
+  "wall_seconds": 808.0,
+  "seed": 11,
+  "min_score_from_calib": 0.4,
+  "best_val_f1_during_training": 0.9458,
+  "val_at_threshold": {
+   "f1": 0.9458,
+   "fn": 156,
+   "fp": 107,
+   "precision": 0.9554,
+   "recall": 0.9363,
+   "support": 2450,
+   "tp": 2294
+  },
+  "calib_at_threshold": {
+   "f1": 0.9343,
+   "fn": 205,
+   "fp": 111,
+   "precision": 0.9529,
+   "recall": 0.9164,
+   "support": 2451,
+   "tp": 2246
+  },
+  "cli": "--name e0_v1arch --out build/ml/exp/e0 --seed 11 --epochs 14 --patience 4",
+  "config": {
+   "hidden": 96,
+   "word_dim": 64,
+   "char_filters": 48,
+   "char_widths": [
+    3
+   ],
+   "key_broadcast": false,
+   "dropout": 0.3,
+   "layers": 1
+  },
+  "val_slices": {
+   "ci95_f1": [
+    0.938,
+    0.953
+   ],
+   "recall_unseen_key_examples": {
+    "n": 56,
+    "recall": 0.9464
+   },
+   "recall_unseen_context": {
+    "n": 581,
+    "recall": 0.8795
+   },
+   "fp_rate_hard_negative_examples": 0.0382,
+   "recall_multi_entity": 0.9308
+  }
+ },
+ {
+  "id": "E1",
+  "data": "v2.1",
+  "description": "E0 + key-summary broadcast",
+  "model_version": "bilstm-v2x-167ec9568f01",
+  "params": 982397,
+  "epochs_run": 10,
+  "wall_seconds": 762.2,
+  "seed": 11,
+  "min_score_from_calib": 0.45,
+  "best_val_f1_during_training": 0.9388,
+  "val_at_threshold": {
+   "f1": 0.939,
+   "fn": 135,
+   "fp": 166,
+   "precision": 0.9331,
+   "recall": 0.9449,
+   "support": 2450,
+   "tp": 2315
+  },
+  "calib_at_threshold": {
+   "f1": 0.9506,
+   "fn": 130,
+   "fp": 111,
+   "precision": 0.9544,
+   "recall": 0.947,
+   "support": 2451,
+   "tp": 2321
+  },
+  "cli": "--name e1_keybcast --out build/ml/exp/e1 --seed 11 --epochs 14 --patience 4 --key-broadcast",
+  "config": {
+   "hidden": 96,
+   "word_dim": 64,
+   "char_filters": 48,
+   "char_widths": [
+    3
+   ],
+   "key_broadcast": true,
+   "dropout": 0.3,
+   "layers": 1
+  },
+  "val_slices": {
+   "ci95_f1": [
+    0.9305,
+    0.9473
+   ],
+   "recall_unseen_key_examples": {
+    "n": 56,
+    "recall": 0.9821
+   },
+   "recall_unseen_context": {
+    "n": 581,
+    "recall": 0.8399
+   },
+   "fp_rate_hard_negative_examples": 0.0742,
+   "recall_multi_entity": 0.9209
+  }
+ },
+ {
+  "id": "E2",
+  "data": "v2.1",
+  "description": "E0 + char-CNN widths (2,3,4) x 64 filters",
+  "model_version": "bilstm-v2x-8a74c4dee768",
+  "params": 1074925,
+  "epochs_run": 12,
+  "wall_seconds": 1556.1,
+  "seed": 11,
+  "min_score_from_calib": 0.6,
+  "best_val_f1_during_training": 0.9456,
+  "val_at_threshold": {
+   "f1": 0.9468,
+   "fn": 182,
+   "fp": 73,
+   "precision": 0.9688,
+   "recall": 0.9257,
+   "support": 2450,
+   "tp": 2268
+  },
+  "calib_at_threshold": {
+   "f1": 0.9498,
+   "fn": 163,
+   "fp": 79,
+   "precision": 0.9666,
+   "recall": 0.9335,
+   "support": 2451,
+   "tp": 2288
+  },
+  "cli": "--name e2_charwide --out build/ml/exp/e2 --seed 11 --epochs 14 --patience 4 --char-widths 2,3,4 --char-filters 64",
+  "config": {
+   "hidden": 96,
+   "word_dim": 64,
+   "char_filters": 64,
+   "char_widths": [
+    2,
+    3,
+    4
+   ],
+   "key_broadcast": false,
+   "dropout": 0.3,
+   "layers": 1
+  },
+  "val_slices": {
+   "ci95_f1": [
+    0.9403,
+    0.9548
+   ],
+   "recall_unseen_key_examples": {
+    "n": 56,
+    "recall": 1.0
+   },
+   "recall_unseen_context": {
+    "n": 581,
+    "recall": 0.864
+   },
+   "fp_rate_hard_negative_examples": 0.0225,
+   "recall_multi_entity": 0.8682
+  }
+ },
+ {
+  "id": "E3",
+  "data": "v2.1",
+  "description": "E0 + hard-negative oversampling (x2)",
+  "model_version": "bilstm-v2x-23c39c1140fe",
+  "params": 953821,
+  "epochs_run": 14,
+  "wall_seconds": 1239.3,
+  "seed": 11,
+  "min_score_from_calib": 0.45,
+  "best_val_f1_during_training": 0.9527,
+  "val_at_threshold": {
+   "f1": 0.9529,
+   "fn": 153,
+   "fp": 74,
+   "precision": 0.9688,
+   "recall": 0.9376,
+   "support": 2450,
+   "tp": 2297
+  },
+  "calib_at_threshold": {
+   "f1": 0.9469,
+   "fn": 194,
+   "fp": 59,
+   "precision": 0.9745,
+   "recall": 0.9208,
+   "support": 2451,
+   "tp": 2257
+  },
+  "cli": "--name e3_hnboost --out build/ml/exp/e3 --seed 11 --epochs 14 --patience 4 --hn-boost 1",
+  "config": {
+   "hidden": 96,
+   "word_dim": 64,
+   "char_filters": 48,
+   "char_widths": [
+    3
+   ],
+   "key_broadcast": false,
+   "dropout": 0.3,
+   "layers": 1
+  },
+  "val_slices": {
+   "ci95_f1": [
+    0.945,
+    0.9605
+   ],
+   "recall_unseen_key_examples": {
+    "n": 56,
+    "recall": 0.9821
+   },
+   "recall_unseen_context": {
+    "n": 581,
+    "recall": 0.883
+   },
+   "fp_rate_hard_negative_examples": 0.0258,
+   "recall_multi_entity": 0.9341
+  }
+ },
+ {
+  "id": "R2-a (seed 11)",
+  "data": "v2.2",
+  "description": "E0 config on V2.2 data",
+  "model_version": "bilstm-v2x-bebfc0c9afcf",
+  "params": 973725,
+  "epochs_run": 9,
+  "wall_seconds": 831.0,
+  "seed": 11,
+  "min_score_from_calib": 0.6,
+  "best_val_f1_during_training": 0.9398,
+  "val_at_threshold": {
+   "f1": 0.944,
+   "fn": 164,
+   "fp": 110,
+   "precision": 0.9545,
+   "recall": 0.9337,
+   "support": 2474,
+   "tp": 2310
+  },
+  "calib_at_threshold": {
+   "f1": 0.9357,
+   "fn": 206,
+   "fp": 109,
+   "precision": 0.9546,
+   "recall": 0.9175,
+   "support": 2498,
+   "tp": 2292
+  },
+  "cli": "--name r2_base --out build/ml/exp/r2a --seed 11 --epochs 14 --patience 4 --max-minutes 32 --threads 1",
+  "config": {
+   "hidden": 96,
+   "word_dim": 64,
+   "char_filters": 48,
+   "char_widths": [
+    3
+   ],
+   "key_broadcast": false,
+   "dropout": 0.3,
+   "layers": 1
+  },
+  "val_slices": {
+   "ci95_f1": [
+    0.9361,
+    0.9516
+   ],
+   "recall_unseen_key_examples": {
+    "n": 56,
+    "recall": 0.9286
+   },
+   "recall_unseen_context": {
+    "n": 536,
+    "recall": 0.8545
+   },
+   "fp_rate_hard_negative_examples": 0.0491,
+   "recall_multi_entity": 0.9104
+  }
+ },
+ {
+  "id": "R2-a (seed 12)",
+  "data": "v2.2",
+  "description": "same, seed 12",
+  "model_version": "bilstm-v2x-de292058fd26",
+  "params": 973725,
+  "epochs_run": 12,
+  "wall_seconds": 1017.1,
+  "seed": 12,
+  "min_score_from_calib": 0.2,
+  "best_val_f1_during_training": 0.9364,
+  "val_at_threshold": {
+   "f1": 0.9368,
+   "fn": 119,
+   "fp": 199,
+   "precision": 0.9221,
+   "recall": 0.9519,
+   "support": 2474,
+   "tp": 2355
+  },
+  "calib_at_threshold": {
+   "f1": 0.9427,
+   "fn": 170,
+   "fp": 113,
+   "precision": 0.9537,
+   "recall": 0.9319,
+   "support": 2498,
+   "tp": 2328
+  },
+  "cli": "--name r2_base_s12 --out build/ml/exp/r2a_s12 --seed 12 --epochs 14 --patience 4 --max-minutes 32 --threads 1",
+  "config": {
+   "hidden": 96,
+   "word_dim": 64,
+   "char_filters": 48,
+   "char_widths": [
+    3
+   ],
+   "key_broadcast": false,
+   "dropout": 0.3,
+   "layers": 1
+  },
+  "val_slices": {
+   "ci95_f1": [
+    0.9277,
+    0.9451
+   ],
+   "recall_unseen_key_examples": {
+    "n": 56,
+    "recall": 0.9821
+   },
+   "recall_unseen_context": {
+    "n": 536,
+    "recall": 0.8974
+   },
+   "fp_rate_hard_negative_examples": 0.0502,
+   "recall_multi_entity": 0.9237
+  }
+ },
+ {
+  "id": "R2-a (seed 13)",
+  "data": "v2.2",
+  "description": "same, seed 13",
+  "model_version": "bilstm-v2x-46bd48b861ab",
+  "params": 973725,
+  "epochs_run": 12,
+  "wall_seconds": 1016.3,
+  "seed": 13,
+  "min_score_from_calib": 0.5,
+  "best_val_f1_during_training": 0.9487,
+  "val_at_threshold": {
+   "f1": 0.9486,
+   "fn": 119,
+   "fp": 136,
+   "precision": 0.9454,
+   "recall": 0.9519,
+   "support": 2474,
+   "tp": 2355
+  },
+  "calib_at_threshold": {
+   "f1": 0.9312,
+   "fn": 175,
+   "fp": 168,
+   "precision": 0.9326,
+   "recall": 0.9299,
+   "support": 2498,
+   "tp": 2323
+  },
+  "cli": "--name r2_base_s13 --out build/ml/exp/r2a_s13 --seed 13 --epochs 14 --patience 4 --max-minutes 32 --threads 1",
+  "config": {
+   "hidden": 96,
+   "word_dim": 64,
+   "char_filters": 48,
+   "char_widths": [
+    3
+   ],
+   "key_broadcast": false,
+   "dropout": 0.3,
+   "layers": 1
+  },
+  "val_slices": {
+   "ci95_f1": [
+    0.9406,
+    0.9558
+   ],
+   "recall_unseen_key_examples": {
+    "n": 56,
+    "recall": 1.0
+   },
+   "recall_unseen_context": {
+    "n": 536,
+    "recall": 0.8657
+   },
+   "fp_rate_hard_negative_examples": 0.0467,
+   "recall_multi_entity": 0.9254
+  }
+ },
+ {
+  "id": "R2-b",
+  "data": "v2.2",
+  "description": "E0 + hard-negative oversampling",
+  "model_version": "bilstm-v2x-c63b736e4745",
+  "params": 973725,
+  "epochs_run": 9,
+  "wall_seconds": 1053.1,
+  "seed": 11,
+  "min_score_from_calib": 0.35,
+  "best_val_f1_during_training": 0.9318,
+  "val_at_threshold": {
+   "f1": 0.9318,
+   "fn": 139,
+   "fp": 203,
+   "precision": 0.92,
+   "recall": 0.9438,
+   "support": 2474,
+   "tp": 2335
+  },
+  "calib_at_threshold": {
+   "f1": 0.9412,
+   "fn": 170,
+   "fp": 121,
+   "precision": 0.9506,
+   "recall": 0.9319,
+   "support": 2498,
+   "tp": 2328
+  },
+  "cli": "--name r2_hnboost --out build/ml/exp/r2b --seed 11 --epochs 14 --patience 4 --max-minutes 32 --threads 1 --hn-boost 1",
+  "config": {
+   "hidden": 96,
+   "word_dim": 64,
+   "char_filters": 48,
+   "char_widths": [
+    3
+   ],
+   "key_broadcast": false,
+   "dropout": 0.3,
+   "layers": 1
+  },
+  "val_slices": {
+   "ci95_f1": [
+    0.9239,
+    0.9407
+   ],
+   "recall_unseen_key_examples": {
+    "n": 56,
+    "recall": 0.9821
+   },
+   "recall_unseen_context": {
+    "n": 536,
+    "recall": 0.8582
+   },
+   "fp_rate_hard_negative_examples": 0.0467,
+   "recall_multi_entity": 0.9187
+  }
+ },
+ {
+  "id": "R2-c",
+  "data": "v2.2",
+  "description": "hn-boost + char widths (2,3,4) x 64",
+  "model_version": "bilstm-v2x-bbc0499523f5",
+  "params": 1094829,
+  "epochs_run": 8,
+  "wall_seconds": 2069.8,
+  "seed": 11,
+  "min_score_from_calib": 0.6,
+  "best_val_f1_during_training": 0.9269,
+  "val_at_threshold": {
+   "f1": 0.9294,
+   "fn": 216,
+   "fp": 127,
+   "precision": 0.9468,
+   "recall": 0.9127,
+   "support": 2474,
+   "tp": 2258
+  },
+  "calib_at_threshold": {
+   "f1": 0.936,
+   "fn": 231,
+   "fp": 79,
+   "precision": 0.9663,
+   "recall": 0.9075,
+   "support": 2498,
+   "tp": 2267
+  },
+  "cli": "--name r2_wide_hn --out build/ml/exp/r2c --seed 11 --epochs 14 --patience 4 --max-minutes 32 --threads 1 --hn-boost 1 --char-widths 2,3,4 --char-filters 64",
+  "config": {
+   "hidden": 96,
+   "word_dim": 64,
+   "char_filters": 64,
+   "char_widths": [
+    2,
+    3,
+    4
+   ],
+   "key_broadcast": false,
+   "dropout": 0.3,
+   "layers": 1
+  },
+  "val_slices": {
+   "ci95_f1": [
+    0.9219,
+    0.9378
+   ],
+   "recall_unseen_key_examples": {
+    "n": 56,
+    "recall": 0.9821
+   },
+   "recall_unseen_context": {
+    "n": 536,
+    "recall": 0.8078
+   },
+   "fp_rate_hard_negative_examples": 0.0222,
+   "recall_multi_entity": 0.8706
+  }
+ }
+]

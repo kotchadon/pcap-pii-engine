@@ -1,0 +1,300 @@
+{
+ "checkpoint": "bilstm-v2-d1f9e9fb9a2b",
+ "min_score": 0.35,
+ "dataset": "challenge",
+ "taxonomy": {
+  "FP_no_gold_overlap": 105,
+  "FN_missed_entirely": 139,
+  "FP_boundary_overlap": 23,
+  "FN_boundary_overlap": 24,
+  "FP_label_confusion_same_span": 2,
+  "FN_label_confusion_same_span": 2
+ },
+ "fn_by_label": {
+  "USERNAME": 65,
+  "PERSON_NAME": 100
+ },
+ "fp_by_label": {
+  "PERSON_NAME": 118,
+  "USERNAME": 12
+ },
+ "worst_frames": [
+  {
+   "source": "json_nested",
+   "frame": "{H}",
+   "tp": 62,
+   "fp": 1,
+   "fn": 16,
+   "examples": 78
+  },
+  {
+   "source": "narrative",
+   "frame": "Called {N} twice, no answer; will try {FN2} tomorrow.",
+   "tp": 1,
+   "fp": 3,
+   "fn": 11,
+   "examples": 6
+  },
+  {
+   "source": "chat",
+   "frame": "[{TIME}] <{H}> anyone around?",
+   "tp": 1,
+   "fp": 7,
+   "fn": 6,
+   "examples": 7
+  },
+  {
+   "source": "json_neg",
+   "frame": "{ORGP}",
+   "tp": 0,
+   "fp": 12,
+   "fn": 0,
+   "examples": 21
+  },
+  {
+   "source": "narrative",
+   "frame": "Interview panel: {N}, {N2}, {N3}.",
+   "tp": 7,
+   "fp": 1,
+   "fn": 11,
+   "examples": 6
+  },
+  {
+   "source": "csv",
+   "frame": "user,role\n{H},admin\n{H2},viewer",
+   "tp": 0,
+   "fp": 0,
+   "fn": 12,
+   "examples": 6
+  },
+  {
+   "source": "email",
+   "frame": "To: {N}; {N2}\ncc: {ORG} Billing",
+   "tp": 5,
+   "fp": 4,
+   "fn": 7,
+   "examples": 6
+  },
+  {
+   "source": "narrative",
+   "frame": "{N} from {ORG} will join the call.",
+   "tp": 3,
+   "fp": 6,
+   "fn": 4,
+   "examples": 7
+  },
+  {
+   "source": "narrative",
+   "frame": "{FN} said {FN2} would be late.",
+   "tp": 4,
+   "fp": 1,
+   "fn": 8,
+   "examples": 6
+  },
+  {
+   "source": "json_nested",
+   "frame": "{H}/{SLUG}",
+   "tp": 1,
+   "fp": 2,
+   "fn": 6,
+   "examples": 7
+  },
+  {
+   "source": "narrative",
+   "frame": "My neighbour {N} keeps parking in my spot. Tell {FN} to stop.",
+   "tp": 5,
+   "fp": 1,
+   "fn": 7,
+   "examples": 6
+  },
+  {
+   "source": "log",
+   "frame": "{DATE} {TIME} WARN login throttled for {H} (attempt 4/5)",
+   "tp": 6,
+   "fp": 7,
+   "fn": 1,
+   "examples": 7
+  },
+  {
+   "source": "narrative",
+   "frame": "Requested by {N} on behalf of {ORG}",
+   "tp": 4,
+   "fp": 5,
+   "fn": 2,
+   "examples": 6
+  },
+  {
+   "source": "sql",
+   "frame": "SELECT * FROM users WHERE username = '{H}'",
+   "tp": 7,
+   "fp": 7,
+   "fn": 0,
+   "examples": 7
+  },
+  {
+   "source": "csv",
+   "frame": "id,name,city\n{NUM},{N},{CITY}",
+   "tp": 1,
+   "fp": 1,
+   "fn": 6,
+   "examples": 7
+  },
+  {
+   "source": "json_neg",
+   "frame": "{CITYP}",
+   "tp": 0,
+   "fp": 6,
+   "fn": 0,
+   "examples": 15
+  },
+  {
+   "source": "form",
+   "frame": "{ORGP}",
+   "tp": 0,
+   "fp": 6,
+   "fn": 0,
+   "examples": 6
+  },
+  {
+   "source": "narrative",
+   "frame": "Condolences to the {LN} family.",
+   "tp": 0,
+   "fp": 0,
+   "fn": 6,
+   "examples": 6
+  },
+  {
+   "source": "narrative",
+   "frame": "Meeting with {ORG} about {WORD}",
+   "tp": 0,
+   "fp": 6,
+   "fn": 0,
+   "examples": 6
+  },
+  {
+   "source": "sql",
+   "frame": "UPDATE accounts SET owner = '{N}' WHERE id = {NUM}",
+   "tp": 3,
+   "fp": 3,
+   "fn": 3,
+   "examples": 6
+  },
+  {
+   "source": "json_neg",
+   "frame": "{PROD}",
+   "tp": 0,
+   "fp": 5,
+   "fn": 0,
+   "examples": 18
+  },
+  {
+   "source": "query",
+   "frame": "{PROD}",
+   "tp": 0,
+   "fp": 5,
+   "fn": 0,
+   "examples": 12
+  },
+  {
+   "source": "json_nested",
+   "frame": "{ORGP}",
+   "tp": 0,
+   "fp": 4,
+   "fn": 0,
+   "examples": 7
+  },
+  {
+   "source": "json_neg",
+   "frame": "{ORG}",
+   "tp": 0,
+   "fp": 4,
+   "fn": 0,
+   "examples": 17
+  },
+  {
+   "source": "query",
+   "frame": "{LN}",
+   "tp": 2,
+   "fp": 0,
+   "fn": 4,
+   "examples": 6
+  }
+ ],
+ "false_positive_frames_without_gold_overlap": [
+  {
+   "source": "json_neg",
+   "frame": "{ORGP}",
+   "count": 12
+  },
+  {
+   "source": "chat",
+   "frame": "[{TIME}] <{H}> anyone around?",
+   "count": 7
+  },
+  {
+   "source": "sql",
+   "frame": "SELECT * FROM users WHERE username = '{H}'",
+   "count": 7
+  },
+  {
+   "source": "log",
+   "frame": "{DATE} {TIME} WARN login throttled for {H} (attempt 4/5)",
+   "count": 7
+  },
+  {
+   "source": "json_neg",
+   "frame": "{CITYP}",
+   "count": 6
+  },
+  {
+   "source": "form",
+   "frame": "{ORGP}",
+   "count": 6
+  },
+  {
+   "source": "narrative",
+   "frame": "{N} from {ORG} will join the call.",
+   "count": 6
+  },
+  {
+   "source": "narrative",
+   "frame": "Meeting with {ORG} about {WORD}",
+   "count": 6
+  },
+  {
+   "source": "json_neg",
+   "frame": "{PROD}",
+   "count": 5
+  },
+  {
+   "source": "query",
+   "frame": "{PROD}",
+   "count": 5
+  },
+  {
+   "source": "json_nested",
+   "frame": "{ORGP}",
+   "count": 4
+  },
+  {
+   "source": "json_neg",
+   "frame": "{ORG}",
+   "count": 4
+  },
+  {
+   "source": "narrative",
+   "frame": "Requested by {N} on behalf of {ORG}",
+   "count": 4
+  },
+  {
+   "source": "yaml",
+   "frame": "name: {PROD}\nversion: 1.{NUM}",
+   "count": 4
+  },
+  {
+   "source": "json_nested",
+   "frame": "{ORG}",
+   "count": 3
+  }
+ ]
+}

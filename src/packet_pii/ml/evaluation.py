@@ -117,7 +117,7 @@ def recall_on(gold_examples: Sequence, pred: Mapping, predicate) -> dict:
 
 def no_entity_false_positive_rate(examples: Sequence, pred: Mapping, only_tag: str | None = None) -> dict:
     """Fraction of entity-free examples on which the system emitted >=1 span (per-example FP rate)."""
-    neg = [e for e in examples if not e.spans and (only_tag is None or only_tag in e.tags)]
+    neg = [e for e in examples if not e.spans and (only_tag is None or only_tag in getattr(e, "tags", ()))]
     hit = sum(1 for e in neg if pred.get(e.id))
     return {"n": len(neg), "with_false_positive": hit, "rate": round(hit / len(neg), 4) if neg else None}
 

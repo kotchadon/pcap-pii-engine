@@ -29,14 +29,14 @@ considered and **not used**: their annotation conventions (every PER mention in 
 restricted) do not match HTTP-field PERSON/USERNAME labelling, and no large download was authorised.
 
 ## Generator design (`data2.py`)
-* **Kinds / sources** (train counts): person fields 2,992 + display 590, username fields 2,482, first/last 1,753, hard-negative fields 3,559,
-  neutral-key fields 1,489, free-text person 3,930 / username 2,783 / mixed 860 / entity-free 1,424, narrative (2-3 frames, multi-entity) 1,584,
+* **Kinds / sources** (train counts, data v2.2): person fields 2,992 + display 590, username fields 2,482, first/last 1,753, hard-negative fields 3,559,
+  neutral-key fields 1,489, free-text person 3,929 / username 2,783 / mixed 860 / entity-free 1,424, narrative (2-3 frames, multi-entity) 1,585,
   key-value / cookie / query strings 2,380, logs 1,147, URL paths 1,248, headers 1,180, markup / embedded JSON 599.
 * **Locations** mirror `http_extract`: `json_body.<nested path with [i]>`, `form.<key>`, `query_parameter.<key>`, `header.<name>`, `body.text`
-  (11,140 distinct train locations). Key grammar: person roles (~100) x heads, bare roles, snake/camel/kebab/UPPER/dotted/concatenated styles,
+  (11,139 distinct train locations). Key grammar: person roles (~100) x heads, bare roles, snake/camel/kebab/UPPER/dotted/concatenated styles,
   neutral keys (`value`, `q`, `data`...). Role words are hash-partitioned across splits (+20% common) so validation contains unseen keys.
-* **Cue frames**: 248 hand-written cue templates (person weak/strong, username explicit/weak, mixed, log, URL, markup), hash-partitioned:
-  train 142, val 24, calib 24, **common 58** (shared by design: "Dear {P},", "Logged in as {U}" ...). Val/calib draw 60% of their frames
+* **Cue frames**: 385 hand-written cue templates (person weak/strong/subject-position/mid-sentence, username explicit/weak/subject/mid, mixed, log, URL, markup), hash-partitioned:
+  train 227, val 35, calib 38, **common 85** (shared by design: "Dear {P},", "Logged in as {U}" ...). Val/calib draw 60% of their frames
   from split-exclusive templates (`exclusive_template` tag).
 * **Frame-sharing hard negatives**: weak person cues are filled with job titles / teams / organisations / cities / products
   ("Dear Hiring Manager,", "Assigned to Engineering", "Contact Acme Labs"); weak username cues with organisations / places / products; explicit
@@ -45,6 +45,7 @@ restricted) do not match HTTP-field PERSON/USERNAME labelling, and no large down
 * **Entity forms**: `First Last`, `Last, First`, `First M. Last`, `F. Last`, 3-token names, first / last only, CJK `LastFirst`, honorific-prefixed
   (honorific excluded from the span), `Name <email>` (e-mail local part is **not** an entity), handles from Faker usernames (55%), name-derived
   patterns (`jsmith`, `maria.garcia`, `maria_99`, 30%) and word-pair handles (15%); same-script name pairing; percent / plus encoding in query strings.
+* **v2.2 additions** (after the V2.1 validation diagnostic): 60 subject-position person predicates ("<Name> requested a refund of N"), 32 mid-sentence person frames, 24 + 22 username frames; weak-cue negative-fill rate lowered 0.30 -> 0.22; a template present in two banks (cross-split leak) was removed and a uniqueness test added. V2.1 manifest kept as `v2_1_dataset_manifest.json`.
 * **Noise**: case style applied identically to entities AND negatives (78% as-is / lower / UPPER / Title); NBSP, double-space and tab;
   wrapper quotes / brackets; lower-cased frame literals, list prefixes, dropped final punctuation; 3.3% truncated fields (spans clipped);
   1% with U+FFFD; Unicode names in 8 scripts.
@@ -65,9 +66,9 @@ ambiguity. Character offsets: code points, half-open; every example is checked a
 | exact (location, text) duplicates across splits with entities | **0** (27 entity-free duplicates: fixed header values such as `content-type: application/json`) |
 | cue templates shared across splits other than the designated *common* set | **0** |
 | lexical items (names, cities, companies, usernames, words, ...) shared across splits | **0** (hash-partitioned by string) |
-| entity strings shared between splits (case-insensitive) | 4 train-calib/train-val (`m`, `an`, `cor`, `de`: initials and name particles) |
-| entity *tokens* shared (alphabetic, len > 1) train-val | 31, all sub-tokens of multi-part names / handles (`maria`, `anna`, `van`, `de`, `per`...) |
-| common-cue share of cue-based examples | train 30.1% / val 36.0% / calib 32.9% |
+| entity strings shared between splits (case-insensitive) | 2 (`de`, `juan`: a name particle and a one-word given name that also occurs as a handle) |
+| entity *tokens* shared (alphabetic, len > 1) | train-val 31, train-calib 34, val-calib 0: sub-tokens of multi-part names / handles and particles (`maria`, `anna`, `van`, `de`, ...) |
+| common-cue share of cue-based examples | train 30.2% / val 37.7% / calib 33.5% |
 
 Realism of the exclusion rules: partitioning *every* lexical item makes evaluation names unseen, which is **stricter than deployment** (real
 traffic reuses common names) - it measures generalisation to new strings, and likely understates recall on very common names. Conversely the
@@ -77,5 +78,5 @@ measures *seen* frames; `evaluate_v2.py` therefore reports recall separately for
 V2 training set).
 
 ## Class balance (train)
-PERSON_NAME 13,569 / USERNAME 11,306 entities; 9,083 of 30,000 examples (30.3%) contain no entity; 9,330 carry the `hard_negative` tag;
-6,435 contain non-ASCII entities; 2,808 have >= 2 entities. Challenge: 504 PERSON_NAME / 324 USERNAME / 313 entity-free (29.6%) / 197 hard negatives.
+PERSON_NAME 13,934 / USERNAME 11,340 entities; 8,620 of 30,000 examples (28.7%) contain no entity; 8,647 carry the `hard_negative` tag;
+6,557 contain non-ASCII entities; 2,879 have >= 2 entities. Challenge: 504 PERSON_NAME / 324 USERNAME / 313 entity-free (29.6%) / 197 hard negatives.

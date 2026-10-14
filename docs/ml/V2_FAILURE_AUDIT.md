@@ -50,3 +50,23 @@ Pure false positives (no overlap with any gold span; calib 122): 60 city/company
 
 Not pursued: bigger models / more epochs (loss already ~0), CRF layer (BIO errors are boundary-data errors, not illegal transitions),
 repeating ctx-dropout 0.3 (negative evidence).
+
+---
+
+## Appendix - the same probes re-run on the delivered V2 ensemble (V1 *dev* data only; V1 test not read)
+`python scripts/ml/audit_v1.py --checkpoint src/packet_pii/ml/artifacts/bilstm_v2 --out docs/ml/results/v2_audit_v2_on_v1dev.json`
+(V1 val/calib are out-of-distribution for V2: different generator, vocabulary and frames.)
+
+| Probe (V1 val / calib) | V1 | V2 | Verdict |
+|---|---|---|---|
+| Micro-F1 on V1 val / calib | 0.791 / 0.837 | **0.980 / 0.907** | large gain out-of-generator |
+| Person value under a *username* key labelled USERNAME (key shortcut) | 51% | **0%** | fixed |
+| field_person recall with the key replaced by a neutral word / key removed | 0.49 / 0.49 | **0.993 / 0.958** | fixed (value-based evidence now used) |
+| field_person recall, all key tokens seen | 0.746 | 0.993 | fixed (V2 vocabulary covers every key in this set, so unseen-key recall is not measurable here; see challenge slices) |
+| Person name inserted into a neutral frame ("Welcome to X!", ...) tagged | 23.9% | **11.4%** | improved |
+| Entity replaced by a city name, same frame, still tagged exactly | 68.5% | **85.1%** | **NOT improved (worse)** - the probe mixes *strong-cue* frames ("My name is X"), which V2 deliberately never negates (annotation rule), and unfamiliar pseudo-city strings; not resolved. The challenge set still shows organisation / city false positives (V2 challenge false-positive rate on hard-negative fields 0.26). |
+| Boundary errors on calib (FP + FN partial overlaps) | 64 + 64 | **0 + 0** | fixed on this distribution; 23 + 24 remain on the challenge set |
+| Per-template recall std (31 templates) / templates < 0.5 | 0.342 / 7 | 0.256 / 3 | variance reduced, not gone |
+
+Conclusion: the key-shortcut, surface-form and boundary root causes (2, 4, 6) were fixed; the frame-reliance cause (1) is only partly addressed; the template-mix
+variance (5) persists whenever frames are held out.
