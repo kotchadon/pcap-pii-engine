@@ -2,12 +2,12 @@
  "common_cue_example_share": {
   "calib": 0.329,
   "train": 0.301,
-  "val": 0.361
+  "val": 0.36
  },
  "leakage_report": {
-  "entity_string_overlap": 2,
-  "entity_token_overlap": 171,
-  "exact_text_duplicates": 41,
+  "entity_string_overlap": 4,
+  "entity_token_overlap": 160,
+  "exact_text_duplicates": 27,
   "exact_text_duplicates_with_entities": 0,
   "shared_negative_lexicon_items": 0,
   "shared_templates_excluding_common": 0
@@ -21,7 +21,7 @@
     "field_first_last": 192,
     "field_neg": 349,
     "field_neutral": 138,
-    "field_person": 281,
+    "field_person": 280,
     "field_user": 236,
     "header": 108,
     "kv": 258,
@@ -30,100 +30,100 @@
     "narrative": 157,
     "text_mixed": 79,
     "text_neg": 136,
-    "text_person": 413,
+    "text_person": 414,
     "text_user": 269,
     "url": 127
    },
-   "distinct_entity_strings": 2200,
+   "distinct_entity_strings": 2157,
    "entities": {
-    "PERSON_NAME": 1325,
-    "USERNAME": 1128
+    "PERSON_NAME": 1322,
+    "USERNAME": 1129
    },
    "examples": 3000,
-   "no_entity_examples": 886,
-   "sha256_jsonl": "821eab224cfeac0fce129cb40e0f611d469d616ee4fd5d4c8cdb385425252d17",
+   "no_entity_examples": 879,
+   "sha256_jsonl": "30890e48eae1837527f63ee5e5f3e23ed4a0c5120ad2f4fd5b7db28640380dd9",
    "tags": {
-    "exclusive_template": 812,
-    "hard_negative": 905,
-    "multi_entity": 252,
-    "no_entity": 18,
-    "replacement_char": 21,
-    "truncated": 90,
-    "unicode": 705
+    "exclusive_template": 813,
+    "hard_negative": 910,
+    "multi_entity": 243,
+    "no_entity": 15,
+    "replacement_char": 17,
+    "truncated": 98,
+    "unicode": 695
    }
   },
   "train": {
    "by_kind": {
-    "field_display": 593,
-    "field_first_last": 1752,
+    "field_display": 590,
+    "field_first_last": 1753,
     "field_neg": 3559,
-    "field_neutral": 1493,
+    "field_neutral": 1489,
     "field_person": 2992,
-    "field_user": 2484,
-    "header": 1174,
-    "kv": 2381,
-    "log": 1150,
-    "markup": 601,
-    "narrative": 1587,
-    "text_mixed": 862,
-    "text_neg": 1407,
-    "text_person": 3933,
-    "text_user": 2784,
+    "field_user": 2482,
+    "header": 1180,
+    "kv": 2380,
+    "log": 1147,
+    "markup": 599,
+    "narrative": 1584,
+    "text_mixed": 860,
+    "text_neg": 1424,
+    "text_person": 3930,
+    "text_user": 2783,
     "url": 1248
    },
-   "distinct_entity_strings": 21643,
+   "distinct_entity_strings": 21906,
    "entities": {
-    "PERSON_NAME": 13590,
-    "USERNAME": 11318
+    "PERSON_NAME": 13569,
+    "USERNAME": 11306
    },
    "examples": 30000,
-   "no_entity_examples": 9084,
-   "sha256_jsonl": "10e800a79543ce06544615c6f824a6eb3373ad1bd2c9e6c7113d0bbb09fc8a89",
+   "no_entity_examples": 9083,
+   "sha256_jsonl": "a149648a55db77b1d35cfd55f9387181d3e026f39e6bce168a43cb94a800e877",
    "tags": {
-    "exclusive_template": 8411,
-    "hard_negative": 9302,
-    "multi_entity": 2818,
-    "no_entity": 135,
-    "replacement_char": 221,
-    "truncated": 1033,
-    "unicode": 6981
+    "exclusive_template": 8392,
+    "hard_negative": 9330,
+    "multi_entity": 2808,
+    "no_entity": 129,
+    "replacement_char": 250,
+    "truncated": 999,
+    "unicode": 6435
    }
   },
   "val": {
    "by_kind": {
     "field_display": 59,
     "field_first_last": 169,
-    "field_neg": 365,
+    "field_neg": 367,
     "field_neutral": 163,
     "field_person": 302,
-    "field_user": 247,
+    "field_user": 246,
     "header": 113,
     "kv": 243,
     "log": 114,
     "markup": 61,
     "narrative": 148,
     "text_mixed": 86,
-    "text_neg": 150,
+    "text_neg": 149,
     "text_person": 380,
     "text_user": 268,
     "url": 132
    },
-   "distinct_entity_strings": 2207,
+   "distinct_entity_strings": 2198,
    "entities": {
-    "PERSON_NAME": 1332,
-    "USERNAME": 1122
+    "PERSON_NAME": 1338,
+    "USERNAME": 1112
    },
    "examples": 3000,
-   "no_entity_examples": 912,
-   "sha256_jsonl": "dbfd5c058e9d1f6e1f195526acb2fcef39e3ada60b127f23cea58ff527c8569e",
+   "no_entity_examples": 906,
+   "sha256_jsonl": "5af529dd882048b001994a9d8a40ca2fe756e7f01b6f56ec9041d5b39a6449c3",
    "tags": {
-    "exclusive_template": 759,
-    "hard_negative": 922,
+    "exclusive_template": 764,
+    "hard_negative": 929,
     "multi_entity": 251,
-    "no_entity": 19,
-    "replacement_char": 25,
-    "truncated": 110,
-    "unicode": 674
+    "no_entity": 13,
+    "replacement_char": 16,
+    "truncated": 96,
+    "unicode": 666
    }
   }
  }

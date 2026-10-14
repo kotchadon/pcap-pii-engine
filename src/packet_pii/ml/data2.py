@@ -89,6 +89,23 @@ for _cat in ("first", "last", "city", "company", "username", "job", "street", "w
 
 # non-Latin names are rendered "Last First" without space for CJK
 _CJK = re.compile(r"[぀-ヿ㐀-鿿가-힯]")
+import unicodedata as _ud
+
+
+def _script(w: str) -> str:
+    try:
+        n = _ud.name(w[0])
+    except ValueError:
+        return "other"
+    return {"LATIN": "latin", "CYRILLIC": "cyr", "GREEK": "greek", "ARABIC": "arab", "HEBREW": "heb", "THAI": "thai",
+            "DEVANAGARI": "dev", "HIRAGANA": "cjk", "KATAKANA": "cjk", "CJK": "cjk", "HANGUL": "cjk"}.get(n.split()[0], "other")
+
+
+POOL_BY_SCRIPT = {cat: {s: {} for s in SPLITS} for cat in ("first", "last")}
+for _cat in ("first", "last"):
+    for _s in SPLITS:
+        for _w in POOL[_cat][_s]:
+            POOL_BY_SCRIPT[_cat][_s].setdefault(_script(_w), []).append(_w)
 
 ROLES_PERSON = ("customer client patient guest owner author sender recipient receiver attendee passenger traveler "
                 "student teacher employee manager contact buyer seller payer payee cardholder applicant candidate "
@@ -210,13 +227,16 @@ class Ctx:
     def person_tokens(self, slot: str) -> tuple[str, str]:
         key = slot[-1] if slot[-1] == "2" else "1"
         if key not in self.persons:
-            self.persons[key] = (self.pick("first"), self.pick("last"))
+            f = self.pick("first")
+            same = POOL_BY_SCRIPT["last"][self.split].get(_script(f))
+            l = self.rng.choice(same) if same and self.rng.random() < .93 else self.pick("last")
+            self.persons[key] = (f, l)
         return self.persons[key]
 
     def person(self, slot: str) -> str:
         f, l = self.person_tokens(slot)
         r = self.rng.random()
-        cjk = bool(_CJK.search(f + l))
+        cjk = bool(_CJK.search(f)) and bool(_CJK.search(l))
         if slot.startswith("F"): return f
         if slot.startswith("L"): return l
         if cjk: return (l + f) if r < .6 else f"{l} {f}"
@@ -356,7 +376,7 @@ PERSON_STRONG = _bank((),
     "{P} requested a refund of {NUM}", "Please welcome {P}!", "Student: {P}, grade {NUM}", "Mr. {L} and Mrs. {L2}",
     "Dear Mr. {P},", "RSVP: {P} (+{NUM})", "Name on card: {P}", "Account holder: {P}", "Signature of {P}",
     "{P} is the new {JOB}", "{F} {L}")
-USER_WEAK_NEG = ("ORG", "CITY", "PROD", "SLUG", "HOST", "TEAM")
+USER_WEAK_NEG = ("ORG", "CITY", "PROD", "TEAM")
 USER_EXPLICIT = _bank((),
     "Logged in as {U}", "Signed in as @{U}", "login: {U}", "Login as {U}", "user {U} logged out", "User '{U}' not found",
     "User {U} created", "Invalid user {U}", "Account {U} locked", "Username: {U}", "Handle: @{U}", "Your username is {U}",
@@ -413,7 +433,7 @@ MARKUP = _bank((),
     "<input type=\"text\" name=\"username\" value=\"{U}\">", "<span class=\"author\">{P}</span>",
     "<a href=\"/users/{U}\">{U}</a>", "<td>{P}</td>", "<meta name=\"author\" content=\"{P}\">",
     "<div data-user=\"{U}\">Hello</div>", "<li class=\"member\">{P}</li>", "<h2>Profile: {P}</h2>",
-    "<p>Posted by <b>{U}</b></p>", "{\"name\":\"{P}\",\"age\":{NUM}}".replace("{\"", "{\"").replace("}", "}", 1) if False else "<label>Name</label><input value=\"{P}\">",
+    "<p>Posted by <b>{U}</b></p>", "<label>Name</label><input value=\"{P}\">",
     "[{P}](/people/{NUM})", "**{P}** wrote", "`{U}` logged in", "<user id=\"{NUM}\" login=\"{U}\"/>")
 JSONTXT = [
     ('{"user":"%s","id":%s}', "U"), ('{"name":"%s","age":%s}', "P"), ('{"login":"%s","score":%s}', "U"),
@@ -464,6 +484,12 @@ def _loc(rng: random.Random, kinds: Sequence[str] = TEXT_KEYS) -> str:
 
 def _noise(rng: random.Random, pieces: list) -> list:
     out = []
+    if rng.random() < .06:   # frame literal in lower case (entities untouched)
+        pieces = [(s.lower() if lab is None else s, lab) for s, lab in pieces]
+    if pieces and pieces[-1][1] is None and pieces[-1][0][-1:] in ".!?:,;" and rng.random() < .12:
+        pieces = pieces[:-1] + [(pieces[-1][0][:-1], None)]
+    if rng.random() < .08:
+        pieces = [(rng.choice(["Re: ", "FYI: ", ">> ", "[note] ", "- ", "* ", "1. ", "# ", "// ", "TODO: "]), None)] + list(pieces)
     for s, lab in pieces:
         if lab is None and rng.random() < .12 and " " in s:
             s = s.replace(" ", rng.choice(["  ", "\t", " ", " "]), 1) if rng.random() < .8 else s.replace(" ", "  ")
@@ -613,9 +639,8 @@ def build_example(rng: random.Random, split: str) -> tuple[str, str, list, list,
         else:
             fmt, which = rng.choice(JSONTXT); tid = "json:" + fmt
             ent = ctx.style(ctx.handle("U") if which == "U" else ctx.person("P"))
-            a, b = fmt.split("%s")[0], fmt.split("%s")
-            pieces = [(b[0], None), (ent, "USERNAME" if which == "U" else "PERSON_NAME"), (b[1] + str(rng.randint(1, 999)) + b[2][len(b[2]) - len(b[2]):].replace("%s", ""), None)] if False else \
-                     [(b[0], None), (ent, "USERNAME" if which == "U" else "PERSON_NAME"), (b[1], None), (str(rng.randint(1, 999)), None), (b[2], None)]
+            b = fmt.split("%s")
+            pieces = [(b[0], None), (ent, "USERNAME" if which == "U" else "PERSON_NAME"), (b[1], None), (str(rng.randint(1, 999)), None), (b[2], None)]
     text, spans = _finish(rng, pieces, tags)
     ents = [text[s:e] for s, e, _ in spans]
     if any(not x.isascii() for x in ents): tags.add("unicode")
