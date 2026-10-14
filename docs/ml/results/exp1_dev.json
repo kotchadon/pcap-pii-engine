@@ -1,0 +1,1606 @@
+{
+ "error_samples_include_text": false,
+ "model_version": "bilstm-v1-972a87f2b6db",
+ "min_score": 0.25,
+ "data_seed": 1234,
+ "torch": "2.14.1+cu130",
+ "python": "3.13.16",
+ "threads": 4,
+ "checkpoint_sha256": "972a87f2b6db8b701ba43a63d1949ca0dc7684ec67c2c2a304ebbbaa19495d6a",
+ "splits": {
+  "val": {
+   "examples": 1500,
+   "entities": 1145,
+   "bilstm_at_min_score": {
+    "micro": {
+     "precision": 0.8518145161290323,
+     "recall": 0.7379912663755459,
+     "f1": 0.7908282639213852,
+     "tp": 845,
+     "fp": 147,
+     "fn": 300,
+     "support": 1145
+    },
+    "macro_f1": 0.7953354535817052,
+    "per_class": {
+     "PERSON_NAME": {
+      "precision": 0.7996515679442509,
+      "recall": 0.7251184834123223,
+      "f1": 0.7605633802816901,
+      "tp": 459,
+      "fp": 115,
+      "fn": 174,
+      "support": 633
+     },
+     "USERNAME": {
+      "precision": 0.9234449760765551,
+      "recall": 0.75390625,
+      "f1": 0.8301075268817204,
+      "tp": 386,
+      "fp": 32,
+      "fn": 126,
+      "support": 512
+     }
+    }
+   },
+   "threshold_sweep": {
+    "0.00": {
+     "precision": 0.8445,
+     "recall": 0.7397,
+     "f1": 0.7886
+    },
+    "0.05": {
+     "precision": 0.8445,
+     "recall": 0.7397,
+     "f1": 0.7886
+    },
+    "0.10": {
+     "precision": 0.847,
+     "recall": 0.7397,
+     "f1": 0.7897
+    },
+    "0.15": {
+     "precision": 0.8487,
+     "recall": 0.7397,
+     "f1": 0.7905
+    },
+    "0.20": {
+     "precision": 0.8495,
+     "recall": 0.7397,
+     "f1": 0.7908
+    },
+    "0.25": {
+     "precision": 0.8518,
+     "recall": 0.738,
+     "f1": 0.7908
+    },
+    "0.30": {
+     "precision": 0.8535,
+     "recall": 0.738,
+     "f1": 0.7916
+    },
+    "0.35": {
+     "precision": 0.8541,
+     "recall": 0.7362,
+     "f1": 0.7908
+    },
+    "0.40": {
+     "precision": 0.8547,
+     "recall": 0.7293,
+     "f1": 0.787
+    },
+    "0.45": {
+     "precision": 0.8549,
+     "recall": 0.7258,
+     "f1": 0.7851
+    },
+    "0.50": {
+     "precision": 0.86,
+     "recall": 0.7188,
+     "f1": 0.7831
+    },
+    "0.55": {
+     "precision": 0.8664,
+     "recall": 0.7022,
+     "f1": 0.7757
+    },
+    "0.60": {
+     "precision": 0.8767,
+     "recall": 0.6952,
+     "f1": 0.7755
+    },
+    "0.65": {
+     "precision": 0.8846,
+     "recall": 0.683,
+     "f1": 0.7708
+    },
+    "0.70": {
+     "precision": 0.8914,
+     "recall": 0.6664,
+     "f1": 0.7626
+    },
+    "0.75": {
+     "precision": 0.9008,
+     "recall": 0.6507,
+     "f1": 0.7556
+    },
+    "0.80": {
+     "precision": 0.9117,
+     "recall": 0.6218,
+     "f1": 0.7394
+    },
+    "0.85": {
+     "precision": 0.9174,
+     "recall": 0.6017,
+     "f1": 0.7268
+    },
+    "0.90": {
+     "precision": 0.9257,
+     "recall": 0.5878,
+     "f1": 0.719
+    },
+    "0.95": {
+     "precision": 0.934,
+     "recall": 0.5441,
+     "f1": 0.6876
+    },
+    "0.97": {
+     "precision": 0.9366,
+     "recall": 0.5031,
+     "f1": 0.6545
+    },
+    "0.99": {
+     "precision": 0.9382,
+     "recall": 0.4507,
+     "f1": 0.6088
+    }
+   },
+   "baselines": {
+    "majority(no_entities)": {
+     "micro": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 1145,
+      "support": 1145
+     },
+     "macro_f1": 0.0,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 633,
+       "support": 633
+      },
+      "USERNAME": {
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 512,
+       "support": 512
+      }
+     }
+    },
+    "existing_detect_key_rules": {
+     "micro": {
+      "precision": 1.0,
+      "recall": 0.18165938864628822,
+      "f1": 0.3074648928307465,
+      "tp": 208,
+      "fp": 0,
+      "fn": 937,
+      "support": 1145
+     },
+     "macro_f1": 0.3104616305634913,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 1.0,
+       "recall": 0.15955766192733017,
+       "f1": 0.27520435967302453,
+       "tp": 101,
+       "fp": 0,
+       "fn": 532,
+       "support": 633
+      },
+      "USERNAME": {
+       "precision": 1.0,
+       "recall": 0.208984375,
+       "f1": 0.345718901453958,
+       "tp": 107,
+       "fp": 0,
+       "fn": 405,
+       "support": 512
+      }
+     }
+    },
+    "strong_key_aware_rules": {
+     "micro": {
+      "precision": 0.9978563772775991,
+      "recall": 0.8131004366812227,
+      "f1": 0.8960538979788258,
+      "tp": 931,
+      "fp": 2,
+      "fn": 214,
+      "support": 1145
+     },
+     "macro_f1": 0.8990676198323795,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 0.9955456570155902,
+       "recall": 0.7061611374407583,
+       "f1": 0.8262476894639557,
+       "tp": 447,
+       "fp": 2,
+       "fn": 186,
+       "support": 633
+      },
+      "USERNAME": {
+       "precision": 1.0,
+       "recall": 0.9453125,
+       "f1": 0.9718875502008032,
+       "tp": 484,
+       "fp": 0,
+       "fn": 28,
+       "support": 512
+      }
+     }
+    }
+   },
+   "errors": {
+    "false_positives": 147,
+    "false_negatives": 300,
+    "fp_by_kind": {
+     "kv": 24,
+     "field_person": 36,
+     "text_neg": 31,
+     "field_user": 1,
+     "text_user": 14,
+     "field_neg": 19,
+     "text_mixed": 9,
+     "text_person": 13
+    },
+    "fn_by_kind": {
+     "field_person": 55,
+     "text_person": 106,
+     "field_user": 34,
+     "kv": 23,
+     "text_mixed": 49,
+     "text_user": 31,
+     "field_first": 2
+    },
+    "recall_by_kind": {
+     "field_first": 0.962,
+     "field_last": 1.0,
+     "field_person": 0.615,
+     "field_user": 0.815,
+     "kv": 0.819,
+     "text_mixed": 0.617,
+     "text_person": 0.615,
+     "text_user": 0.797,
+     "url": 1.0
+    },
+    "sample_false_positives": [
+     {
+      "id": "val-00000",
+      "kind": "kv",
+      "label": "PERSON_NAME",
+      "start": 8,
+      "end": 15,
+      "span_length": 7,
+      "text_length": 25
+     },
+     {
+      "id": "val-00007",
+      "kind": "field_person",
+      "label": "PERSON_NAME",
+      "start": 12,
+      "end": 19,
+      "span_length": 7,
+      "text_length": 19
+     },
+     {
+      "id": "val-00010",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 21,
+      "span_length": 10,
+      "text_length": 22
+     },
+     {
+      "id": "val-00011",
+      "kind": "kv",
+      "label": "PERSON_NAME",
+      "start": 8,
+      "end": 15,
+      "span_length": 7,
+      "text_length": 26
+     },
+     {
+      "id": "val-00019",
+      "kind": "field_user",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 13,
+      "span_length": 13,
+      "text_length": 13
+     },
+     {
+      "id": "val-00035",
+      "kind": "field_person",
+      "label": "PERSON_NAME",
+      "start": 14,
+      "end": 23,
+      "span_length": 9,
+      "text_length": 23
+     },
+     {
+      "id": "val-00037",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 19,
+      "span_length": 8,
+      "text_length": 20
+     },
+     {
+      "id": "val-00069",
+      "kind": "text_user",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 7,
+      "span_length": 7,
+      "text_length": 46
+     },
+     {
+      "id": "val-00105",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 20,
+      "span_length": 9,
+      "text_length": 21
+     },
+     {
+      "id": "val-00115",
+      "kind": "kv",
+      "label": "PERSON_NAME",
+      "start": 8,
+      "end": 18,
+      "span_length": 10,
+      "text_length": 25
+     },
+     {
+      "id": "val-00140",
+      "kind": "field_neg",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 8,
+      "span_length": 8,
+      "text_length": 14
+     },
+     {
+      "id": "val-00155",
+      "kind": "field_neg",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
+     },
+     {
+      "id": "val-00160",
+      "kind": "field_neg",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 14,
+      "span_length": 14,
+      "text_length": 14
+     },
+     {
+      "id": "val-00172",
+      "kind": "kv",
+      "label": "PERSON_NAME",
+      "start": 8,
+      "end": 14,
+      "span_length": 6,
+      "text_length": 25
+     },
+     {
+      "id": "val-00192",
+      "kind": "text_mixed",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 15,
+      "span_length": 15,
+      "text_length": 45
+     },
+     {
+      "id": "val-00208",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 24,
+      "span_length": 13,
+      "text_length": 25
+     },
+     {
+      "id": "val-00210",
+      "kind": "field_neg",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
+     },
+     {
+      "id": "val-00235",
+      "kind": "field_person",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 22,
+      "span_length": 22,
+      "text_length": 22
+     },
+     {
+      "id": "val-00238",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 21,
+      "span_length": 10,
+      "text_length": 22
+     },
+     {
+      "id": "val-00241",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 4,
+      "end": 11,
+      "span_length": 7,
+      "text_length": 22
+     },
+     {
+      "id": "val-00241",
+      "kind": "text_person",
+      "label": "USERNAME",
+      "start": 12,
+      "end": 22,
+      "span_length": 10,
+      "text_length": 22
+     },
+     {
+      "id": "val-00254",
+      "kind": "field_neg",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 7,
+      "span_length": 7,
+      "text_length": 11
+     },
+     {
+      "id": "val-00255",
+      "kind": "text_user",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 15,
+      "span_length": 15,
+      "text_length": 50
+     },
+     {
+      "id": "val-00263",
+      "kind": "field_person",
+      "label": "USERNAME",
+      "start": 8,
+      "end": 16,
+      "span_length": 8,
+      "text_length": 16
+     },
+     {
+      "id": "val-00320",
+      "kind": "field_neg",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 11
+     }
+    ],
+    "sample_false_negatives": [
+     {
+      "id": "val-00007",
+      "kind": "field_person",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 19,
+      "span_length": 19,
+      "text_length": 19
+     },
+     {
+      "id": "val-00014",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 6,
+      "end": 14,
+      "span_length": 8,
+      "text_length": 36
+     },
+     {
+      "id": "val-00019",
+      "kind": "field_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 13,
+      "span_length": 13,
+      "text_length": 13
+     },
+     {
+      "id": "val-00025",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 23,
+      "end": 39,
+      "span_length": 16,
+      "text_length": 56
+     },
+     {
+      "id": "val-00025",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 43,
+      "end": 56,
+      "span_length": 13,
+      "text_length": 56
+     },
+     {
+      "id": "val-00035",
+      "kind": "field_person",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 23,
+      "span_length": 23,
+      "text_length": 23
+     },
+     {
+      "id": "val-00049",
+      "kind": "field_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 8,
+      "span_length": 8,
+      "text_length": 8
+     },
+     {
+      "id": "val-00061",
+      "kind": "kv",
+      "label": "USERNAME",
+      "start": 10,
+      "end": 30,
+      "span_length": 20,
+      "text_length": 43
+     },
+     {
+      "id": "val-00068",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 6,
+      "end": 11,
+      "span_length": 5,
+      "text_length": 33
+     },
+     {
+      "id": "val-00075",
+      "kind": "text_mixed",
+      "label": "USERNAME",
+      "start": 25,
+      "end": 33,
+      "span_length": 8,
+      "text_length": 48
+     },
+     {
+      "id": "val-00079",
+      "kind": "text_mixed",
+      "label": "USERNAME",
+      "start": 33,
+      "end": 45,
+      "span_length": 12,
+      "text_length": 45
+     },
+     {
+      "id": "val-00080",
+      "kind": "field_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 9,
+      "span_length": 9,
+      "text_length": 9
+     },
+     {
+      "id": "val-00090",
+      "kind": "field_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 14,
+      "span_length": 14,
+      "text_length": 14
+     },
+     {
+      "id": "val-00091",
+      "kind": "kv",
+      "label": "USERNAME",
+      "start": 10,
+      "end": 18,
+      "span_length": 8,
+      "text_length": 31
+     },
+     {
+      "id": "val-00095",
+      "kind": "field_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 9,
+      "span_length": 9,
+      "text_length": 9
+     },
+     {
+      "id": "val-00098",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 23,
+      "end": 43,
+      "span_length": 20,
+      "text_length": 68
+     },
+     {
+      "id": "val-00098",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 47,
+      "end": 68,
+      "span_length": 21,
+      "text_length": 68
+     },
+     {
+      "id": "val-00099",
+      "kind": "field_person",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 22,
+      "span_length": 22,
+      "text_length": 22
+     },
+     {
+      "id": "val-00118",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 6,
+      "end": 12,
+      "span_length": 6,
+      "text_length": 34
+     },
+     {
+      "id": "val-00119",
+      "kind": "field_person",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 22,
+      "span_length": 22,
+      "text_length": 22
+     },
+     {
+      "id": "val-00134",
+      "kind": "field_person",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 24,
+      "span_length": 24,
+      "text_length": 24
+     },
+     {
+      "id": "val-00138",
+      "kind": "kv",
+      "label": "USERNAME",
+      "start": 10,
+      "end": 19,
+      "span_length": 9,
+      "text_length": 32
+     },
+     {
+      "id": "val-00143",
+      "kind": "text_user",
+      "label": "USERNAME",
+      "start": 8,
+      "end": 19,
+      "span_length": 11,
+      "text_length": 47
+     },
+     {
+      "id": "val-00144",
+      "kind": "field_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 18,
+      "span_length": 18,
+      "text_length": 18
+     },
+     {
+      "id": "val-00147",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 6,
+      "end": 14,
+      "span_length": 8,
+      "text_length": 36
+     }
+    ]
+   },
+   "raw_score_ece_vs_precision": 0.0682,
+   "raw_score_reliability_bins": [
+    {
+     "bin": "[0.0,0.1)",
+     "n": 3,
+     "mean_score": 0.08,
+     "precision": 0.0
+    },
+    {
+     "bin": "[0.1,0.2)",
+     "n": 3,
+     "mean_score": 0.133,
+     "precision": 0.0
+    },
+    {
+     "bin": "[0.2,0.3)",
+     "n": 7,
+     "mean_score": 0.232,
+     "precision": 0.286
+    },
+    {
+     "bin": "[0.3,0.4)",
+     "n": 13,
+     "mean_score": 0.369,
+     "precision": 0.769
+    },
+    {
+     "bin": "[0.4,0.5)",
+     "n": 20,
+     "mean_score": 0.459,
+     "precision": 0.6
+    },
+    {
+     "bin": "[0.5,0.6)",
+     "n": 49,
+     "mean_score": 0.546,
+     "precision": 0.551
+    },
+    {
+     "bin": "[0.6,0.7)",
+     "n": 52,
+     "mean_score": 0.652,
+     "precision": 0.635
+    },
+    {
+     "bin": "[0.7,0.8)",
+     "n": 75,
+     "mean_score": 0.755,
+     "precision": 0.68
+    },
+    {
+     "bin": "[0.8,0.9)",
+     "n": 54,
+     "mean_score": 0.85,
+     "precision": 0.722
+    },
+    {
+     "bin": "[0.9,1.0)",
+     "n": 727,
+     "mean_score": 0.988,
+     "precision": 0.926
+    }
+   ],
+   "cpu_timing": {
+    "single_field_ms": 3.27,
+    "batched_fields_per_sec": 2424.7
+   }
+  },
+  "calib": {
+   "examples": 1500,
+   "entities": 1106,
+   "bilstm_at_min_score": {
+    "micro": {
+     "precision": 0.8252853380158033,
+     "recall": 0.8499095840867993,
+     "f1": 0.8374164810690423,
+     "tp": 940,
+     "fp": 199,
+     "fn": 166,
+     "support": 1106
+    },
+    "macro_f1": 0.836691691459544,
+    "per_class": {
+     "PERSON_NAME": {
+      "precision": 0.7867036011080333,
+      "recall": 0.9015873015873016,
+      "f1": 0.8402366863905327,
+      "tp": 568,
+      "fp": 154,
+      "fn": 62,
+      "support": 630
+     },
+     "USERNAME": {
+      "precision": 0.8920863309352518,
+      "recall": 0.7815126050420168,
+      "f1": 0.8331466965285553,
+      "tp": 372,
+      "fp": 45,
+      "fn": 104,
+      "support": 476
+     }
+    }
+   },
+   "threshold_sweep": {
+    "0.00": {
+     "precision": 0.8246,
+     "recall": 0.8499,
+     "f1": 0.837
+    },
+    "0.05": {
+     "precision": 0.8246,
+     "recall": 0.8499,
+     "f1": 0.837
+    },
+    "0.10": {
+     "precision": 0.8246,
+     "recall": 0.8499,
+     "f1": 0.837
+    },
+    "0.15": {
+     "precision": 0.8253,
+     "recall": 0.8499,
+     "f1": 0.8374
+    },
+    "0.20": {
+     "precision": 0.8253,
+     "recall": 0.8499,
+     "f1": 0.8374
+    },
+    "0.25": {
+     "precision": 0.8253,
+     "recall": 0.8499,
+     "f1": 0.8374
+    },
+    "0.30": {
+     "precision": 0.8251,
+     "recall": 0.849,
+     "f1": 0.8369
+    },
+    "0.35": {
+     "precision": 0.8251,
+     "recall": 0.849,
+     "f1": 0.8369
+    },
+    "0.40": {
+     "precision": 0.8247,
+     "recall": 0.8463,
+     "f1": 0.8353
+    },
+    "0.45": {
+     "precision": 0.8249,
+     "recall": 0.8436,
+     "f1": 0.8342
+    },
+    "0.50": {
+     "precision": 0.828,
+     "recall": 0.8354,
+     "f1": 0.8317
+    },
+    "0.55": {
+     "precision": 0.8309,
+     "recall": 0.8309,
+     "f1": 0.8309
+    },
+    "0.60": {
+     "precision": 0.8353,
+     "recall": 0.8255,
+     "f1": 0.8304
+    },
+    "0.65": {
+     "precision": 0.8419,
+     "recall": 0.8183,
+     "f1": 0.8299
+    },
+    "0.70": {
+     "precision": 0.8447,
+     "recall": 0.8065,
+     "f1": 0.8252
+    },
+    "0.75": {
+     "precision": 0.8475,
+     "recall": 0.7939,
+     "f1": 0.8198
+    },
+    "0.80": {
+     "precision": 0.8501,
+     "recall": 0.7794,
+     "f1": 0.8132
+    },
+    "0.85": {
+     "precision": 0.8609,
+     "recall": 0.7613,
+     "f1": 0.8081
+    },
+    "0.90": {
+     "precision": 0.8749,
+     "recall": 0.7269,
+     "f1": 0.7941
+    },
+    "0.95": {
+     "precision": 0.8969,
+     "recall": 0.6844,
+     "f1": 0.7764
+    },
+    "0.97": {
+     "precision": 0.8985,
+     "recall": 0.632,
+     "f1": 0.742
+    },
+    "0.99": {
+     "precision": 0.9282,
+     "recall": 0.5497,
+     "f1": 0.6905
+    }
+   },
+   "baselines": {
+    "majority(no_entities)": {
+     "micro": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 1106,
+      "support": 1106
+     },
+     "macro_f1": 0.0,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 630,
+       "support": 630
+      },
+      "USERNAME": {
+       "precision": 0.0,
+       "recall": 0.0,
+       "f1": 0.0,
+       "tp": 0,
+       "fp": 0,
+       "fn": 476,
+       "support": 476
+      }
+     }
+    },
+    "existing_detect_key_rules": {
+     "micro": {
+      "precision": 1.0,
+      "recall": 0.2088607594936709,
+      "f1": 0.3455497382198953,
+      "tp": 231,
+      "fp": 0,
+      "fn": 875,
+      "support": 1106
+     },
+     "macro_f1": 0.35132871565032364,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 1.0,
+       "recall": 0.1746031746031746,
+       "f1": 0.29729729729729726,
+       "tp": 110,
+       "fp": 0,
+       "fn": 520,
+       "support": 630
+      },
+      "USERNAME": {
+       "precision": 1.0,
+       "recall": 0.2542016806722689,
+       "f1": 0.4053601340033501,
+       "tp": 121,
+       "fp": 0,
+       "fn": 355,
+       "support": 476
+      }
+     }
+    },
+    "strong_key_aware_rules": {
+     "micro": {
+      "precision": 0.9024122807017544,
+      "recall": 0.744122965641953,
+      "f1": 0.8156590683845393,
+      "tp": 823,
+      "fp": 89,
+      "fn": 283,
+      "support": 1106
+     },
+     "macro_f1": 0.8136303448502744,
+     "per_class": {
+      "PERSON_NAME": {
+       "precision": 0.8496621621621622,
+       "recall": 0.7984126984126985,
+       "f1": 0.8232405891980361,
+       "tp": 503,
+       "fp": 89,
+       "fn": 127,
+       "support": 630
+      },
+      "USERNAME": {
+       "precision": 1.0,
+       "recall": 0.6722689075630253,
+       "f1": 0.8040201005025126,
+       "tp": 320,
+       "fp": 0,
+       "fn": 156,
+       "support": 476
+      }
+     }
+    }
+   },
+   "errors": {
+    "false_positives": 199,
+    "false_negatives": 166,
+    "fp_by_kind": {
+     "text_person": 55,
+     "text_user": 16,
+     "text_neg": 63,
+     "url": 30,
+     "field_neg": 23,
+     "kv": 8,
+     "field_user": 4
+    },
+    "fn_by_kind": {
+     "text_person": 53,
+     "text_user": 32,
+     "field_user": 37,
+     "url": 33,
+     "field_person": 1,
+     "kv": 10
+    },
+    "recall_by_kind": {
+     "field_first": 1.0,
+     "field_last": 1.0,
+     "field_person": 0.994,
+     "field_user": 0.807,
+     "kv": 0.907,
+     "text_mixed": 1.0,
+     "text_person": 0.759,
+     "text_user": 0.778,
+     "url": 0.0
+    },
+    "sample_false_positives": [
+     {
+      "id": "calib-00002",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 5,
+      "end": 19,
+      "span_length": 14,
+      "text_length": 19
+     },
+     {
+      "id": "calib-00003",
+      "kind": "text_user",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
+     },
+     {
+      "id": "calib-00022",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 21,
+      "span_length": 10,
+      "text_length": 34
+     },
+     {
+      "id": "calib-00044",
+      "kind": "text_user",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 14,
+      "span_length": 14,
+      "text_length": 34
+     },
+     {
+      "id": "calib-00045",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 22,
+      "span_length": 11,
+      "text_length": 35
+     },
+     {
+      "id": "calib-00050",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 22,
+      "span_length": 11,
+      "text_length": 35
+     },
+     {
+      "id": "calib-00067",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 6,
+      "end": 20,
+      "span_length": 14,
+      "text_length": 20
+     },
+     {
+      "id": "calib-00073",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 6,
+      "span_length": 6,
+      "text_length": 33
+     },
+     {
+      "id": "calib-00075",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 5,
+      "end": 20,
+      "span_length": 15,
+      "text_length": 20
+     },
+     {
+      "id": "calib-00078",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 17,
+      "span_length": 6,
+      "text_length": 30
+     },
+     {
+      "id": "calib-00084",
+      "kind": "text_user",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
+     },
+     {
+      "id": "calib-00100",
+      "kind": "field_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 21,
+      "span_length": 10,
+      "text_length": 34
+     },
+     {
+      "id": "calib-00102",
+      "kind": "field_neg",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 11
+     },
+     {
+      "id": "calib-00114",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 6,
+      "end": 22,
+      "span_length": 16,
+      "text_length": 22
+     },
+     {
+      "id": "calib-00121",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 22,
+      "span_length": 11,
+      "text_length": 35
+     },
+     {
+      "id": "calib-00128",
+      "kind": "text_user",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 16,
+      "span_length": 16,
+      "text_length": 29
+     },
+     {
+      "id": "calib-00131",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 23,
+      "span_length": 12,
+      "text_length": 36
+     },
+     {
+      "id": "calib-00134",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 6,
+      "end": 19,
+      "span_length": 13,
+      "text_length": 19
+     },
+     {
+      "id": "calib-00144",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 6,
+      "end": 17,
+      "span_length": 11,
+      "text_length": 17
+     },
+     {
+      "id": "calib-00150",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 6,
+      "span_length": 6,
+      "text_length": 34
+     },
+     {
+      "id": "calib-00158",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 24,
+      "span_length": 13,
+      "text_length": 37
+     },
+     {
+      "id": "calib-00184",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 6,
+      "end": 18,
+      "span_length": 12,
+      "text_length": 18
+     },
+     {
+      "id": "calib-00197",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 5,
+      "end": 20,
+      "span_length": 15,
+      "text_length": 20
+     },
+     {
+      "id": "calib-00199",
+      "kind": "text_neg",
+      "label": "PERSON_NAME",
+      "start": 11,
+      "end": 23,
+      "span_length": 12,
+      "text_length": 36
+     },
+     {
+      "id": "calib-00204",
+      "kind": "text_user",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
+     }
+    ],
+    "sample_false_negatives": [
+     {
+      "id": "calib-00002",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 13,
+      "end": 19,
+      "span_length": 6,
+      "text_length": 19
+     },
+     {
+      "id": "calib-00003",
+      "kind": "text_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
+     },
+     {
+      "id": "calib-00004",
+      "kind": "field_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 8,
+      "span_length": 8,
+      "text_length": 8
+     },
+     {
+      "id": "calib-00020",
+      "kind": "field_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 13,
+      "span_length": 13,
+      "text_length": 13
+     },
+     {
+      "id": "calib-00038",
+      "kind": "field_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 15,
+      "span_length": 15,
+      "text_length": 15
+     },
+     {
+      "id": "calib-00043",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 9,
+      "end": 16,
+      "span_length": 7,
+      "text_length": 22
+     },
+     {
+      "id": "calib-00044",
+      "kind": "text_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 14,
+      "span_length": 14,
+      "text_length": 34
+     },
+     {
+      "id": "calib-00048",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 9,
+      "end": 18,
+      "span_length": 9,
+      "text_length": 24
+     },
+     {
+      "id": "calib-00059",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 9,
+      "end": 19,
+      "span_length": 10,
+      "text_length": 25
+     },
+     {
+      "id": "calib-00065",
+      "kind": "text_user",
+      "label": "USERNAME",
+      "start": 6,
+      "end": 13,
+      "span_length": 7,
+      "text_length": 26
+     },
+     {
+      "id": "calib-00068",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 9,
+      "end": 22,
+      "span_length": 13,
+      "text_length": 28
+     },
+     {
+      "id": "calib-00072",
+      "kind": "field_person",
+      "label": "PERSON_NAME",
+      "start": 0,
+      "end": 12,
+      "span_length": 12,
+      "text_length": 12
+     },
+     {
+      "id": "calib-00075",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 13,
+      "end": 20,
+      "span_length": 7,
+      "text_length": 20
+     },
+     {
+      "id": "calib-00084",
+      "kind": "text_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
+     },
+     {
+      "id": "calib-00085",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 9,
+      "end": 15,
+      "span_length": 6,
+      "text_length": 21
+     },
+     {
+      "id": "calib-00087",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 9,
+      "end": 21,
+      "span_length": 12,
+      "text_length": 27
+     },
+     {
+      "id": "calib-00109",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 9,
+      "end": 28,
+      "span_length": 19,
+      "text_length": 34
+     },
+     {
+      "id": "calib-00126",
+      "kind": "text_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 8,
+      "span_length": 8,
+      "text_length": 28
+     },
+     {
+      "id": "calib-00128",
+      "kind": "text_user",
+      "label": "USERNAME",
+      "start": 6,
+      "end": 16,
+      "span_length": 10,
+      "text_length": 29
+     },
+     {
+      "id": "calib-00179",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 9,
+      "end": 19,
+      "span_length": 10,
+      "text_length": 25
+     },
+     {
+      "id": "calib-00180",
+      "kind": "url",
+      "label": "USERNAME",
+      "start": 9,
+      "end": 17,
+      "span_length": 8,
+      "text_length": 23
+     },
+     {
+      "id": "calib-00189",
+      "kind": "field_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
+     },
+     {
+      "id": "calib-00197",
+      "kind": "text_person",
+      "label": "PERSON_NAME",
+      "start": 13,
+      "end": 20,
+      "span_length": 7,
+      "text_length": 20
+     },
+     {
+      "id": "calib-00200",
+      "kind": "field_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 10,
+      "span_length": 10,
+      "text_length": 10
+     },
+     {
+      "id": "calib-00204",
+      "kind": "text_user",
+      "label": "USERNAME",
+      "start": 0,
+      "end": 11,
+      "span_length": 11,
+      "text_length": 31
+     }
+    ]
+   },
+   "raw_score_ece_vs_precision": 0.1225,
+   "raw_score_reliability_bins": [
+    {
+     "bin": "[0.1,0.2)",
+     "n": 1,
+     "mean_score": 0.102,
+     "precision": 0.0
+    },
+    {
+     "bin": "[0.2,0.3)",
+     "n": 1,
+     "mean_score": 0.281,
+     "precision": 1.0
+    },
+    {
+     "bin": "[0.3,0.4)",
+     "n": 3,
+     "mean_score": 0.36,
+     "precision": 1.0
+    },
+    {
+     "bin": "[0.4,0.5)",
+     "n": 19,
+     "mean_score": 0.468,
+     "precision": 0.632
+    },
+    {
+     "bin": "[0.5,0.6)",
+     "n": 23,
+     "mean_score": 0.555,
+     "precision": 0.478
+    },
+    {
+     "bin": "[0.6,0.7)",
+     "n": 37,
+     "mean_score": 0.652,
+     "precision": 0.568
+    },
+    {
+     "bin": "[0.7,0.8)",
+     "n": 42,
+     "mean_score": 0.753,
+     "precision": 0.714
+    },
+    {
+     "bin": "[0.8,0.9)",
+     "n": 95,
+     "mean_score": 0.859,
+     "precision": 0.611
+    },
+    {
+     "bin": "[0.9,1.0)",
+     "n": 919,
+     "mean_score": 0.988,
+     "precision": 0.875
+    }
+   ],
+   "cpu_timing": {
+    "single_field_ms": 1.44,
+    "batched_fields_per_sec": 4429.2
+   }
+  }
+ }
+}
