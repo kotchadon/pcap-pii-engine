@@ -79,6 +79,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._reply({'token': self.server.token, 'max_upload_bytes': self.server.max_upload,
                          'detector_mode': 'rules_plus_bilstm' if self.server.ml_detector else 'rules_only',
                          'model_enabled': self.server.ml_detector is not None,
+                         'model_available': self.server.ml_detector is not None,
                          'model_version': (self.server.ml_detector.model_version
                                            if self.server.ml_detector else None)})
             return
@@ -95,6 +96,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._reply({'error': 'Request refused'}, 403)
             return
         path = urlsplit(self.path).path
+        requested_mode = self.headers.get('X-Detection-Mode')
+        if requested_mode is not None and requested_mode not in ('rules', 'hybrid'):
+            self._reply({'error': 'Invalid detection mode'}, 400)
+            return
+        if requested_mode == 'hybrid' and self.server.ml_detector is None:
+            self._reply({'error': 'Contextual AI model is unavailable; start with --ml-checkpoint'}, 422)
+            return
         if path == '/api/demo':
             # Demo data are synthetic. Only demo traffic is used, never user data.
             from importlib.util import module_from_spec, spec_from_file_location
@@ -111,7 +119,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             with tempfile.TemporaryDirectory(prefix='pii_demo_') as directory:
                 capture = Path(directory) / 'synthetic-demo.pcap'
                 module.write_pcap(capture)
-                self._analyze(capture, 'synthetic-demo.pcap')
+                self._analyze(capture, 'synthetic-demo.pcap', requested_mode)
             return
         if path != '/api/analyze':
             self._reply({'error': 'Not found'}, 404)
@@ -143,18 +151,21 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         return
                     output.write(block)
                     remaining -= len(block)
-            self._analyze(capture, 'uploaded-capture')
+            self._analyze(capture, 'uploaded-capture', requested_mode)
 
-    def _analyze(self, capture: Path, label: str) -> None:
+    def _analyze(self, capture: Path, label: str, requested_mode: str | None = None) -> None:
         try:
             # Serialise inference to avoid overlapping CPU-heavy analyses on the same
             # shared checkpoint during a live presentation.
+            use_ml = self.server.ml_detector is not None and requested_mode != 'rules'
             with self.server.analysis_lock:
                 report = analyze(capture, include_values=False,
                                  limits=AnalysisLimits(max_capture_bytes=self.server.max_upload),
-                                 ml_detector=self.server.ml_detector)
+                                 ml_detector=self.server.ml_detector if use_ml else None)
             self._reply({'filename': label, 'report': report,
-                         'model_enabled': self.server.ml_detector is not None})
+                         'model_enabled': use_ml,
+                         'model_available': self.server.ml_detector is not None,
+                         'scan_mode': 'hybrid' if use_ml else 'rules'})
         except (OSError, ValueError, TypeError, OverflowError) as exc:
             # Engine errors may include paths; never expose them verbatim in the UI.
             self._reply({'error': 'Capture rejected or analysis could not complete',
