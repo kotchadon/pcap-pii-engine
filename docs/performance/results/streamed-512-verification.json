@@ -1,0 +1,27 @@
+{
+  "valid_json": true,
+  "accounting_matches": true,
+  "all_findings_masked": true,
+  "semantic_sha256": "ea39909ebb4ecd50bd7ba5d635c39d4f7ca8774ba0375820769177cd74075b7b",
+  "findings_by_type": {
+    "EMAIL": 196128
+  },
+  "summary": {
+    "packets_captured": 773910,
+    "non_tcp_or_unsupported_packets": 0,
+    "flows_processed": 36320,
+    "endpoint_pairs": 36320,
+    "http_flows": 32688,
+    "http_messages": 784512,
+    "http_transactions": 392256,
+    "unpaired_requests": 0,
+    "unpaired_responses": 0,
+    "total_data_bytes": 524419317,
+    "processing_time_seconds": 83.2846,
+    "potential_leaks": 196128,
+    "stream_gaps": 0,
+    "capture_truncated_records": 0,
+    "capture_malformed_records": 0,
+    "analysis_incomplete": false
+  }
+}

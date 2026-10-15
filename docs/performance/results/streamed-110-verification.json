@@ -1,0 +1,31 @@
+{
+  "valid_json": true,
+  "accounting_matches": true,
+  "all_findings_masked": true,
+  "semantic_sha256": "1b8b48583e874d1d30f1e7098b6e4aecfb29260e24e49f04dc8d9a956bf0599a",
+  "findings_by_type": {
+    "PERSON_NAME_CANDIDATE": 60231,
+    "USERNAME": 60231,
+    "EMAIL": 60231,
+    "PHONE": 60231,
+    "CREDIT_CARD": 3122
+  },
+  "summary": {
+    "packets_captured": 361389,
+    "non_tcp_or_unsupported_packets": 0,
+    "flows_processed": 60232,
+    "endpoint_pairs": 60232,
+    "http_flows": 60231,
+    "http_messages": 120462,
+    "http_transactions": 60231,
+    "unpaired_requests": 0,
+    "unpaired_responses": 0,
+    "total_data_bytes": 109561050,
+    "processing_time_seconds": 34.9378,
+    "potential_leaks": 244046,
+    "stream_gaps": 0,
+    "capture_truncated_records": 0,
+    "capture_malformed_records": 0,
+    "analysis_incomplete": false
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "base_commit": "19af7a5668e4b20ebd6cff1dfc87234bb2a58615",
+  "baseline": {
+    "passed": 257,
+    "failed": 9,
+    "seconds": 26.66
+  },
+  "final": {
+    "passed": 278,
+    "failed": 9,
+    "seconds": 34.13
+  },
+  "new_performance_tests": 21,
+  "failing_nodes": [
+    "tests/test_ml_bilstm.py::test_committed_checkpoint_loads_on_cpu_and_is_deterministic",
+    "tests/test_ml_input_probe.py::test_committed_v2_artifact_contract_and_examples",
+    "tests/test_ml_metrics_report.py::test_evaluate_default_exports_no_raw_text",
+    "tests/test_ml_metrics_report.py::test_evaluate_include_text_is_explicit_opt_in",
+    "tests/test_ml_v2_data.py::test_committed_v2_splits_match_manifest",
+    "tests/test_ml_v2_ensemble.py::test_v1_checkpoint_identity_preserved",
+    "tests/test_ml_v2_ensemble.py::test_committed_v2_ensemble_integrity_and_separation_from_v1",
+    "tests/test_ml_v2_ensemble.py::test_committed_v2_deterministic_unicode_and_repeated_locations",
+    "tests/test_ml_v2_model.py::test_v1_checkpoint_still_loads_and_is_unchanged"
+  ],
+  "failure_cause": "Same baseline failures: unavailable authentic model.pt checkpoints or v2 train.jsonl.gz. Git entries retained unchanged. No tests excluded or faked."
+}
