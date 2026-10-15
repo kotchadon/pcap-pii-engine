@@ -346,7 +346,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                         _check_memory(budget)
                 stages['result_aggregation'] += time.perf_counter()-tick
             tick = time.perf_counter()
-            flow_summaries.append({
+            flow_summary = {
                 'flow_id': fid,
                 'endpoints': [{'ip': e[0], 'port': e[1]} for e in endpoints],
                 'packets': len(packets),
@@ -355,7 +355,12 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 'unpaired_requests': flow_orphan_req,
                 'unpaired_responses': flow_orphan_resp,
                 'stream_gaps': flow_gaps,
-            })
+            }
+            if _rows is None:
+                result_bytes += len(json.dumps(flow_summary,ensure_ascii=False).encode('utf-8'))
+                if result_bytes > budget.max_report_bytes:
+                    raise AnalysisLimitError('Analysis exceeded configured report budget')
+            flow_summaries.append(flow_summary)
 
             stages['result_aggregation'] += time.perf_counter()-tick
             if sessions_processed % 128 == 0:
@@ -419,7 +424,14 @@ def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = Fal
     try:
         report = _analyze(path, threshold, include_values, limits=limits, profile=profile,
                           progress=progress, timings=timings)
-        _check_memory(limits if limits is not None else AnalysisLimits.for_profile(profile))
+        budget = limits if limits is not None else AnalysisLimits.for_profile(profile)
+        _check_memory(budget)
+        # Include containers, metadata and UTF-8 encoding without a giant string.
+        total = 0
+        for chunk in json.JSONEncoder(ensure_ascii=False,allow_nan=False).iterencode(report):
+            total += len(chunk.encode('utf-8'))
+            if total > budget.max_report_bytes:
+                raise ReportLimitError('Complete report exceeds configured byte budget')
         if progress is not None:
             progress(dict(stage='complete', **report['summary']))
         return report
@@ -435,7 +447,8 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
 
     Temporary results stay private next to target and are removed on success or
     failure. The receipt omits findings/flows; the complete arrays are in target.
-    Progress callbacks are synchronous (raise to cancel); never contain payload.
+    Progress callbacks are synchronous and contain no payload. Raise to cancel
+    before publication; complete is a non-cancellable notification.
     """
     from .reporting import ReportSpool, ReportLimitError, write_private_report
     source, output = Path(path), Path(target)
@@ -467,8 +480,12 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
         receipt['output_bytes']=output.stat().st_size
         receipt['output_path']=str(output)
         if progress is not None:
-            progress(dict(stage='complete',elapsed_seconds=time.monotonic()-clock,
-                          **report['summary']))
+            try:
+                progress(dict(stage='complete',elapsed_seconds=time.monotonic()-clock,
+                              **report['summary']))
+            except Exception:
+                # Publication already succeeded; observer failure cannot undo it.
+                receipt['progress_notification_failed'] = True
         return receipt
     except (MemoryError, ReportLimitError) as exc:
         raise AnalysisLimitError('Analysis exhausted memory or report budget; no complete report') from exc

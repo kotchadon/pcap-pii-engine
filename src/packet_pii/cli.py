@@ -27,13 +27,13 @@ def main(argv=None) -> int:
     parser.add_argument('--max-memory-mib', type=int, default=None)
     parser.add_argument('--max-findings', type=int, default=None)
     parser.add_argument('--max-capture-mib', type=int, default=None,
-                        help='Maximum input capture size in MiB (default 128)')
+                        help='Override profile input limit in MiB (Standard: 128)')
     parser.add_argument('--max-packets', type=int, default=None,
-                        help='Maximum packets to process (default 100000)')
+                        help='Override profile packet limit (Standard: 100000)')
     parser.add_argument('--max-flows', type=int, default=None,
-                        help='Maximum distinct TCP endpoint pairs (default 20000)')
+                        help='Override endpoint-pair and session limit (Standard: 20000)')
     parser.add_argument('--max-tcp-mib', type=int, default=None,
-                        help='Maximum buffered TCP payload MiB (default 64)')
+                        help='Override profile TCP payload MiB (Standard: 64)')
     args = parser.parse_args(argv)
     try:
         # Prevent self-destruction if --output points at the capture file,
