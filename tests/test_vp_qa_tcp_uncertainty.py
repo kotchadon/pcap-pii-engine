@@ -60,18 +60,19 @@ def test_missing_head_or_middle_segment_is_flagged_incomplete_and_evidence_is_lo
     assert not [f for f in r["findings"] if f["http_message_type"] == "request"]          # the damaged request yields nothing - never partial guesses
 
 
-def test_missing_tail_segment_is_silent_current_behaviour(tmp_path):
-    """OBSERVED DEFECT F-05: losing the LAST request segment drops the whole request with stream_gaps=0 and
-    analysis_incomplete=False - the report looks clean although PII-bearing traffic vanished."""
+def test_missing_tail_segment_is_flagged_incomplete(tmp_path):
+    """F-05 fixed: losing the LAST request segment leaves an unterminated HTTP request. Nothing is guessed from it, but the
+    report no longer looks clean: the message is counted and the analysis is flagged incomplete."""
     r = analyze(one_request_pcap(tmp_path, REQ, seg=SEG, drop={N - 1}))
     s = r["summary"]
-    assert (s["http_messages"], s["rules_findings"], s["stream_gaps"], s["analysis_incomplete"]) == (1, 0, 0, False)   # only the response survives
+    assert (s["http_messages"], s["rules_findings"], s["stream_gaps"]) == (1, 0, 0)          # only the response survives
+    assert s["unterminated_http_messages"] == 1 and s["analysis_incomplete"] is True
+    assert any("unterminated at the end of a stream" in lim for lim in r["limitations"])
+    assert [f["unterminated_http_messages"] for f in r["flows"]] == [1]
 
 
-@pytest.mark.xfail(strict=True, reason="QA finding F-05: an unterminated HTTP message at end of stream should set analysis_incomplete")
-def test_missing_tail_segment_should_set_analysis_incomplete(tmp_path):
-    r = analyze(one_request_pcap(tmp_path, REQ, seg=SEG, drop={N - 1}))
-    assert r["summary"]["analysis_incomplete"] is True
+def test_complete_and_non_http_streams_are_not_flagged_unterminated(tmp_path, baseline):
+    assert baseline["summary"]["unterminated_http_messages"] == 0 and baseline["summary"]["analysis_incomplete"] is False
 
 
 def test_conflicting_overlapping_payload_is_flagged_and_excluded_whatever_the_arrival_order(tmp_path):
@@ -116,17 +117,29 @@ def test_non_http_tcp_and_non_tcp_packets_are_counted_not_guessed(tmp_path):
     s = r["summary"]
     assert s["http_messages"] == 0 and s["potential_leaks"] == 0 and s["non_tcp_or_unsupported_packets"] == 2
     assert "Encrypted HTTPS payloads cannot be inspected without decryption" in r["limitations"]
+    assert s["unsupported_packets_by_reason"] == {"malformed_packet": 1, "non_tcp": 1} and s["unsupported_packets_hiding_tcp"] == 0
+    assert s["tls_streams_not_inspected"] == 1 and s["analysis_incomplete"] is False     # out-of-scope traffic is counted, not "damage"
 
 
-def test_ip_fragment_is_counted_unsupported_but_not_flagged_incomplete(tmp_path):
-    """Observed: an IPv4 fragment is dropped as 'unsupported' (counted) and the request is lost, yet analysis_incomplete stays False."""
+def test_ipv6_extension_header_is_counted_as_possibly_hiding_tcp(tmp_path):
+    base = conversation(0, REQ, ok_response())
+    v6 = bytearray(b"\x02" * 6 + b"\x03" * 6 + b"\x86\xdd" + bytes(60)); v6[14] = 0x60; v6[14 + 6] = 0   # hop-by-hop options header
+    r = analyze(write_pcap(tmp_path / "v6ext.pcap", base + [(1_760_000_050.0, bytes(v6))]))
+    s = r["summary"]
+    assert s["unsupported_packets_by_reason"] == {"ipv6_extension_header": 1} and s["analysis_incomplete"] is True
+
+
+def test_ip_fragment_is_counted_by_reason_and_flagged_incomplete(tmp_path):
+    """F-09 fixed: an IPv4 fragment may hide TCP payload. It is counted by reason and the analysis is flagged incomplete."""
     frames = conversation(0, REQ, ok_response())
     fb = bytearray(frames[3][1]); fb[14 + 6] = 0x20; fb[14 + 7] = 0x00           # set the More-Fragments flag on the data packet
     frames[3] = (frames[3][0], bytes(fb))
     r = analyze(build_pcap(tmp_path / "frag.pcap", [frames]))
     s = r["summary"]
-    assert s["non_tcp_or_unsupported_packets"] == 1 and s["rules_findings"] == 0 and s["analysis_incomplete"] is False
-    assert any("No IP fragmentation" in lim for lim in r["limitations"])              # disclosed generically
+    assert s["non_tcp_or_unsupported_packets"] == 1 and s["rules_findings"] == 0
+    assert s["unsupported_packets_by_reason"] == {"ip_fragment": 1} and s["unsupported_packets_hiding_tcp"] == 1
+    assert s["analysis_incomplete"] is True
+    assert any("IP fragments" in lim for lim in r["limitations"])
 
 
 def test_empty_and_truncated_pcap_files(tmp_path):

@@ -97,19 +97,10 @@ def test_recognised_secret_keys_are_excluded_and_masked_in_query_and_form(tmp_pa
     assert any(f["pii_type"] == "CREDENTIAL_OR_TOKEN" and f["location"] == "form.password" for f in r["findings"])
 
 
-def test_bare_token_parameter_is_not_recognised_as_a_credential_current_behaviour(tmp_path):
-    """OBSERVED GAP F-06: SECRET_KEYS has no bare `token`/`jwt`/`sid`/`passphrase`/`private_key`/`id_token`/`otp`/`pin`.
-    `?token=<value>` is neither reported as CREDENTIAL_OR_TOKEN nor excluded from the contextual model's input (local only:
-    the default report still does not echo it)."""
+def test_bare_token_parameter_is_a_credential_and_never_reaches_the_model(tmp_path):
+    """F-06 fixed: `?token=<value>` is a credential key. It is reported masked and excluded from the contextual model's input."""
     spy = SpyDetector()
     r = analyze(_query_form_capture(tmp_path), ml_detector=spy)
-    assert ("query_parameter.token", SECRETS[1]) in spy.seen
-    assert not any(f["location"] == "query_parameter.token" for f in r["findings"])
-    assert SECRETS[1] not in json.dumps(r)                                          # still masked/absent in the default report
-
-
-@pytest.mark.xfail(strict=True, reason="QA finding F-06: a bare `token` parameter should be treated as a credential (rules) and excluded from ML")
-def test_bare_token_parameter_should_be_a_credential(tmp_path):
-    spy = SpyDetector()
-    analyze(_query_form_capture(tmp_path), ml_detector=spy)
     assert all(text != SECRETS[1] for _, text in spy.seen)
+    assert any(f["location"] == "query_parameter.token" and f["pii_type"] == "CREDENTIAL_OR_TOKEN" for f in r["findings"])
+    assert SECRETS[1] not in json.dumps(r)                                          # masked in the default report

@@ -11,15 +11,16 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 import re
+import hashlib
 import json
 import resource
 import sys
 import time
 from urllib.parse import urlsplit
 
-from .capture import (CaptureDiagnostics, read_frames, decode_tcp,
+from .capture import (CaptureDiagnostics, read_frames, decode_tcp, decode_tcp_with_reason, EVIDENCE_LOSS_REASONS,
                       endpoint_key, reassemble_detailed, sequence_offset, split_tcp_sessions, TcpPacket)
-from .http_extract import (HttpMessage, parse_http_stream_with_spans, extract_fields,
+from .http_extract import (HttpMessage, parse_http_stream_detailed, extract_fields, body_skip_reason,
                            MAX_MESSAGES, MAX_FIELDS)
 from .detect import detect_fields, MAX_FIELD_LENGTH
 from .hybrid import infer_http_fields, MAX_SCAN_ML_FIELDS, MAX_SCAN_ML_CHARACTERS
@@ -227,6 +228,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     diagnostics = CaptureDiagnostics()
     flow_packets: dict[tuple, list[tuple]] = defaultdict(list)
     frames = bytes_processed = ignored = buffered_tcp_bytes = 0
+    skipped_packets: dict[str, int] = {}
     for frame in read_frames(path, diagnostics=diagnostics,
                              max_file_bytes=budget.max_capture_bytes):
         if frames >= budget.max_packets:
@@ -247,13 +249,19 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             flow_packets[key].append((direction,packet.timestamp,packet.seq,packet.flags,packet.payload))
         else:
             ignored += 1
+            skip_reason = decode_tcp_with_reason(frame)[1] or 'unclassified'  # classification only for skipped frames
+            skipped_packets[skip_reason] = skipped_packets.get(skip_reason, 0) + 1
         if frames % 4096 == 0:
             emit('reading', packets=frames, endpoint_pairs=len(flow_packets))
     stages['read_decode_group'] = time.perf_counter()-read_started
     emit('reconstructing', packets=frames, endpoint_pairs=len(flow_packets), sessions=0)
 
     findings = [] if _rows is None else _rows.findings
-    http_count = http_flows = gaps = 0
+    http_count = http_flows = gaps = unterminated = 0
+    bodies_skipped: dict[str, int] = {}
+    http2_streams = tls_streams = 0
+    evidence_loss_packets = sum(n for r, n in skipped_packets.items() if r in EVIDENCE_LOSS_REASONS)
+    location_signals: dict[int, int] = {}  # digest(flow, message, location) -> bit 1 rules, bit 2 model; no values retained
     transactions = orphan_requests = orphan_responses = 0
     flow_summaries = [] if _rows is None else _rows.flows
     sessions_processed = 0
@@ -282,7 +290,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             for packet in packets:
                 directions[(packet.src, packet.sport, packet.dst, packet.dport)].append(packet)
             records: list[_Record] = []
-            flow_gaps = 0
+            flow_gaps = flow_unterminated = 0
             for direction, segs in directions.items():
                 tick = time.perf_counter()
                 assembled = reassemble_detailed(segs)
@@ -292,7 +300,15 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     gaps += 1
                     flow_gaps += 1
                 tick = time.perf_counter()
-                spans = parse_http_stream_with_spans(stream)
+                if stream[:14] == b'PRI * HTTP/2.0':
+                    http2_streams += 1
+                elif stream[:2] in (b'\x16\x03', b'\x17\x03', b'\x15\x03'):
+                    tls_streams += 1
+                parsed_stream = parse_http_stream_detailed(stream)
+                spans = parsed_stream.spans
+                if parsed_stream.unterminated_http:
+                    unterminated += 1
+                    flow_unterminated += 1
                 if len(spans) == MAX_MESSAGES and spans[-1].end_offset < len(stream):
                     raise AnalysisLimitError('HTTP message limit prevents complete analysis')
                 stages['http_parse'] += time.perf_counter()-tick
@@ -322,6 +338,9 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 timestamp = datetime.fromtimestamp(record.timestamp, timezone.utc).isoformat()
                 tick = time.perf_counter()
                 fields = extract_fields(record.message)
+                skip = body_skip_reason(record.message)
+                if skip:
+                    bodies_skipped[skip] = bodies_skipped.get(skip, 0) + 1
                 if len(fields) >= MAX_FIELDS or any(len(value)>MAX_FIELD_LENGTH for _,value in fields):
                     raise AnalysisLimitError('HTTP field limits prevent complete detection')
                 stages['field_extraction'] += time.perf_counter()-tick
@@ -339,8 +358,11 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     entry.pop('fingerprint', None)
                     entries.append(entry)
                 if ml_detector is not None:
+                    quality = {**({'stream_gap': 'true'} if flow_gaps else {}),
+                               **({'capture_incomplete': 'true'} if diagnostics.incomplete else {}),
+                               **({'truncated': 'true'} if flow_unterminated else {})}
                     ml_result = infer_http_fields(
-                        fields, ml_detector, include_values=include_values,
+                        fields, ml_detector, include_values=include_values, quality=quality,
                         max_fields=MAX_SCAN_ML_FIELDS-ml_evaluated,
                         max_characters=MAX_SCAN_ML_CHARACTERS-ml_characters)
                     ml_evaluated += ml_result.fields_evaluated
@@ -375,6 +397,10 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                         result_bytes += len(json.dumps(entry,ensure_ascii=False).encode('utf-8'))
                         if result_bytes > budget.max_report_bytes:
                             raise AnalysisLimitError('Analysis exceeded configured report budget')
+                    key = int.from_bytes(hashlib.blake2b(
+                        f"{fid}\0{record.message_id}\0{entry['location']}".encode('utf-8', 'surrogatepass'),
+                        digest_size=8).digest(), 'big')
+                    location_signals[key] = location_signals.get(key, 0) | (2 if entry['detector'] == 'bilstm' else 1)
                     findings.append(entry)
                     if len(findings) % 1024 == 0:
                         _check_memory(budget)
@@ -389,6 +415,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 'unpaired_requests': flow_orphan_req,
                 'unpaired_responses': flow_orphan_resp,
                 'stream_gaps': flow_gaps,
+                'unterminated_http_messages': flow_unterminated,
             }
             if _rows is None:
                 result_bytes += len(json.dumps(flow_summary,ensure_ascii=False).encode('utf-8'))
@@ -425,6 +452,8 @@ def _analyze(path: str | Path, threshold: float = 0.8,
         'summary': {
             'packets_captured': frames,
             'non_tcp_or_unsupported_packets': ignored,
+            'unsupported_packets_by_reason': dict(sorted(skipped_packets.items())),
+            'unsupported_packets_hiding_tcp': evidence_loss_packets,
             'flows_processed': sessions_processed,
             'endpoint_pairs': len(flow_packets),
             'http_flows': http_flows,
@@ -434,6 +463,10 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'unpaired_responses': orphan_responses,
             'total_data_bytes': bytes_processed,
             'processing_time_seconds': round(time.monotonic() - started, 4),
+            'distinct_exposed_locations': len(location_signals),
+            'locations_flagged_by_rules': sum(1 for v in location_signals.values() if v & 1),
+            'locations_flagged_by_model': sum(1 for v in location_signals.values() if v & 2),
+            'locations_flagged_by_both': sum(1 for v in location_signals.values() if v == 3),
             'potential_leaks': len(findings),
             'fields_extracted': fields_extracted,
             'rules_findings': rules_findings,
@@ -449,14 +482,20 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'ml_inference_failed': False,
             'ml_incomplete': ml_skipped > 0,
             'stream_gaps': gaps,
+            'unterminated_http_messages': unterminated,
+            'http2_streams_not_decoded': http2_streams,
+            'tls_streams_not_inspected': tls_streams,
+            'http_bodies_not_inspected': sum(bodies_skipped.values()),
+            'http_bodies_not_inspected_by_reason': dict(sorted(bodies_skipped.items())),
             'capture_truncated_records': diagnostics.truncated_records,
             'capture_malformed_records': diagnostics.malformed_records,
-            'analysis_incomplete': diagnostics.incomplete or gaps > 0 or ml_skipped > 0,
+            'analysis_incomplete': diagnostics.incomplete or gaps > 0 or unterminated > 0 or ml_skipped > 0
+                                   or evidence_loss_packets > 0 or bool(bodies_skipped) or http2_streams > 0,
         },
         'flows': flow_summaries, 'findings': findings,
         'limitations': [
             'Encrypted HTTPS payloads cannot be inspected without decryption',
-            'No IP fragmentation; unobserved TCP lifecycle and delayed packets after tuple reuse remain ambiguous',
+            'IP fragments are not reassembled (counted and flagged); unobserved TCP lifecycle and delayed packets after tuple reuse remain ambiguous',
             'HTTP/2 and HTTP/3 not decoded; incomplete streams are ignored',
             'HTTP/1.x request-response pairing is best-effort (direction, stream order, packet timing)',
             ('Experimental BiLSTM enabled: model scores are uncalibrated; no real-traffic precision/recall established'
@@ -470,6 +509,12 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'Findings mean possible PII exposure, not proof of exfiltration',
             *(['Capture corruption/truncation or missing TCP data: analysis is incomplete']
               if diagnostics.incomplete or gaps > 0 else []),
+            *(['Some packets (IP fragments, IPv6 extension headers or truncated packets) may carry TCP data that was not analysed']
+              if evidence_loss_packets else []),
+            *(['Some HTTP bodies (unsupported or corrupt Content-Encoding) were present but not inspected']
+              if bodies_skipped else []),
+            *(['An HTTP message was unterminated at the end of a stream (truncated or ambiguous framing); its content was not analysed']
+              if unterminated else []),
         ],
     }
 

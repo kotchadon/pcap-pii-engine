@@ -50,6 +50,25 @@ class HttpSpan:
     end_offset: int
 
 
+@dataclass(frozen=True)
+class HttpParseResult:
+    """Parsed messages plus an account of what remained unparsed at the end of the stream."""
+    spans: list[HttpSpan]
+    consumed: int
+    stream_bytes: int
+    unterminated_http: bool  # an HTTP-looking message began at `consumed` but could not be completed
+
+
+_HTTP_START = re.compile(rb'(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|TRACE|CONNECT) |HTTP/1\.')
+_HTTP_STARTS = (b'GET ', b'POST ', b'PUT ', b'PATCH ', b'DELETE ', b'HEAD ', b'OPTIONS ', b'TRACE ', b'CONNECT ', b'HTTP/1.')
+
+
+def _looks_like_http_start(tail: bytes) -> bool:
+    if _HTTP_START.match(tail):
+        return True
+    return 0 < len(tail) < 8 and any(start.startswith(tail) for start in _HTTP_STARTS)
+
+
 def _parse_headers(raw: bytes) -> tuple[str, dict[str, str], bool] | None:
     lines = raw.split(b'\r\n')
     if not lines or len(lines) > 201:
@@ -123,8 +142,19 @@ def parse_http_stream_with_spans(data: bytes) -> list[HttpSpan]:
     Offsets allow packet provenance to be associated with the correct message,
     including HTTP pipelining where multiple messages share a TCP segment.
     """
+    return parse_http_stream_detailed(data).spans
+
+
+def parse_http_stream_detailed(data: bytes) -> HttpParseResult:
+    """Like :func:`parse_http_stream_with_spans` but also reports an unterminated trailing HTTP message.
+
+    A stream whose tail starts like HTTP but cannot be completed (truncated headers or body, ambiguous framing) is
+    evidence that was seen but not analysed, so callers must not publish the capture as complete. A deliberate stop
+    (unframed response body, protocol switch) and non-HTTP payloads (e.g. TLS) are not reported as unterminated.
+    """
     messages: list[HttpSpan] = []
     offset = 0
+    deliberate_stop = False
     while offset < len(data) and len(messages) < MAX_MESSAGES:
         header_end = data.find(b'\r\n\r\n', offset,
                                min(len(data), offset + MAX_HTTP_HEADER + 4))
@@ -170,8 +200,11 @@ def parse_http_stream_with_spans(data: bytes) -> list[HttpSpan]:
             break
         offset = next_at
         if unframed_response or code == 101:
+            deliberate_stop = True
             break  # Unframed body or protocol switch ends supported HTTP parsing.
-    return messages
+    unterminated = (not deliberate_stop and len(messages) < MAX_MESSAGES and offset < len(data)
+                    and _looks_like_http_start(data[offset:offset + 16]))
+    return HttpParseResult(messages, offset, len(data), unterminated)
 
 
 def parse_http_stream(data: bytes) -> list[HttpMessage]:
@@ -277,6 +310,18 @@ def _multipart_fields(body: bytes, content_type: str) -> list[tuple[str, str]]:
             continue
         results.append((f'form.{field}', _decode_text(payload,part.get('content-type', ''))))
     return results
+
+
+def body_skip_reason(message: HttpMessage) -> str | None:
+    """Why a present body was not inspected (None if it was, or if there is no body)."""
+    if not message.body:
+        return None
+    encoding = message.headers.get('content-encoding', 'identity').strip().lower()
+    if encoding in ('', 'identity') and len(message.body) <= MAX_HTTP_BODY:
+        return None
+    if _decompress_body(message) is not None:
+        return None
+    return 'unsupported_content_encoding' if encoding not in ('', 'identity', 'gzip', 'deflate') else 'undecodable_body'
 
 
 def extract_fields(message: HttpMessage) -> list[tuple[str, str]]:

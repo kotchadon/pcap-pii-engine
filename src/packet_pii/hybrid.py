@@ -9,13 +9,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 import time
-from typing import Sequence
+from typing import Mapping, Sequence
 
 from .detect import _mask, SECRET_KEYS
 from .ml import FieldInput, run_detector
 from .ml.detector import ContextualPIIDetector
-from .ml.schema import DEFAULT_MAX_FIELD_CHARS, DEFAULT_MAX_FIELDS
+from .ml.schema import DEFAULT_MAX_FIELD_CHARS, DEFAULT_MAX_FIELDS, MAX_LOCATION_CHARS
 from .ml.schema import MlValidationError
+from .ml.input_policy import MAX_REPLACEMENT_RATIO, QUALITY_FLAGS
 
 
 class InferenceError(RuntimeError):
@@ -60,6 +61,7 @@ def infer_http_fields(
     detector: ContextualPIIDetector,
     *,
     include_values: bool = False,
+    quality: Mapping[str, str] | None = None,
     max_fields: int = DEFAULT_MAX_FIELDS,
     max_characters: int = MAX_SCAN_ML_CHARACTERS,
 ) -> InferenceResult:
@@ -67,6 +69,11 @@ def infer_http_fields(
 
     Unsafe oversized fields are skipped, not silently truncated (truncation
     would produce misleading provenance). The caller publishes skipped counts.
+
+    ``quality`` carries upstream evidence-quality flags for the whole message (see ``ml.input_policy.QUALITY_FLAGS``:
+    ``stream_gap``, ``capture_incomplete``, ``truncated``). They never change the model's input or predictions; they are
+    attached to each ML finding as ``input_quality`` so partial evidence stays visible. Fields that are mostly U+FFFD
+    replacement characters are excluded by policy (the one-character rule of the ML package is deliberately not adopted).
     """
     for name, value in (('max_fields', max_fields), ('max_characters', max_characters)):
         if type(value) is not int or value < 0:
@@ -80,12 +87,19 @@ def infer_http_fields(
         if not text:
             empty += 1
             continue
+        if text.count('\ufffd') / len(text) > MAX_REPLACEMENT_RATIO:
+            excluded += 1
+            continue
         if (len(eligible) >= min(DEFAULT_MAX_FIELDS, max_fields)
+                or len(location) > MAX_LOCATION_CHARS
                 or len(text) > DEFAULT_MAX_FIELD_CHARS
                 or len(text) > max_characters - characters):
             skipped += 1
             continue
-        eligible.append(FieldInput(index, location, text))
+        context = {k: v for k, v in (quality or {}).items() if k in QUALITY_FLAGS}
+        if '\ufffd' in text:
+            context['decode_replaced'] = 'true'
+        eligible.append(FieldInput(index, location, text, context))
         characters += len(text)
     if not eligible:
         return InferenceResult([], 0, skipped, excluded, skipped, empty)
@@ -124,6 +138,8 @@ def infer_http_fields(
             'span_start': span.start,
             'span_end': span.end,
             'field_index': span.field_index,
+            **({'input_quality': sorted(k for k in QUALITY_FLAGS if field.context.get(k) == 'true')}
+               if any(field.context.get(k) == 'true' for k in QUALITY_FLAGS) else {}),
         })
     return InferenceResult(findings, len(eligible), skipped, excluded,
                            len(eligible) + skipped, empty, characters, elapsed, True)

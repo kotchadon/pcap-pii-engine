@@ -202,14 +202,20 @@ def test_no_raw_fictional_values_in_default_report(run, mode):
     assert all("fingerprint" not in f for f in run[mode]["findings"])
 
 
-def test_overlapping_signals_are_counted_twice_in_potential_leaks(run):
-    """Rule + ML can flag the SAME field: potential_leaks counts findings, not distinct exposed values."""
+def test_overlapping_signals_are_reported_as_distinct_locations(run):
+    """F-08 fixed: rule + ML can flag the SAME field. `potential_leaks` still counts findings (compatibility) but the summary
+    now also reports the distinct exposed locations and which detectors agree."""
     by_loc: dict[tuple, set] = {}
     for f in run["hybrid"]["findings"]:
         by_loc.setdefault((f["flow_id"], f["http_message_id"], f["location"]), set()).add(f["detector"])
     both = sorted(k[2] for k, d in by_loc.items() if d == {"rule", "bilstm"})
     assert both == ["form.full_name", "json_body.username", "json_body.username"]
-    assert run["hybrid"]["summary"]["potential_leaks"] == 31 and len(by_loc) == 27   # 31 findings over 27 distinct field locations
+    s = run["hybrid"]["summary"]
+    assert s["potential_leaks"] == 31 and len(by_loc) == 27
+    assert (s["distinct_exposed_locations"], s["locations_flagged_by_both"]) == (27, 3)
+    assert s["locations_flagged_by_rules"] + s["locations_flagged_by_model"] - s["locations_flagged_by_both"] == 27
+    rules = run["rules"]["summary"]
+    assert rules["distinct_exposed_locations"] == rules["locations_flagged_by_rules"] and rules["locations_flagged_by_model"] == 0
 
 
 def test_include_values_offsets_are_consistent_with_masked_lengths(run):

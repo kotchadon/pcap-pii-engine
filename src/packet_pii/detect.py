@@ -9,7 +9,44 @@ EMAIL = re.compile(r'(?<![\w.+-])[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}(?![\w.-])')
 IPV4 = re.compile(r'(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])')
 PHONE = re.compile(r'(?<!\w)(?:\+\d[\d\s().-]{7,16}\d|0[234578][\d\s().-]{7,14}\d)(?!\w)')
 CARD = re.compile(r'(?<!\d)(?:\d[ -]?){12,18}\d(?!\d)')
-SECRET_KEYS = re.compile(r'(?:password|passwd|pwd|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|auth(?:orization)?|session[_-]?(?:id|token)|bearer|set-cookie|cookie)',re.I)
+
+
+class _SecretKeyMatcher:
+    """Token-aware credential-key matcher (replaces a substring regex that matched ``author`` via ``auth``).
+
+    A location is split into lower-case tokens on punctuation and camelCase boundaries. Unambiguous credential words match
+    as tokens, token suffixes (``clientsecret``) or adjacent token pairs (``api`` + ``key``). Generic words such as
+    ``token``/``auth``/``pin`` are ignored when qualified as metadata (``token_type``, ``max_tokens``).
+    """
+    _SPLIT = re.compile(r'[^A-Za-z0-9]+|(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])')
+    _WORDS = frozenset({'password', 'passwd', 'pwd', 'passphrase', 'passcode', 'secret', 'secrets', 'apikey', 'bearer', 'cookie',
+                        'authorization', 'auth', 'jwt', 'sid', 'otp', 'token', 'pin', 'credential', 'credentials'})
+    _SUBSTRINGS = ('password', 'passwd', 'passphrase')
+    _SUFFIXES = ('secret', 'token', 'apikey')
+    _PAIRS = frozenset({('api', 'key'), ('private', 'key'), ('access', 'key'), ('secret', 'key'), ('session', 'id'),
+                        ('set', 'cookie'), ('client', 'secret'), ('auth', 'token')})
+    _GENERIC = frozenset({'token', 'auth', 'pin', 'sid', 'otp'})
+    _METADATA = frozenset({'type', 'count', 'limit', 'length', 'size', 'max', 'min', 'expiry', 'expires', 'ttl', 'usage', 'tokens',
+                           'total', 'number', 'num'})
+
+    def tokens(self, location):
+        return [t.lower() for t in self._SPLIT.split(str(location)) if t]
+
+    def search(self, location):
+        tokens = self.tokens(location)
+        if not tokens:
+            return None
+        has_metadata = any(t in self._METADATA for t in tokens)
+        for i, token in enumerate(tokens):
+            hit = (token in self._WORDS or any(sub in token for sub in self._SUBSTRINGS)
+                   or any(len(token) > len(suf) and token.endswith(suf) for suf in self._SUFFIXES)
+                   or (i + 1 < len(tokens) and (token, tokens[i + 1]) in self._PAIRS))
+            if hit and not (has_metadata and token in self._GENERIC):
+                return True
+        return None
+
+
+SECRET_KEYS = _SecretKeyMatcher()
 USERNAME_KEYS = re.compile(r'(?:^|[.\[_-])(?:username|user_name|login)(?:$|[.\]_-])',re.I)
 NAME_KEYS = re.compile(r'(?:^|[.\[_-])(?:full_?name|first_?name|last_?name)(?:$|[.\]_-])',re.I)
 
