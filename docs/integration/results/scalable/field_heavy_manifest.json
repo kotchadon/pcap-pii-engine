@@ -1,0 +1,11 @@
+{
+  "generator_version": 1,
+  "source": "synthetic representative, not original user lab capture",
+  "capture_bytes": 5518024,
+  "sha256": "01963534ee6c11d5b61a623fe8c58674b78599a6750b39f2225198d7222b5574",
+  "packets": 6400,
+  "sessions": 400,
+  "http_messages": 800,
+  "contextual_body_fields": 88000,
+  "email_body_fields": 19200
+}

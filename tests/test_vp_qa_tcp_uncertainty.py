@@ -60,15 +60,15 @@ def test_missing_head_or_middle_segment_is_flagged_incomplete_and_evidence_is_lo
     assert not [f for f in r["findings"] if f["http_message_type"] == "request"]          # the damaged request yields nothing - never partial guesses
 
 
-def test_missing_tail_segment_is_silent_current_behaviour(tmp_path):
-    """OBSERVED DEFECT F-05: losing the LAST request segment drops the whole request with stream_gaps=0 and
-    analysis_incomplete=False - the report looks clean although PII-bearing traffic vanished."""
+def test_missing_tail_segment_is_observable_http_incompleteness(tmp_path):
+    """F-05 fixed: short request framing is observable despite no internal TCP gap."""
     r = analyze(one_request_pcap(tmp_path, REQ, seg=SEG, drop={N - 1}))
     s = r["summary"]
-    assert (s["http_messages"], s["rules_findings"], s["stream_gaps"], s["analysis_incomplete"]) == (1, 0, 0, False)   # only the response survives
+    assert (s["http_messages"], s["rules_findings"], s["stream_gaps"], s["analysis_incomplete"]) == (1, 0, 0, True)   # only the response survives
+    assert s['http_incomplete_streams'] == 1
+    assert r['flows'][0]['http_diagnostics'][0]['reason'] == 'http_incomplete_content_length_body'
 
 
-@pytest.mark.xfail(strict=True, reason="QA finding F-05: an unterminated HTTP message at end of stream should set analysis_incomplete")
 def test_missing_tail_segment_should_set_analysis_incomplete(tmp_path):
     r = analyze(one_request_pcap(tmp_path, REQ, seg=SEG, drop={N - 1}))
     assert r["summary"]["analysis_incomplete"] is True

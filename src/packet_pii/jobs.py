@@ -6,7 +6,7 @@ reports and their derived indexes expire together. Cancellation is cooperative.
 from __future__ import annotations
 from collections import Counter
 from contextlib import closing
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 import json
 import os
 from pathlib import Path
@@ -18,6 +18,7 @@ import threading
 import time
 
 from .engine import AnalysisLimits, AnalysisLimitError, analyze_to_report
+from .hybrid import MLWorkBudget
 
 MIB = 2**20
 TERMINAL = {'completed','failed','cancelled'}
@@ -39,6 +40,7 @@ class Job:
     profile: str
     limits: AnalysisLimits
     model_available: bool
+    ml_work_budget: MLWorkBudget = field(default_factory=MLWorkBudget)
     status: str = 'uploading'
     progress: dict = field(default_factory=lambda: {'stage':'uploading'})
     created: float = field(default_factory=time.monotonic)
@@ -54,6 +56,7 @@ class Job:
     released: bool = False
     upload_abort: object = None
     ml_failed: bool = False
+    reason_code: str | None = None
 
     @property
     def capture(self): return self.directory/'capture.bin'
@@ -65,10 +68,13 @@ class Job:
 
 class JobManager:
     def __init__(self, analysis_lock, detector=None, *, disk_quota_bytes=12*2**30,
-                 max_retained=3, ttl_seconds=3600):
+                 max_retained=3, ttl_seconds=3600, ml_work_budget=None):
         if type(disk_quota_bytes) is not int or disk_quota_bytes < 32*MIB:
             raise ValueError('Job disk quota must be at least 32 MiB')
         self.analysis_lock, self.detector = analysis_lock, detector
+        self.ml_work_budget = MLWorkBudget() if ml_work_budget is None else ml_work_budget
+        if not isinstance(self.ml_work_budget, MLWorkBudget):
+            raise TypeError('ml_work_budget must be MLWorkBudget')
         self.disk_quota = disk_quota_bytes
         self.max_retained, self.ttl = max_retained, ttl_seconds
         self.root = Path(tempfile.mkdtemp(prefix='trace_jobs_'));self.root.chmod(0o700)
@@ -87,11 +93,13 @@ class JobManager:
     def _used(self):
         return sum(p.stat().st_size for p in self.root.glob('*/*') if p.is_file())
 
-    def reserve(self, request_id, *, filename, source, size, mode, profile):
+    def reserve(self, request_id, *, filename, source, size, mode, profile, ml_work_budget=None):
         limits = AnalysisLimits.for_profile(profile)
+        work_budget = self.ml_work_budget if ml_work_budget is None else ml_work_budget
+        if not isinstance(work_budget, MLWorkBudget):raise TypeError('ml_work_budget must be MLWorkBudget')
         if size > limits.max_capture_bytes:raise AnalysisLimitError('Capture exceeds selected profile')
         if mode == 'hybrid' and self.detector is None:raise ValueError('Model unavailable')
-        fingerprint=(filename,source,size,mode,profile)
+        fingerprint=(filename,source,size,mode,profile,tuple(asdict(work_budget).items()))
         with self.lock:
             if self.closed:raise JobBusy('Server is stopping')
             for job in self.jobs.values():
@@ -108,7 +116,7 @@ class JobManager:
             try:
                 job_id=secrets.token_hex(16);directory=self.root/job_id;directory.mkdir(mode=0o700)
                 job=Job(job_id,request_id,fingerprint,directory,filename,mode,profile,limits,
-                        self.detector is not None,reserved_bytes=reserve)
+                        self.detector is not None,ml_work_budget=work_budget,reserved_bytes=reserve)
                 job.thread=threading.current_thread()
                 self.jobs[job_id]=job
                 return job,True
@@ -123,11 +131,14 @@ class JobManager:
     def fail_upload(self, job):
         with self.lock:
             if job.status != 'uploading':return
+            self._remove_files(job)
+            self._release(job)
             job.status='cancelled' if job.cancel.is_set() else 'failed'
             job.error='Upload cancelled' if job.cancel.is_set() else 'Upload could not complete'
             job.reason_type='UploadError'
+            job.reason_code='upload_cancelled' if job.cancel.is_set() else 'upload_failed'
+            job.progress={**job.progress,'stage':job.status}
             job.updated=time.monotonic()
-        self._remove_files(job);self._release(job)
 
     @staticmethod
     def _remove_files(job):
@@ -174,26 +185,38 @@ class JobManager:
                 # below still decides whether the dashboard exposes this result.
                 if job.cancel.is_set() and event['stage']!='complete':raise JobCancelled()
                 with self.lock:
-                    job.progress=dict(event);job.updated=time.monotonic()
+                    # Other stages may not repeat every counter. Retain the last
+                    # observed values; never replace them with invented zeroes.
+                    job.progress={**job.progress,**event};job.updated=time.monotonic()
             receipt=analyze_to_report(job.capture,job.report,profile=job.profile,limits=job.limits,
                 ml_detector=self.detector if job.mode=='hybrid' else None,
+                ml_work_budget=job.ml_work_budget,
                 progress=progress,row_observer=observe)
             conn.commit();conn.close();conn=None
             with self.lock:
                 if job.cancel.is_set():raise JobCancelled()
+                job.capture.unlink(missing_ok=True)
+                self._release(job)
                 job.receipt={k:v for k,v in receipt.items() if k!='output_path'}
                 job.status='completed';job.updated=time.monotonic()
         except Exception as exc:
             with self.lock:
+                # Terminal status means cleanup and lock release have finished.
+                # Otherwise polling/retention can observe a cancelled job while
+                # its private index is still open and its worker still owns files.
+                if conn is not None:conn.close();conn=None
+                self._remove_files(job)
+                self._release(job)
                 job.status='cancelled' if isinstance(exc,JobCancelled) else 'failed'
                 job.reason_type=type(exc).__name__
                 job.ml_failed=bool(getattr(exc,'ml_inference_failed',False))
+                job.reason_code=('ml_cancelled' if job.mode=='hybrid' else 'scan_cancelled') if job.status=='cancelled' else (
+                    'ml_inference_failed' if job.ml_failed else
+                    'analysis_resource_limit' if isinstance(exc,AnalysisLimitError) else 'scan_failed')
                 job.error=('Scan cancelled' if job.status=='cancelled' else
                            'Scan exceeded a configured resource budget' if isinstance(exc,AnalysisLimitError) else
                            'Scan could not complete; no complete result is available')
-                job.progress={'stage':job.status};job.updated=time.monotonic()
-            if conn is not None:conn.close();conn=None
-            self._remove_files(job)
+                job.progress={**job.progress,'stage':job.status};job.updated=time.monotonic()
         finally:
             job.capture.unlink(missing_ok=True)
             self._release(job)
@@ -211,8 +234,10 @@ class JobManager:
             result=dict(job_id=job.job_id,status=job.status,filename=job.filename,
                 capture_bytes=job.capture_bytes,model_available=job.model_available,
                 model_enabled=job.mode=='hybrid',scan_mode=job.mode,profile=job.profile,
-                progress=dict(job.progress),elapsed_seconds=time.monotonic()-job.created,
-                error=job.error,reason_type=job.reason_type,
+                ml_work_budget=asdict(job.ml_work_budget),
+                progress=dict(job.progress),elapsed_seconds=(job.updated if job.status in TERMINAL else time.monotonic())-job.created,
+                error=job.error,reason_type=job.reason_type,reason_code=job.reason_code,
+                cancellation_requested=job.cancel.is_set(),cancellation_completed=job.status=='cancelled',
                 ml_inference_failed=job.ml_failed)
             if job.status=='completed':
                 report={k:v for k,v in job.receipt.items() if k not in ('output_path','output_bytes')}

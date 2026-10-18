@@ -20,7 +20,7 @@ from urllib.parse import urlsplit, parse_qs, unquote
 from http.cookies import SimpleCookie
 
 from .engine import AnalysisLimits, analyze
-from .hybrid import load_experimental_bilstm
+from .hybrid import load_experimental_bilstm, MLWorkBudget
 from threading import Lock, BoundedSemaphore
 from .jobs import JobManager, JobBusy, JobQuota
 
@@ -37,18 +37,21 @@ class DashboardServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, addr: tuple[str, int], max_upload: int = _MAX_UPLOAD, ml_detector=None,
-                 *, job_disk_mib: int = 12288):
+                 *, job_disk_mib: int = 12288, ml_budget_profile: str = 'standard'):
         if addr[0] != '127.0.0.1':
             raise ValueError('Dashboard must bind to 127.0.0.1')
         if type(max_upload) is not int or not 24 <= max_upload <= _MAX_UPLOAD:
             raise ValueError('Invalid dashboard upload limit')
+        work_budget = MLWorkBudget.for_profile(ml_budget_profile)
         super().__init__(addr, DashboardHandler)
+        self.ml_budget_profile = ml_budget_profile
         self.max_upload = max_upload
         self.token = secrets.token_urlsafe(32)
         self.ml_detector = ml_detector
         self.analysis_lock = Lock()
         self.request_slots = BoundedSemaphore(8)
-        self.jobs = JobManager(self.analysis_lock,ml_detector,disk_quota_bytes=job_disk_mib*1024*1024)
+        self.jobs = JobManager(self.analysis_lock,ml_detector,disk_quota_bytes=job_disk_mib*1024*1024,
+                               ml_work_budget=work_budget)
 
     def process_request(self, request, client_address):
         if not self.request_slots.acquire(blocking=False):
@@ -134,6 +137,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._reply({'token': self.server.token, 'max_upload_bytes': self.server.max_upload,
                          'jobs_supported': True, 'active_job_id': self.server.jobs.latest_id,
                          'profiles': {name:vars(AnalysisLimits.for_profile(name)) for name in ('standard','large','stress')},
+                         'ml_budget_profile': self.server.ml_budget_profile,
+                         'ml_budget_profiles': {name:vars(MLWorkBudget.for_profile(name)) for name in ('standard','extended')},
                          'detector_mode': 'rules_plus_bilstm' if self.server.ml_detector else 'rules_only',
                          'model_enabled': self.server.ml_detector is not None,
                          'model_available': self.server.ml_detector is not None,
@@ -317,6 +322,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._reply({'error':'Not found'},404);return
         mode=self.headers.get('X-Detection-Mode','rules')
         profile=self.headers.get('X-Analysis-Profile','standard')
+        ml_profile=self.headers.get('X-ML-Budget-Profile')
+        if ml_profile is not None and ml_profile not in ('standard','extended'):
+            self._reply({'error':'ML budget profile must be standard or extended'},400);return
+        ml_budget=MLWorkBudget.for_profile(ml_profile) if ml_profile else self.server.jobs.ml_work_budget
         request_id=self.headers.get('X-Request-ID','')
         if mode not in ('rules','hybrid') or profile not in ('standard','large','stress') or not re.fullmatch(r'[A-Za-z0-9_-]{8,80}',request_id):
             self._reply({'error':'Valid scan mode, profile and request ID are required'},400);return
@@ -342,7 +351,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
         job=None
         started=False
         try:
-            job,created=self.server.jobs.reserve(request_id,filename=label,source=source,size=size,mode=mode,profile=profile)
+            job,created=self.server.jobs.reserve(request_id,filename=label,source=source,size=size,mode=mode,profile=profile,
+                                                ml_work_budget=ml_budget)
             if not created:
                 self.close_connection=True
                 self._reply({'job_id':job.job_id,'status':job.status},202);return
@@ -384,12 +394,15 @@ def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(description='Run local-only PCAP PII investigation dashboard')
     p.add_argument('--port', type=int, default=8765)
     p.add_argument('--ml-checkpoint', default=None, help='Opt in to offline research BiLSTM checkpoint')
+    p.add_argument('--ml-budget-profile', choices=('standard','extended'), default='standard',
+                   help='Explicit ML work allowance for jobs; independent of capture resource profile')
     p.add_argument('--job-disk-mib',type=int,default=12288,help='Private job disk quota MiB; conservative capacity is checked before accepting a scan')
     args = p.parse_args(argv)
     if not 1024 <= args.port <= 65535:
         p.error('Port must be 1024–65535')
     ml_detector = load_experimental_bilstm(args.ml_checkpoint) if args.ml_checkpoint else None
-    server = DashboardServer(('127.0.0.1', args.port), ml_detector=ml_detector,job_disk_mib=args.job_disk_mib)
+    server = DashboardServer(('127.0.0.1', args.port), ml_detector=ml_detector,job_disk_mib=args.job_disk_mib,
+                             ml_budget_profile=args.ml_budget_profile)
     print(f'PCAP PII dashboard: http://127.0.0.1:{args.port}/ (Ctrl+C to stop)')
     try:
         server.serve_forever()

@@ -79,7 +79,9 @@ def test_live_file_accuracy_is_declared_unmeasurable():
     js = _text(UI[1])
     html = _text(UI[0])
     assert "No live-file precision/recall/F1 is available" in js
-    assert "Live-file precision, recall and F1 are NOT measured" in html
+    # Main's Model Laboratory now explains the required independent labels.
+    assert "No verified labels have been supplied for this capture" in html
+    assert "cannot compute their precision, recall or F1 without independently annotated correct answers" in html
     assert "NOT LIVE FILE ACCURACY" in html.upper() or "not live file accuracy" in html.lower()
     guide = _text(ROOT / "docs/showcase/VP_DEMO_GUIDE.md")
     assert "not measurable" in guide and "are not computed from the uploaded PCAP" in guide

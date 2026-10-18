@@ -174,21 +174,22 @@ def test_garbage_input_produces_no_fabricated_findings(tmp_path, det):
 
 
 # ---------------------------------------------------------------- hybrid-only robustness defects found by QA
-def test_overlong_json_key_aborts_the_whole_hybrid_analysis_current_behaviour(tmp_path, det):
-    """OBSERVED DEFECT: a >1024-char JSON key makes FieldInput validation raise inside hybrid.infer_http_fields, aborting the
-    entire capture in hybrid mode (the dashboard would answer 'Capture rejected'). Rules-only mode is unaffected."""
+def test_overlong_json_key_preserves_analysis_and_valid_following_field(tmp_path, det):
+    """F-03 fixed: skip the invalid path and continue with the valid field."""
     req = post_json({"k" * 2000: "Henrik Larsson", "recipient": "Ingrid Solberg"})
     p = one_request_pcap(tmp_path, req)
     assert analyze(p)["summary"]["http_messages"] == 2                                       # rules-only completes
-    with pytest.raises(MlValidationError, match="location too long"):
-        analyze(p, ml_detector=det)
+    result = analyze(p, ml_detector=det)
+    assert result['summary']['ml_skip_reasons'] == {'ml_field_path_too_long': 1}
+    assert result['summary']['ml_fields_evaluated'] == 2  # recipient + response.ok
+    assert result['summary']['analysis_incomplete'] is True
+    assert rule_findings(result) == rule_findings(analyze(p))
 
 
-@pytest.mark.xfail(strict=True, raises=MlValidationError, reason="QA finding F-03: hybrid mode should skip (and count) an over-long field key, not abort the analysis")
 def test_overlong_json_key_should_be_skipped_not_fatal(tmp_path, det):
     req = post_json({"k" * 2000: "Henrik Larsson", "recipient": "Ingrid Solberg"})
     r = analyze(one_request_pcap(tmp_path, req), ml_detector=det)
-    assert r["summary"]["ml_fields_skipped"] >= 1
+    assert r["summary"]["ml_fields_skipped"] == 1
 
 
 def test_oversized_field_value_is_skipped_and_counted_not_truncated(tmp_path, det):

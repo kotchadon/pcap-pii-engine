@@ -1,0 +1,22 @@
+{
+  "environment": "Linux x86_64 Python3.12.14; optional Torch available, authentic artifacts unavailable",
+  "baseline_main": "44de57db97d9caf5b1b0946d2db9dbc0d06507e2",
+  "command": "PYTHONPATH=/workspace/scratch/28ec9f0f81f9/ml-deps OMP_NUM_THREADS=1 python -m pytest -q",
+  "passed": 323,
+  "failed": 11,
+  "seconds": 35.85,
+  "failure_tests": [
+    "tests/test_hybrid_integration.py::test_real_saved_checkpoint_live_inference",
+    "tests/test_ml_bilstm.py::test_committed_checkpoint_loads_on_cpu_and_is_deterministic",
+    "tests/test_ml_input_probe.py::test_committed_v2_artifact_contract_and_examples",
+    "tests/test_ml_metrics_report.py::test_evaluate_default_exports_no_raw_text",
+    "tests/test_ml_metrics_report.py::test_evaluate_include_text_is_explicit_opt_in",
+    "tests/test_ml_v2_data.py::test_committed_v2_splits_match_manifest - Fi...",
+    "tests/test_ml_v2_ensemble.py::test_v1_checkpoint_identity_preserved - ...",
+    "tests/test_ml_v2_ensemble.py::test_committed_v2_ensemble_integrity_and_separation_from_v1",
+    "tests/test_ml_v2_ensemble.py::test_committed_v2_deterministic_unicode_and_repeated_locations",
+    "tests/test_ml_v2_model.py::test_v1_checkpoint_still_loads_and_is_unchanged",
+    "tests/test_showcase_live_evidence.py::test_showcase_with_real_saved_model_when_available"
+  ],
+  "failure_cause": "Missing local authentic model.pt checkpoints and V2 train.jsonl.gz; Git entries are preserved unchanged."
+}
