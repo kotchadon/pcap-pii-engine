@@ -14,6 +14,7 @@ ml = ["torch>=2.2"]  # optional: BiLSTM contextual detector (packet_pii.ml.bilst
 
 [project.scripts]
 pcap-pii = "packet_pii.cli:main"
+pcap-pii-evaluate = "packet_pii.evaluate_cli:main"
 
 [tool.setuptools.packages.find]
 where=["src"]

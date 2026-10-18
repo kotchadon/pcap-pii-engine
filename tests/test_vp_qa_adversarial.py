@@ -174,22 +174,17 @@ def test_garbage_input_produces_no_fabricated_findings(tmp_path, det):
 
 
 # ---------------------------------------------------------------- hybrid-only robustness defects found by QA
-def test_overlong_json_key_preserves_analysis_and_valid_following_field(tmp_path, det):
-    """F-03 fixed: skip the invalid path and continue with the valid field."""
+def test_overlong_json_key_is_skipped_counted_and_flagged_not_fatal(tmp_path, det):
+    """F-03 fixed: a >1024-char JSON key no longer aborts hybrid analysis. The field is skipped and counted, the analysis is
+    flagged incomplete (never published as fully covered), and the remaining field is still evaluated."""
     req = post_json({"k" * 2000: "Henrik Larsson", "recipient": "Ingrid Solberg"})
     p = one_request_pcap(tmp_path, req)
-    assert analyze(p)["summary"]["http_messages"] == 2                                       # rules-only completes
-    result = analyze(p, ml_detector=det)
-    assert result['summary']['ml_skip_reasons'] == {'ml_field_path_too_long': 1}
-    assert result['summary']['ml_fields_evaluated'] == 2  # recipient + response.ok
-    assert result['summary']['analysis_incomplete'] is True
-    assert rule_findings(result) == rule_findings(analyze(p))
-
-
-def test_overlong_json_key_should_be_skipped_not_fatal(tmp_path, det):
-    req = post_json({"k" * 2000: "Henrik Larsson", "recipient": "Ingrid Solberg"})
-    r = analyze(one_request_pcap(tmp_path, req), ml_detector=det)
-    assert r["summary"]["ml_fields_skipped"] == 1
+    assert analyze(p)["summary"]["http_messages"] == 2                                       # rules-only completes (unchanged)
+    r = analyze(p, ml_detector=det)
+    s = r["summary"]
+    assert s["ml_fields_skipped"] == 1 and s["ml_incomplete"] is True and s["analysis_incomplete"] is True
+    assert "k" * 100 not in json.dumps(r)                                                    # the oversized key is never echoed
+    assert s["ml_fields_evaluated"] >= 1
 
 
 def test_oversized_field_value_is_skipped_and_counted_not_truncated(tmp_path, det):
@@ -203,18 +198,27 @@ def test_oversized_field_value_is_skipped_and_counted_not_truncated(tmp_path, de
 
 
 # ---------------------------------------------------------------- rules-engine finding on 'author' (QA finding F-04)
-def test_author_key_is_classified_as_credential_and_never_reaches_the_model(tmp_path, det):
-    """SECRET_KEYS contains 'auth' without a word boundary, so `author`, `authority`, `authentic` become CREDENTIAL_OR_TOKEN
-    (rules) and are excluded from the contextual model - a person's name in `author` is therefore labelled as a credential."""
+def test_author_key_is_not_a_credential_and_reaches_the_model(tmp_path, det):
+    """F-04 fixed: credential keys are matched as tokens, so `author`/`authority`/`authentic` are ordinary fields. They are
+    not labelled CREDENTIAL_OR_TOKEN and are eligible for contextual inference (whether the model flags them is a
+    characterisation of V2, not asserted here)."""
     rules, hyb = _both(tmp_path, post_json({"author": "Ingrid Solberg", "authority": "city council", "authentic": "yes"}), det)
-    assert [f["pii_type"] for f in rule_findings(rules)] == ["CREDENTIAL_OR_TOKEN"] * 3
-    assert ml_findings(hyb) == [] and hyb["summary"]["ml_fields_evaluated"] == 1          # only the response body field was evaluated
+    assert [f["pii_type"] for f in rule_findings(rules)] == []
+    assert hyb["summary"]["ml_fields_evaluated"] == 4       # three request fields (previously excluded) + the response field
 
 
-@pytest.mark.xfail(strict=True, reason="QA finding F-04: 'author'/'authority' should not be treated as credentials")
-def test_author_should_not_be_a_credential(tmp_path, det):
-    rules, _ = _both(tmp_path, post_json({"author": "Ingrid Solberg"}), det)
-    assert [f["pii_type"] for f in rule_findings(rules)] != ["CREDENTIAL_OR_TOKEN"]
+@pytest.mark.parametrize("key", ["auth", "x-auth-token", "authorization", "api_key", "apiKey", "client_secret", "passwordHash", "id_token",
+                                 "session_id", "refresh_token", "jwt", "otp", "token"])
+def test_genuine_credential_keys_are_still_credentials(tmp_path, det, key):
+    rules, hyb = _both(tmp_path, post_json({key: "fictional-secret-value-123"}), det)
+    assert [f["pii_type"] for f in rule_findings(rules)] == ["CREDENTIAL_OR_TOKEN"]
+    assert "fictional-secret-value-123" not in json.dumps(hyb)
+
+
+@pytest.mark.parametrize("key", ["token_type", "max_tokens", "secretary", "sidebar", "pinned", "www-authenticate"])
+def test_credential_lookalike_keys_are_not_credentials(tmp_path, det, key):
+    rules, _ = _both(tmp_path, post_json({key: "Bearer"}), det)
+    assert [f["pii_type"] for f in rule_findings(rules)] == []
 
 
 # ---------------------------------------------------------------- rules-only vs hybrid
@@ -238,17 +242,28 @@ def _enc_request(encoding: bytes, body: bytes) -> bytes:
     (b"zstd", b'{"recipient":"Henrik Larsson","email":"hl@example.test"}'),
     (b"gzip", b'{"recipient":"Henrik Larsson","email":"hl@example.test"}'),      # declared gzip but plain text: undecodable
 ])
-def test_undecodable_content_encodings_yield_no_findings_and_no_incomplete_flag(tmp_path, det, encoding, body):
-    """Documented unsupported case: the body is skipped silently. 'analysis_incomplete' stays False, so a clean-looking report
-    can hide bodies that were never inspected."""
+def test_undecodable_content_encodings_yield_no_findings_but_are_counted_and_flagged(tmp_path, det, encoding, body):
+    """F-09 fixed: a body that exists but cannot be decoded is still never guessed at, but is now counted by reason and the
+    analysis is flagged incomplete instead of looking clean."""
     rules, hyb = _both(tmp_path, _enc_request(encoding, body), det, name=f"{encoding.decode()}.pcap")
+    reason = "undecodable_body" if encoding == b"gzip" else "unsupported_content_encoding"
     for r in (rules, hyb):
         assert [f for f in r["findings"] if f["http_message_type"] == "request"] == []
-        assert r["summary"]["analysis_incomplete"] is False
+        assert r["summary"]["analysis_incomplete"] is True
+        assert r["summary"]["http_bodies_not_inspected"] == 1
+        assert r["summary"]["http_bodies_not_inspected_by_reason"] == {reason: 1}
+        assert any("present but not inspected" in lim for lim in r["limitations"])
+
+
+def test_decodable_and_empty_bodies_are_not_reported_as_skipped(tmp_path, det):
+    rules, _ = _both(tmp_path, _enc_request(b"identity", b'{"recipient":"Henrik Larsson"}'), det, name="id.pcap")
+    empty, _ = _both(tmp_path, _enc_request(b"br", b""), det, name="empty.pcap")
+    assert rules["summary"]["http_bodies_not_inspected"] == 0 and empty["summary"]["http_bodies_not_inspected"] == 0
 
 
 def test_http2_prior_knowledge_preface_is_not_parsed_and_is_disclosed(tmp_path, det):
     h2 = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" + bytes([0, 0, 18, 4, 0, 0, 0, 0, 0]) + b"\x00" * 18
     _, hyb = _both(tmp_path, h2, det, name="h2.pcap", response=b"")
     assert hyb["summary"]["http_messages"] == 0 and hyb["findings"] == []
+    assert hyb["summary"]["http2_streams_not_decoded"] == 1 and hyb["summary"]["analysis_incomplete"] is True   # F-09: counted, not silent
     assert "HTTP/2 and HTTP/3 not decoded; incomplete streams are ignored" in hyb["limitations"]

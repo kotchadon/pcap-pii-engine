@@ -1,0 +1,274 @@
+{
+ "schema_version": "trace-ground-truth/1",
+ "dataset": {
+  "name": "TRACE VP showcase (hand-designed demonstration)",
+  "kind": "hand_designed_demonstration",
+  "description": "Hand annotations over the 12-conversation showcase the TRACE team designed. A demonstration of the evaluator on a familiar file, NOT an independent benchmark and NOT evidence of general accuracy.",
+  "created": "2025-06-02",
+  "synthetic": true,
+  "provenance": {
+   "label_source": "human_annotation",
+   "labels_derived_from_model_output": false,
+   "annotators": 1,
+   "generator": "scripts/groundtruth/build_showcase_manifest.py",
+   "notes": "Written by hand from scenario definitions; only the listed fields are annotated."
+  }
+ },
+ "capture": {
+  "sha256": "06a2562043f05841bd038a4408934731aa8aef3794d3a03ec1bc30792a0cde7f",
+  "bytes": 11312
+ },
+ "labels": [
+  "PERSON_NAME",
+  "USERNAME"
+ ],
+ "annotation_scope": "listed_fields_only",
+ "fields": [
+  {
+   "field_id": "show01",
+   "flow": {
+    "client": "192.0.2.10:42000",
+    "server": "198.51.100.20:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "json_body.shipping.recipient",
+   "text_sha256": "264deb698c00a55754d0c34d12d91ab2cccc7a8ca4a25a57cfb3309bfd438e80",
+   "text_length": 21,
+   "spans": [
+    {
+     "start": 0,
+     "end": 21,
+     "label": "PERSON_NAME"
+    }
+   ],
+   "category": "positive:request"
+  },
+  {
+   "field_id": "show02",
+   "flow": {
+    "client": "192.0.2.10:42000",
+    "server": "198.51.100.20:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "json_body.audit.actor",
+   "text_sha256": "e7701d68383419c761cc1c413e7dde85c3aa99bfb8107ccb500bf491f2e0e81a",
+   "text_length": 12,
+   "spans": [
+    {
+     "start": 0,
+     "end": 12,
+     "label": "USERNAME"
+    }
+   ],
+   "category": "positive:request"
+  },
+  {
+   "field_id": "show03",
+   "flow": {
+    "client": "192.0.2.11:42001",
+    "server": "198.51.100.21:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "json_body.username",
+   "text_sha256": "dfcfe7f19ab888a76c63a2197b6d915b9ea71e82f8a0427c38d7e175f0d825bb",
+   "text_length": 12,
+   "spans": [
+    {
+     "start": 0,
+     "end": 12,
+     "label": "USERNAME"
+    }
+   ],
+   "category": "positive:request"
+  },
+  {
+   "field_id": "show04",
+   "flow": {
+    "client": "192.0.2.12:42002",
+    "server": "198.51.100.22:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "json_body.full_name",
+   "text_sha256": "5a8148bd2f1240305d84ed4e4f234728d07e512ee1d093bebd2a535e2e765998",
+   "text_length": 12,
+   "spans": [
+    {
+     "start": 0,
+     "end": 12,
+     "label": "PERSON_NAME"
+    }
+   ],
+   "category": "positive:request"
+  },
+  {
+   "field_id": "show05",
+   "flow": {
+    "client": "192.0.2.13:42003",
+    "server": "198.51.100.20:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "json_body.order.currency",
+   "text_sha256": "5e75885111cddfc6af2fde23355681faf0d674b36db48522f5578b4bfe2240f2",
+   "text_length": 3,
+   "spans": [],
+   "category": "hard_negative:identifier_lookalike"
+  },
+  {
+   "field_id": "show06",
+   "flow": {
+    "client": "192.0.2.14:42004",
+    "server": "198.51.100.21:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "form.full_name",
+   "text_sha256": "99ad736b3fb307860b720139a9e193977deb78d9ca55ffcef2986475cf0bc791",
+   "text_length": 11,
+   "spans": [
+    {
+     "start": 0,
+     "end": 11,
+     "label": "PERSON_NAME"
+    }
+   ],
+   "category": "positive:request"
+  },
+  {
+   "field_id": "show07",
+   "flow": {
+    "client": "192.0.2.15:42005",
+    "server": "198.51.100.22:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "json_body.audit.actor",
+   "text_sha256": "e7701d68383419c761cc1c413e7dde85c3aa99bfb8107ccb500bf491f2e0e81a",
+   "text_length": 12,
+   "spans": [
+    {
+     "start": 0,
+     "end": 12,
+     "label": "USERNAME"
+    }
+   ],
+   "category": "positive:request"
+  },
+  {
+   "field_id": "show08",
+   "flow": {
+    "client": "192.0.2.16:42006",
+    "server": "198.51.100.20:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "json_body.shipping.recipient",
+   "text_sha256": "264deb698c00a55754d0c34d12d91ab2cccc7a8ca4a25a57cfb3309bfd438e80",
+   "text_length": 21,
+   "spans": [
+    {
+     "start": 0,
+     "end": 21,
+     "label": "PERSON_NAME"
+    }
+   ],
+   "category": "positive:request"
+  },
+  {
+   "field_id": "show09",
+   "flow": {
+    "client": "192.0.2.18:42008",
+    "server": "198.51.100.22:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "json_body.invoice.billed_to",
+   "text_sha256": "c19dda288f70d1cb5a261607d390b771bcb834f5ea68319cb1e29e4f03dd7355",
+   "text_length": 17,
+   "spans": [],
+   "category": "hard_negative:company_name"
+  },
+  {
+   "field_id": "show10",
+   "flow": {
+    "client": "192.0.2.19:42009",
+    "server": "198.51.100.20:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "json_body.geo.place",
+   "text_sha256": "096fedcdb664b507a146a478a695f055409c961556c77bb0f7f805887ac44762",
+   "text_length": 7,
+   "spans": [],
+   "category": "hard_negative:given_name_lookalike"
+  },
+  {
+   "field_id": "show11",
+   "flow": {
+    "client": "192.0.2.20:42010",
+    "server": "198.51.100.21:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "json_body.username",
+   "text_sha256": "f196733e16014ac6d8de5c99225e11b4568276faae20728afd9975ab31598e81",
+   "text_length": 13,
+   "spans": [
+    {
+     "start": 0,
+     "end": 13,
+     "label": "USERNAME"
+    }
+   ],
+   "category": "positive:request"
+  },
+  {
+   "field_id": "show12",
+   "flow": {
+    "client": "192.0.2.21:42011",
+    "server": "198.51.100.22:80"
+   },
+   "message": {
+    "type": "request",
+    "ordinal": 1
+   },
+   "location": "json_body.user",
+   "text_sha256": "e7701d68383419c761cc1c413e7dde85c3aa99bfb8107ccb500bf491f2e0e81a",
+   "text_length": 12,
+   "spans": [
+    {
+     "start": 0,
+     "end": 12,
+     "label": "USERNAME"
+    }
+   ],
+   "category": "positive:request"
+  }
+ ]
+}

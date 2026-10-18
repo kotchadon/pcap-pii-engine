@@ -4,13 +4,14 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 import re
 import time
-from typing import Callable, Iterator, Sequence
+from typing import Callable, Iterator, Mapping, Sequence
 
 from .detect import _mask, SECRET_KEYS
 from .ml import FieldInput, run_detector
 from .ml.detector import ContextualPIIDetector
 from .ml.schema import DEFAULT_MAX_FIELD_CHARS, DEFAULT_MAX_FIELDS, MAX_LOCATION_CHARS
 from .ml.schema import MlValidationError
+from .ml.input_policy import MAX_REPLACEMENT_RATIO, QUALITY_FLAGS
 
 
 class InferenceError(RuntimeError):
@@ -96,14 +97,18 @@ def _predict_batch(batch, detector, include_values):
             if span.score is None:
                 raise MlValidationError('Experimental detector must provide a typed score for report output')
             original_value = source.text[span.start:span.end]
-            findings.append({
+            finding = {
                 'pii_type': span.label.value, 'location': source.location,
                 'confidence': span.score, 'confidence_type': span.score_type.value,
                 'value': original_value if include_values else _mask(original_value),
                 'detector': 'bilstm', 'model_version': span.model_version,
                 'span_start': span.start, 'span_end': span.end,
                 'field_index': span.field_index,
-            })
+            }
+            flags = sorted(k for k, v in source.context.items() if k in QUALITY_FLAGS and v == 'true')
+            if flags:
+                finding['input_quality'] = flags
+            findings.append(finding)
     except MlValidationError as exc:
         exc.ml_inference_failed = True
         raise
@@ -118,6 +123,7 @@ def iter_http_field_batches(
     fields_evaluated: int = 0, characters_evaluated: int = 0,
     before_batch: Callable[[], None] | None = None,
     field_observer: Callable[[int, str, str | None], None] | None = None,
+    quality: Mapping[str, str] | None = None,
 ) -> Iterator[InferenceResult]:
     """Yield bounded findings and accounting deltas, retaining one working batch.
 
@@ -133,6 +139,7 @@ def iter_http_field_batches(
                         ('characters_evaluated', characters_evaluated)):
         if type(value) is not int or value < 0:
             raise ValueError(f'{name} must be a non-negative integer')
+    clean_quality = {k: v for k, v in (quality or {}).items() if k in QUALITY_FLAGS and v == 'true'}
     batch = []
     characters = excluded = empty = skipped = examined = 0
     reasons = {}
@@ -175,6 +182,10 @@ def iter_http_field_batches(
             empty += 1
             observe(index, 'empty')
             continue
+        if text.count('\ufffd') / len(text) > MAX_REPLACEMENT_RATIO:
+            excluded += 1
+            observe(index, 'excluded_by_policy')
+            continue
         reason = None
         if not isinstance(location, str) or not location:
             reason = 'ml_field_path_invalid'
@@ -193,7 +204,10 @@ def iter_http_field_batches(
             reasons[reason] = reasons.get(reason, 0) + 1
             observe(index, 'skipped', reason)
             continue
-        batch.append(FieldInput(index, location, text))
+        field_context = dict(clean_quality)
+        if '\ufffd' in text:
+            field_context['decode_replaced'] = 'true'
+        batch.append(FieldInput(index, location, text, field_context))
         characters += len(text)
     if examined:
         yield flush()
@@ -203,6 +217,7 @@ def infer_http_fields(
     fields: Sequence[tuple[str, str]], detector: ContextualPIIDetector, *,
     include_values: bool = False, max_fields: int = DEFAULT_MAX_FIELDS,
     max_characters: int = MAX_SCAN_ML_CHARACTERS,
+    quality: Mapping[str, str] | None = None,
 ) -> InferenceResult:
     """Compatible materializing adapter; the scan engine uses the batch iterator."""
     budget = MLWorkBudget(max_total_fields=max_fields, max_total_characters=max_characters)
@@ -212,7 +227,7 @@ def infer_http_fields(
                   processing_time_seconds=0.0, completed_batches=0)
     invoked = False
     for result in iter_http_field_batches(fields, detector, include_values=include_values,
-                                         work_budget=budget):
+                                         work_budget=budget, quality=quality):
         findings.extend(result.findings)
         for key in totals:
             totals[key] += getattr(result, key)

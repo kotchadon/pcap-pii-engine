@@ -214,12 +214,29 @@ def read_frames(path: str | Path, *,
             yield from _read_pcap(stream, diag)
 
 
+# Reasons a frame is not turned into a TCP packet. Those in EVIDENCE_LOSS_REASONS may hide TCP payload that TRACE
+# cannot analyse, so a report containing them is incomplete; the others are outside the supported scope (non-TCP, unknown link).
+SKIP_NON_TCP = 'non_tcp'
+SKIP_UNSUPPORTED_LINK = 'unsupported_link_type'
+SKIP_IP_FRAGMENT = 'ip_fragment'
+SKIP_IPV6_EXTENSION = 'ipv6_extension_header'
+SKIP_TRUNCATED = 'truncated_packet'
+SKIP_MALFORMED = 'malformed_packet'
+EVIDENCE_LOSS_REASONS = frozenset({SKIP_IP_FRAGMENT, SKIP_IPV6_EXTENSION, SKIP_TRUNCATED})
+_IPV6_EXTENSION_HEADERS = frozenset({0, 43, 44, 50, 51, 60, 135, 139, 140})
+
+
 def decode_tcp(frame: RawFrame) -> TcpPacket | None:
+    return decode_tcp_with_reason(frame)[0]
+
+
+def decode_tcp_with_reason(frame: RawFrame) -> tuple[TcpPacket | None, str | None]:
+    """Decode one frame; when it is not usable return why, so the caller can count unsupported traffic by kind."""
     data = frame.data
     try:
         if frame.linktype == 1:  # Ethernet, optionally VLAN tagged
             if len(data) < 14:
-                return None
+                return None, SKIP_MALFORMED
             proto = int.from_bytes(data[12:14], 'big')
             at = 14
             for _ in range(2):
@@ -237,40 +254,48 @@ def decode_tcp(frame: RawFrame) -> TcpPacket | None:
             proto = int.from_bytes(data[0:2], 'big')
             data = data[20:]
         else:
-            return None
+            return None, SKIP_UNSUPPORTED_LINK
         if proto == 0x0800:
             if len(data) < 20 or data[0] >> 4 != 4:
-                return None
+                return None, SKIP_MALFORMED
             ihl = (data[0] & 15) * 4
             total = int.from_bytes(data[2:4], 'big')
-            if ihl < 20 or total < ihl or len(data) < total or data[9] != 6:
-                return None
+            if ihl < 20 or total < ihl:
+                return None, SKIP_MALFORMED
+            if data[9] != 6:
+                return None, SKIP_NON_TCP
+            if len(data) < total:
+                return None, SKIP_TRUNCATED
             frag = int.from_bytes(data[6:8], 'big')
             if frag & 0x3FFF:  # fragment: no IP reassembly in MVP
-                return None
+                return None, SKIP_IP_FRAGMENT
             src = str(ipaddress.IPv4Address(data[12:16]))
             dst = str(ipaddress.IPv4Address(data[16:20]))
             transport = data[ihl:total]
         elif proto == 0x86DD:
-            if len(data) < 40 or data[0] >> 4 != 6 or data[6] != 6:
-                return None  # IPv6 extension headers currently not supported
+            if len(data) < 40 or data[0] >> 4 != 6:
+                return None, SKIP_MALFORMED
+            if data[6] in _IPV6_EXTENSION_HEADERS:
+                return None, SKIP_IPV6_EXTENSION  # TCP may follow the extension chain; not decoded
+            if data[6] != 6:
+                return None, SKIP_NON_TCP
             src = str(ipaddress.IPv6Address(data[8:24]))
             dst = str(ipaddress.IPv6Address(data[24:40]))
             payload_len = int.from_bytes(data[4:6], 'big')
             if len(data) < 40 + payload_len:
-                return None
+                return None, SKIP_TRUNCATED
             transport = data[40:40+payload_len]
         else:
-            return None
+            return None, SKIP_NON_TCP
         if len(transport) < 20:
-            return None
+            return None, SKIP_MALFORMED
         sport, dport, seq = struct.unpack_from('!HHI', transport, 0)
         thl = (transport[12] >> 4)*4
         if thl < 20 or thl > len(transport):
-            return None
-        return TcpPacket(frame.timestamp,src,dst,sport,dport,seq,transport[13],transport[thl:])
+            return None, SKIP_MALFORMED
+        return TcpPacket(frame.timestamp,src,dst,sport,dport,seq,transport[13],transport[thl:]), None
     except (ValueError, struct.error, IndexError):
-        return None
+        return None, SKIP_MALFORMED
 
 
 def endpoint_key(pkt: TcpPacket) -> tuple[tuple[str,int],tuple[str,int]]:

@@ -20,16 +20,19 @@ from urllib.parse import urlsplit, parse_qs, unquote
 from http.cookies import SimpleCookie
 
 from .engine import AnalysisLimits, analyze
-from .hybrid import load_experimental_bilstm, MLWorkBudget
+from .hybrid import load_experimental_bilstm, MLWorkBudget as LegacyMLWorkBudget
+from .ml_runner import ML_PROFILES
 from threading import Lock, BoundedSemaphore
 from .jobs import JobManager, JobBusy, JobQuota
+from .groundtruth import MAX_MANIFEST_BYTES, ManifestError, load_manifest, parse_manifest
 
 _STATIC = Path(__file__).with_name('dashboard_static')
 _MAX_UPLOAD = 512 * 1024 * 1024
 _MAX_SYNC_UPLOAD = 8 * 1024 * 1024
 _ALLOWED = {'/': ('index.html', 'text/html; charset=utf-8'),
             '/app.css': ('app.css', 'text/css; charset=utf-8'),
-            '/app.js': ('app.js', 'text/javascript; charset=utf-8')}
+            '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
+            '/lab.js': ('lab.js', 'text/javascript; charset=utf-8')}
 
 
 class DashboardServer(ThreadingHTTPServer):
@@ -42,7 +45,6 @@ class DashboardServer(ThreadingHTTPServer):
             raise ValueError('Dashboard must bind to 127.0.0.1')
         if type(max_upload) is not int or not 24 <= max_upload <= _MAX_UPLOAD:
             raise ValueError('Invalid dashboard upload limit')
-        work_budget = MLWorkBudget.for_profile(ml_budget_profile)
         super().__init__(addr, DashboardHandler)
         self.ml_budget_profile = ml_budget_profile
         self.max_upload = max_upload
@@ -51,7 +53,7 @@ class DashboardServer(ThreadingHTTPServer):
         self.analysis_lock = Lock()
         self.request_slots = BoundedSemaphore(8)
         self.jobs = JobManager(self.analysis_lock,ml_detector,disk_quota_bytes=job_disk_mib*1024*1024,
-                               ml_work_budget=work_budget)
+                               ml_work_budget=LegacyMLWorkBudget.for_profile(ml_budget_profile))
 
     def process_request(self, request, client_address):
         if not self.request_slots.acquire(blocking=False):
@@ -136,9 +138,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if path == '/api/session':
             self._reply({'token': self.server.token, 'max_upload_bytes': self.server.max_upload,
                          'jobs_supported': True, 'active_job_id': self.server.jobs.latest_id,
-                         'profiles': {name:vars(AnalysisLimits.for_profile(name)) for name in ('standard','large','stress')},
                          'ml_budget_profile': self.server.ml_budget_profile,
-                         'ml_budget_profiles': {name:vars(MLWorkBudget.for_profile(name)) for name in ('standard','extended')},
+                         'ml_budget_profiles': {name: vars(LegacyMLWorkBudget.for_profile(name)) for name in ('standard','extended')},
+                         'profiles': {name:vars(AnalysisLimits.for_profile(name)) for name in ('standard','large','stress')},
                          'detector_mode': 'rules_plus_bilstm' if self.server.ml_detector else 'rules_only',
                          'model_enabled': self.server.ml_detector is not None,
                          'model_available': self.server.ml_detector is not None,
@@ -167,6 +169,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         if path.startswith('/api/jobs'):
             self._job_post(path)
+            return
+        if path in ('/api/manifests', '/api/manifests/showcase'):
+            self._manifest_post(path)
             return
         requested_mode = self.headers.get('X-Detection-Mode')
         if requested_mode is not None and requested_mode not in ('rules', 'hybrid'):
@@ -277,13 +282,33 @@ class DashboardHandler(BaseHTTPRequestHandler):
         finally:
             self.server.analysis_lock.release()
 
+    def _manifest_post(self,path):
+        try:
+            if path=='/api/manifests/showcase':
+                manifest=load_manifest(Path(__file__).resolve().parents[2]/'examples'/'groundtruth'/'showcase_demo.manifest.json')
+            else:
+                if self.headers.get('Content-Type','').split(';')[0].strip()!='application/json':
+                    self._reply({'error':'Expected application/json'},415);return
+                length=self.headers.get('Content-Length','')
+                if not re.fullmatch(r'[0-9]{1,12}',length) or int(length)<2:
+                    self._reply({'error':'Invalid Content-Length'},400);return
+                if int(length)>MAX_MANIFEST_BYTES:
+                    self.close_connection=True
+                    self._reply({'error':'Manifest is too large'},413);return
+                manifest=parse_manifest(self.rfile.read(int(length)))
+        except ManifestError as exc:
+            self._reply({'error':'Invalid ground-truth manifest: '+str(exc)[:160]},400);return
+        except OSError:
+            self._reply({'error':'Manifest unavailable'},404);return
+        self._reply({'manifest_id':self.server.jobs.add_manifest(manifest),'manifest':manifest.public()},201)
+
     def _job_get(self,path):
-        match=re.fullmatch(r'/api/jobs/([0-9a-f]{32})(?:/(findings|flows|report))?',path)
+        match=re.fullmatch(r'/api/jobs/([0-9a-f]{32})(?:/(findings|flows|report|evaluation))?',path)
         if not match:
             self._reply({'error':'Job not found'},404);return
         job_id,kind=match.groups()
         authenticated=self.headers.get('X-Dashboard-Token')==self.server.token
-        if kind=='report' and not authenticated:
+        if kind in ('report','evaluation') and not authenticated:
             try:
                 cookie=SimpleCookie(self.headers.get('Cookie',''))
                 authenticated=cookie.get('trace_session') is not None and secrets.compare_digest(cookie['trace_session'].value,self.server.token)
@@ -293,7 +318,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._reply({'error':'Request refused'},403);return
         try:
             job=self.server.jobs.get(job_id)
-            if kind=='report':
+            if kind=='evaluation':
+                if job.status!='completed' or job.evaluation is None:raise ValueError('No evaluation available')
+                body=json.dumps(job.evaluation,ensure_ascii=False,allow_nan=False).encode('utf-8')
+                download=f'trace-evaluation-{job_id}.json' if 'download' in parse_qs(urlsplit(self.path).query) else None
+                self._headers(200,'application/json; charset=utf-8',len(body),download=download)
+                self.wfile.write(body)
+            elif kind=='report':
                 if job.status!='completed':raise ValueError('Result not complete')
                 with job.report.open('rb') as stream:
                     self._headers(200,'application/json',os.fstat(stream.fileno()).st_size,
@@ -322,15 +353,24 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._reply({'error':'Not found'},404);return
         mode=self.headers.get('X-Detection-Mode','rules')
         profile=self.headers.get('X-Analysis-Profile','standard')
-        ml_profile=self.headers.get('X-ML-Budget-Profile')
-        if ml_profile is not None and ml_profile not in ('standard','extended'):
-            self._reply({'error':'ML budget profile must be standard or extended'},400);return
-        ml_budget=MLWorkBudget.for_profile(ml_profile) if ml_profile else self.server.jobs.ml_work_budget
+        legacy_name=self.headers.get('X-ML-Budget-Profile')
+        if legacy_name is not None and legacy_name not in ('standard','extended'):
+            self._reply({'error':'Unknown ML budget profile'},400);return
+        legacy_budget=LegacyMLWorkBudget.for_profile(legacy_name) if legacy_name else None
+        ml_profile=self.headers.get('X-ML-Coverage', legacy_name or 'standard')
+        manifest_id=self.headers.get('X-Ground-Truth-Manifest')
         request_id=self.headers.get('X-Request-ID','')
-        if mode not in ('rules','hybrid') or profile not in ('standard','large','stress') or not re.fullmatch(r'[A-Za-z0-9_-]{8,80}',request_id):
-            self._reply({'error':'Valid scan mode, profile and request ID are required'},400);return
+        if mode not in ('rules','hybrid') or profile not in ('standard','large','stress') or ml_profile not in ML_PROFILES or not re.fullmatch(r'[A-Za-z0-9_-]{8,80}',request_id):
+            self._reply({'error':'Valid scan mode, profile, ML coverage profile and request ID are required'},400);return
         if mode=='hybrid' and self.server.ml_detector is None:
             self._reply({'error':'Requested model is unavailable'},422);return
+        manifest=None
+        if manifest_id is not None:
+            try:
+                if not re.fullmatch(r'[0-9a-f]{32}',manifest_id):raise KeyError
+                manifest=self.server.jobs.get_manifest(manifest_id)
+            except KeyError:
+                self._reply({'error':'Ground-truth manifest unavailable or expired; upload it again'},400);return
         source=path.rsplit('/',1)[-1]
         size=0
         label='trace-vp-showcase.pcap' if source=='showcase' else 'synthetic-demo.pcap'
@@ -351,8 +391,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         job=None
         started=False
         try:
-            job,created=self.server.jobs.reserve(request_id,filename=label,source=source,size=size,mode=mode,profile=profile,
-                                                ml_work_budget=ml_budget)
+            job,created=self.server.jobs.reserve(request_id,filename=label,source=source,size=size,mode=mode,profile=profile,ml_profile=ml_profile,manifest=manifest,ml_work_budget=legacy_budget)
             if not created:
                 self.close_connection=True
                 self._reply({'job_id':job.job_id,'status':job.status},202);return
@@ -394,15 +433,13 @@ def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(description='Run local-only PCAP PII investigation dashboard')
     p.add_argument('--port', type=int, default=8765)
     p.add_argument('--ml-checkpoint', default=None, help='Opt in to offline research BiLSTM checkpoint')
-    p.add_argument('--ml-budget-profile', choices=('standard','extended'), default='standard',
-                   help='Explicit ML work allowance for jobs; independent of capture resource profile')
     p.add_argument('--job-disk-mib',type=int,default=12288,help='Private job disk quota MiB; conservative capacity is checked before accepting a scan')
+    p.add_argument('--ml-budget-profile',choices=('standard','extended'),default='standard')
     args = p.parse_args(argv)
     if not 1024 <= args.port <= 65535:
         p.error('Port must be 1024–65535')
     ml_detector = load_experimental_bilstm(args.ml_checkpoint) if args.ml_checkpoint else None
-    server = DashboardServer(('127.0.0.1', args.port), ml_detector=ml_detector,job_disk_mib=args.job_disk_mib,
-                             ml_budget_profile=args.ml_budget_profile)
+    server = DashboardServer(('127.0.0.1', args.port), ml_detector=ml_detector,job_disk_mib=args.job_disk_mib,ml_budget_profile=args.ml_budget_profile)
     print(f'PCAP PII dashboard: http://127.0.0.1:{args.port}/ (Ctrl+C to stop)')
     try:
         server.serve_forever()

@@ -1,13 +1,5 @@
 # TRACE - independent technical validation (QA)
 
-**Scalability follow-up (2026-10-18):** F-03 and F-05 are addressed on
-`feature/trace-scalable-ml-engine`. Their former strict xfails are now required
-regressions: overlong paths are skipped with a reason, and incomplete request
-framing sets `analysis_incomplete`. Response body framing without request-method
-context remains explicit uncertainty (HEAD/CONNECT). The original measured
-model results and findings register below are historical QA evidence, not a
-fresh benchmark of this branch. See `../integration/ML_COVERAGE_CONTRACT.md`.
-
 Branch `feature/trace-independent-vp-qa`, based on `origin/feature/vp-live-evidence-showcase` @ `86ad303` (latest UI + hybrid + showcase).
 Added only `tests/test_vp_qa_*.py` and `docs/vp-qa/`; no application code, frontend, model weight, dataset or existing test was changed.
 A finding means potential exposure of personal-looking data in unencrypted HTTP/1.x; it is not proof of exfiltration, theft or misuse.
@@ -35,10 +27,10 @@ Rule findings carry **no** model fields. `confidence` is a heuristic for rules a
 
 ## 2. Test methodology
 * **Real components, no mock model.** The existing showcase tests use `MockV2` (a string search that injects findings) or avoid asserting model output; the QA suite uses the real V2 ensemble and asserts what it actually returns.
-* **Three kinds of test:** (a) *invariants* (counts, provenance, masking, rules unchanged by ML) - hard assertions; (b) *characterisation* of research-model outputs, pinned to the checkpoint version - honest records of hits, misses and false positives, never forced positive; (c) `xfail(strict=True)` for behaviour a reviewer would expect but which is **not** delivered today (findings F-03..F-07) - if another engineer fixes it, the test goes red and the document must be updated.
+* **Three kinds of test:** (a) *invariants* (counts, provenance, masking, rules unchanged by ML) - hard assertions; (b) *characterisation* of research-model outputs, pinned to the checkpoint version - honest records of hits, misses and false positives, never forced positive; (c) `xfail(strict=True)` for behaviour a reviewer would expect but which was **not** delivered when the QA was written (findings F-03..F-07). F-03 to F-07 have since been fixed and converted to normal tests; no strict xfail remains.
 * **Own PCAP builder** (`test_vp_qa_support.py`) so tests do not depend on another engineer's fixture helpers, except where the showcase itself is under test.
 * **Spy detector** records exactly what is handed to a model, so secret-handling is verified independent of any model.
-* **Inventory (100 tests; 95 pass, 5 strict xfail):** live showcase 21 · model-ready/zero-findings 6 · adversarial 34 · TCP uncertainty 17 · secrets 7 · scientific claims 15.
+* **Inventory (118 tests, all passing on this branch; originally 100 with 5 strict xfail):** live showcase 21 · model-ready/zero-findings 6 · adversarial 52 · TCP uncertainty 18 · secrets 6 · scientific claims 15. Behaviour fixed after the QA run is covered by the regression tests cited in section 5.
 * The independent benchmark (`challenge_v1`, 1,058 fields) was **not** used to tune or select anything; it was only read for reporting.
 
 ## 3. Observed live results - 12-conversation showcase, real V2 ensemble
@@ -76,7 +68,7 @@ The 12 contextual predictions (masked as shown in the report; fixture-author int
 * **Miss:** `json_body.full_name` in flow 3 (`Alex Example`) - evaluated, no span; only the deterministic rule reported it (`test_known_model_miss_is_reported_not_hidden`).
 * **Correct non-finding:** the planted company hard negative (`Johnson & Johnson`, flow 9 `billed_to`).
 * Tally: 8 of 9 planted person/username fields hit, 4 false-positive candidates. **n = 9 on a hand-authored fixture whose strings were copied from the model's own demo; this is an observation, not precision/recall.** None of these strings occurs as an entity in the V2 training/validation/calibration data (`test_showcase_strings_are_absent_from_v2_training_data`).
-* 3 field locations are flagged by both rules and ML, so 31 findings cover 27 distinct field locations (`test_overlapping_signals_are_counted_twice_in_potential_leaks`); the UI says signals may overlap.
+* 3 field locations are flagged by both rules and ML, so 31 findings cover 27 distinct field locations (`test_overlapping_signals_are_reported_as_distinct_locations`); the UI says signals may overlap.
 
 ### Why "model ready" can coexist with zero ML findings (`test_vp_qa_model_ready_zero_findings.py`)
 "Ready" = checkpoint loaded; "invoked" = `analyze(..., ml_detector=)` ran; "evaluated" = eligible fields passed to the model; "findings" = spans returned. Five independent causes, each reproduced:
@@ -100,25 +92,26 @@ From `docs/ml/results/v2_eval_*.json` (exact span + label, micro-F1, 1,000-resam
 * Scores are raw ensemble-averaged tag probabilities, **uncalibrated**: expected calibration error 0.01 on in-generator dev but 0.07 on the challenge set (spans scored 0.5-0.7 were right about half the time). Verified in the report metadata and by `test_report_and_findings_label_scores_as_uncalibrated`.
 * Live-file precision/recall/F1 are not measured (and cannot be computed): no ground truth exists for an uploaded PCAP.
 
-## 5. Findings register (new, from this QA; none fixed here)
-| ID | Finding | Evidence (test) | Severity | Suggested owner |
+## 5. Findings register and status on `feature/trace-ml-completeness-groundtruth-v1`
+The register was produced by the original QA run (PR #15). The engineering follow-up on this branch fixed F-03 to F-11; each former strict `xfail` was turned into a normal passing regression test **without changing its expectation** (the expectation was already "this should work"). F-07 (dashboard labelling) was fixed with the Model Laboratory rework.
+| ID | Finding (original) | Status | Regression evidence | Severity |
 |---|---|---|---|---|
-| F-03 | A JSON key longer than 1,024 characters aborts the **entire** hybrid analysis (`MlValidationError` from `FieldInput`); rules-only completes. The dashboard would report "Capture rejected". | `test_overlong_json_key_preserves_analysis_and_valid_following_field` + strict xfail | High (input-triggered failure) | hybrid / backend |
-| F-04 | `SECRET_KEYS` matches `auth` without a word boundary: `author`, `authority`, `authentic` become CREDENTIAL_OR_TOKEN and the field is also excluded from the model - a person's name under `author` is labelled a credential. | `test_author_key_is_classified_as_credential_and_never_reaches_the_model` + strict xfail | Medium | rules |
-| F-05 | Losing the **last** segment of a request drops the whole request while `stream_gaps = 0` and `analysis_incomplete = false`. Head/middle loss is correctly flagged. | `test_missing_tail_segment_is_observable_http_incompleteness` + strict xfail | High (silent evidence loss) | network |
-| F-06 | Bare `token`, `jwt`, `sid`, `passphrase`, `private_key`, `id_token`, `otp`, `pin` are not credential keys: `?token=...` is neither reported as a credential nor excluded from the model's input (the default report still does not echo it). | `test_bare_token_parameter_is_not_recognised_as_a_credential_current_behaviour` + strict xfail | Medium | rules / hybrid |
-| F-07 | Dashboard tile "OFFLINE STRONG RULES F1 31.7%" does not say it is a research baseline (live rules: 13.4%). | `test_strong_rules_figure_is_a_research_baseline_not_the_live_rules_engine` + strict xfail | Low (labelling) | frontend |
-| F-08 | `potential_leaks` counts findings, not distinct exposed values (31 findings / 27 locations in the showcase). | `test_overlapping_signals_are_counted_twice_in_potential_leaks` | Low | backend / frontend |
-| F-09 | Undecodable bodies (`Content-Encoding: br`/`zstd`, corrupt gzip, expansion > 2 MiB) and HTTP/2 yield no findings and **no** incompleteness flag; IP fragments are counted as unsupported but also not flagged incomplete. | `test_undecodable_content_encodings_*`, `test_http2_*`, `test_ip_fragment_*` | Medium | network |
-| F-10 | `hybrid.py` does not use the ML package's input-quality policy: upstream truncation/gap/replacement-character flags are not passed to the model or attached per finding; only the capture-level `analysis_incomplete` exists. | code read + `test_hybrid_mode_does_not_launder_an_incomplete_capture` (flag preserved globally) | Medium | hybrid |
-| F-11 | The static limitation string still says "No ... sequence wraparound/reused-tuple separation"; wraparound actually reassembles correctly in test, reused 4-tuples lose data but are flagged incomplete. | `test_sequence_number_wraparound_is_reassembled`, `test_reused_four_tuple_*` | Info | network |
+| F-03 | A JSON key longer than 1,024 characters aborted the **entire** hybrid analysis (`MlValidationError`). | **Fixed.** The field is skipped, counted in `ml_fields_skipped`, the analysis is flagged incomplete, the key is never echoed. | `test_overlong_json_key_is_skipped_counted_and_flagged_not_fatal` | High |
+| F-04 | `auth` matched without a word boundary: `author`, `authority`, `authentic` became CREDENTIAL_OR_TOKEN and were hidden from the model. | **Fixed.** Credential keys are matched as tokens (camelCase/punctuation-aware). | `test_author_key_is_not_a_credential_and_reaches_the_model`, `test_genuine_credential_keys_are_still_credentials`, `test_credential_lookalike_keys_are_not_credentials` | Medium |
+| F-05 | Losing the **last** segment of a request dropped it with `stream_gaps = 0` and `analysis_incomplete = false`. | **Fixed.** An HTTP-looking unterminated tail is counted (`unterminated_http_messages`) and flags the analysis incomplete. Nothing is inferred from it. | `test_missing_tail_segment_is_flagged_incomplete`, `test_complete_and_non_http_streams_are_not_flagged_unterminated` | High |
+| F-06 | Bare `token`, `jwt`, `sid`, `passphrase`, `private_key`, `id_token`, `otp`, `pin` were not credential keys. | **Fixed.** They are credentials (reported masked) and excluded from model input; metadata-style keys such as `token_type`/`max_tokens` are not. | `test_bare_token_parameter_is_a_credential_and_never_reaches_the_model`, `test_genuine_credential_keys_are_still_credentials` | Medium |
+| F-07 | The "OFFLINE STRONG RULES F1 31.7%" tile did not say it is a research baseline (live rules: 13.4%). | **Fixed.** `/api/benchmark` serves both comparators with explicit labels (research baseline vs the live rule engine) and the target status; the Model Laboratory renders them. | `test_benchmark_comparators_are_labelled_research_baseline_vs_live_rule_engine` | Low |
+| F-08 | `potential_leaks` counted findings, not distinct exposed locations (31 findings / 27 locations in the showcase). | **Fixed (additive).** `potential_leaks` is unchanged for compatibility; `distinct_exposed_locations`, `locations_flagged_by_rules/model/both` are new. No values are retained to compute them. | `test_overlapping_signals_are_reported_as_distinct_locations` | Low |
+| F-09 | Undecodable bodies, HTTP/2 and IP fragments produced no findings and no incompleteness flag. | **Fixed.** Bodies not inspected, HTTP/2 streams, IP fragments, IPv6 extension headers and truncated packets are counted by reason and flag the analysis incomplete. Non-TCP and TLS traffic is counted but is out of scope and does not flag. | `test_undecodable_content_encodings_yield_no_findings_but_are_counted_and_flagged`, `test_decodable_and_empty_bodies_are_not_reported_as_skipped`, `test_http2_prior_knowledge_preface_is_not_parsed_and_is_disclosed`, `test_ip_fragment_is_counted_by_reason_and_flagged_incomplete`, `test_ipv6_extension_header_is_counted_as_possibly_hiding_tcp` | Medium |
+| F-10 | `hybrid.py` did not carry the ML package's input-quality flags. | **Fixed.** Gap, capture-incomplete, unterminated and replacement-character flags are passed in `FieldInput.context` (the V2 model ignores context, so predictions are unchanged) and attached to each ML finding as `input_quality`. Fields that are mostly U+FFFD are excluded by policy. | `tests/test_input_quality.py` | Medium |
+| F-11 | The static limitation text said wraparound and tuple reuse were unsupported. | **Fixed upstream and here.** Wraparound and reused 4-tuples are handled (`test_sequence_number_wraparound_is_reassembled`, `test_reused_four_tuple_is_split_into_separate_flows_and_both_users_are_found`); the fragment caveat was reworded because fragments are now flagged. | those two tests | Info |
 
 ## 6. Known failure modes
 * **Model false positives (observed):** currency code `AUD`, ordinary words in a note, city names that are also given names (`Madison`, `Austin`), organisations that look like names (`Morgan Stanley`, `Harper Collins`), a product under `name` (`AirLoom Mini`). On a 20-field adversarial negative set 6 were flagged (30%) - a worst-case set, **not** a false-positive rate for real traffic (`test_company_and_city_false_positives_are_visible_and_labelled_experimental`).
 * **Model misses / weak formats:** second and third names in a list, positional CSV (found only at raw score < 0.6), chat-style prefixes (right handle plus a false positive), short cryptic handles under cryptic keys (`v`, `u`), emoji inside a handle truncates the span (`test_known_weak_formats_*`, `test_emoji_inside_a_username_*`).
 * **Works as observed (not a guarantee):** unusual field names the rules ignore (`attendee`, `gamertag`, `acct_holder`, `screen_name`), Greek/Korean/Arabic/Cyrillic/accented names with correct code-point offsets, lower/upper-case variants.
-* **Network:** tail-segment loss (F-05), conflicting retransmissions resolved by first arrival and flagged incomplete, reused 4-tuples, IP fragments, non-HTTP payloads.
-* **Rules:** keyword-based; names appear only in fields literally called `full_name|first_name|last_name`; `username|user_name|login` for usernames; F-04/F-06.
+* **Network:** tail-segment loss (F-05, now flagged), conflicting overlapping retransmissions (the disputed region is excluded and flagged incomplete, whatever the arrival order), reused 4-tuples (split into separate flows), IP fragments (now flagged), non-HTTP payloads.
+* **Rules:** keyword-based; names appear only in fields literally called `full_name|first_name|last_name`; `username|user_name|login` for usernames; F-04/F-06 are fixed.
 
 ## 7. Unsupported or unverified protocols / cases
 | Case | Status |
@@ -126,9 +119,9 @@ From `docs/ml/results/v2_eval_*.json` (exact span + label, micro-F1, 1,000-resam
 | HTTPS/TLS payloads | not decoded (stated in every report); TLS-like bytes produce no messages - tested |
 | HTTP/2, HTTP/3/QUIC, WebSocket frames, gRPC | not decoded; HTTP/2 preface tested; the others are **untested** |
 | IPv6, UDP, other L4 | counted as unsupported (tested with a UDP + IPv6 frame) |
-| IP fragmentation | unsupported; counted, not flagged (F-09) |
-| TCP: reused 4-tuple, tail loss, conflicting payload | data loss or arrival-dependent result (tested); only some are flagged |
-| Content encodings other than gzip/deflate; bodies > 2 MiB | silently not inspected (F-09) |
+| IP fragmentation | unsupported; counted by reason and flagged incomplete |
+| TCP: reused 4-tuple, tail loss, conflicting payload | reused tuples split into flows; tail loss and conflicting payload are flagged incomplete; conflicting bytes are excluded, not guessed (tested) |
+| Content encodings other than gzip/deflate; bodies > 2 MiB | not inspected; counted by reason and flagged incomplete |
 | PCAPNG, VLAN/Ethernet variants, jumbo captures | not exercised by this QA suite (other branches own large-capture performance) |
 | Base64/URL-encoded/obfuscated PII, PII in headers/cookies for the model | not detected by the model (headers excluded by policy) |
 
@@ -136,7 +129,7 @@ From `docs/ml/results/v2_eval_*.json` (exact span + label, micro-F1, 1,000-resam
 **Demonstrated by executed tests:** the engine reconstructs the 12 showcase conversations deterministically; rule findings are unaffected by the model; the V2 checkpoint loads and runs on CPU offline with verified integrity; provenance and masking are present and consistent; no fictional credential reaches the model, the default report, logs or stdout; hybrid failure modes and silent-loss cases are characterised; headline numbers shown in the UI equal the committed evaluation and are labelled as offline/synthetic.
 **Not demonstrated / unverified:** accuracy on any real capture (no labelled real data exists); false-positive rate on real traffic; behaviour on large or PCAPNG captures with the hybrid enabled; behaviour on HTTP/2+, QUIC and WebSocket; any calibration of model scores (they remain uncalibrated); that any finding corresponds to harm, theft or exfiltration (the tool cannot establish it).
 
-## 9. Prioritised next steps
+## 9. Prioritised next steps (as originally written; items 1, 3, 4 (F-08/F-10) and 6 (F-11) are done on this branch)
 1. **P0 - robustness:** make hybrid skip-and-count over-long keys/fields instead of aborting (F-03); flag an unterminated HTTP message at end of stream as incomplete (F-05). Flip the strict xfails to normal tests.
 2. **P0 - evidence quality:** build a small *labelled* PCAP corpus (fictional or consented, replayed through real stacks, with field-level ground truth) so that precision and recall on capture-like data can be measured at all (they cannot be measured today).
 3. **P1 - rules:** word-boundary the `auth` pattern and add bare `token|jwt|sid|passphrase|private_key|otp|pin` (F-04, F-06); both change what the model sees.

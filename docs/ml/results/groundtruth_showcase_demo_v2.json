@@ -1,0 +1,564 @@
+{
+  "schema_version": "trace-ground-truth-evaluation/1",
+  "generated_at": "2026-10-18T12:21:47+00:00",
+  "status": "complete",
+  "scope": "Metrics are file-specific: they describe the scored fields of this capture against the supplied annotations. Every annotated field was aligned and scored.",
+  "capture": {
+    "sha256": "06a2562043f05841bd038a4408934731aa8aef3794d3a03ec1bc30792a0cde7f",
+    "bytes": 11312,
+    "verified_against_manifest": true
+  },
+  "manifest": {
+    "sha256": "4773fb8f87e0b23609721ed369cbc87dadc113e41be423221239f97b0e2981f3",
+    "name": "TRACE VP showcase (hand-designed demonstration)",
+    "kind": "hand_designed_demonstration",
+    "description": "Hand annotations over the 12-conversation showcase the TRACE team designed. A demonstration of the evaluator on a familiar file, NOT an independent benchmark and NOT evidence of general accuracy.",
+    "created": "2025-06-02",
+    "synthetic": true,
+    "labels": [
+      "PERSON_NAME",
+      "USERNAME"
+    ],
+    "annotation_scope": "listed_fields_only",
+    "fields": 12,
+    "positive_fields": 9,
+    "negative_fields": 3,
+    "gold_spans": 9,
+    "label_source": "human_annotation",
+    "generator": "scripts/groundtruth/build_showcase_manifest.py",
+    "labels_derived_from_model_output": false,
+    "verified": true
+  },
+  "model_version": "bilstm-v2-d1f9e9fb9a2b",
+  "detection_method": "rules_plus_bilstm",
+  "analysis_version": {
+    "engine": "pcap-pii-engine",
+    "version": "0.1.0",
+    "report_schema_version": "1.0.0"
+  },
+  "ml_work_limits": {
+    "profile": "standard",
+    "max_fields": 10000,
+    "max_characters": 2000000,
+    "max_seconds": 60.0,
+    "batch_fields": 256,
+    "batch_characters": 262144,
+    "max_field_chars": 65536
+  },
+  "analysis": {
+    "ml_coverage_status": "complete",
+    "ml_coverage_ratio": 1.0,
+    "ml_fields_eligible": 48,
+    "ml_fields_evaluated": 48,
+    "ml_fields_skipped": 0,
+    "ml_fields_skipped_by_reason": {},
+    "analysis_incomplete": false,
+    "stream_gaps": 0,
+    "unterminated_http_messages": 0,
+    "http_messages": 24,
+    "fields_extracted": 147
+  },
+  "alignment": {
+    "manifest_fields": 12,
+    "aligned": 12,
+    "unaligned": {},
+    "unannotated_fields_in_listed_messages": null,
+    "messages_in_capture_observed": 24
+  },
+  "systems": {
+    "rules_only": {
+      "description": "Deterministic rules only (whole-field USERNAME / PERSON_NAME_CANDIDATE findings).",
+      "scored_fields": 12,
+      "unscored_fields": {},
+      "gold_spans_scored": 9,
+      "predicted_spans": 4,
+      "per_label": {
+        "PERSON_NAME": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 2,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6667,
+          "precision_ci95": [
+            0.3424,
+            1.0
+          ],
+          "recall_ci95": [
+            0.15,
+            0.85
+          ],
+          "undefined": [],
+          "support": 4,
+          "predicted": 2
+        },
+        "USERNAME": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 3,
+          "precision": 1.0,
+          "recall": 0.4,
+          "f1": 0.5714,
+          "precision_ci95": [
+            0.3424,
+            1.0
+          ],
+          "recall_ci95": [
+            0.1176,
+            0.7693
+          ],
+          "undefined": [],
+          "support": 5,
+          "predicted": 2
+        }
+      },
+      "micro": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 5,
+        "precision": 1.0,
+        "recall": 0.4444,
+        "f1": 0.6154,
+        "precision_ci95": [
+          0.5101,
+          1.0
+        ],
+        "recall_ci95": [
+          0.1888,
+          0.7333
+        ],
+        "undefined": []
+      },
+      "macro": {
+        "labels_averaged": [
+          "PERSON_NAME",
+          "USERNAME"
+        ],
+        "precision": 1.0,
+        "recall": 0.45,
+        "f1": 0.619
+      },
+      "negative_fields": {
+        "scored": 3,
+        "with_false_positive": 0,
+        "by_category": {
+          "hard_negative:company_name": {
+            "scored": 1,
+            "with_false_positive": 0
+          },
+          "hard_negative:given_name_lookalike": {
+            "scored": 1,
+            "with_false_positive": 0
+          },
+          "hard_negative:identifier_lookalike": {
+            "scored": 1,
+            "with_false_positive": 0
+          }
+        }
+      },
+      "categories": {
+        "hard_negative:company_name": {
+          "scored": 1,
+          "with_false_positive": 0
+        },
+        "hard_negative:given_name_lookalike": {
+          "scored": 1,
+          "with_false_positive": 0
+        },
+        "hard_negative:identifier_lookalike": {
+          "scored": 1,
+          "with_false_positive": 0
+        },
+        "positive:request": {
+          "scored": 9,
+          "with_false_positive": 0
+        }
+      },
+      "error_breakdown": {
+        "false_positive": {},
+        "false_negative": {
+          "missed": 5
+        }
+      },
+      "true_positives_by_detector": {
+        "rule": 4
+      },
+      "error_samples": [
+        {
+          "error": "false_negative",
+          "type": "missed",
+          "field_id": "show01",
+          "label": "PERSON_NAME",
+          "gold_span": [
+            0,
+            21
+          ]
+        },
+        {
+          "error": "false_negative",
+          "type": "missed",
+          "field_id": "show02",
+          "label": "USERNAME",
+          "gold_span": [
+            0,
+            12
+          ]
+        },
+        {
+          "error": "false_negative",
+          "type": "missed",
+          "field_id": "show07",
+          "label": "USERNAME",
+          "gold_span": [
+            0,
+            12
+          ]
+        },
+        {
+          "error": "false_negative",
+          "type": "missed",
+          "field_id": "show08",
+          "label": "PERSON_NAME",
+          "gold_span": [
+            0,
+            21
+          ]
+        },
+        {
+          "error": "false_negative",
+          "type": "missed",
+          "field_id": "show12",
+          "label": "USERNAME",
+          "gold_span": [
+            0,
+            12
+          ]
+        }
+      ],
+      "error_samples_truncated": false
+    },
+    "model_only": {
+      "description": "Contextual model predictions only (rules ignored).",
+      "scored_fields": 12,
+      "unscored_fields": {},
+      "gold_spans_scored": 9,
+      "predicted_spans": 10,
+      "per_label": {
+        "PERSON_NAME": {
+          "tp": 3,
+          "fp": 2,
+          "fn": 1,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.6667,
+          "precision_ci95": [
+            0.2307,
+            0.8824
+          ],
+          "recall_ci95": [
+            0.3006,
+            0.9544
+          ],
+          "undefined": [],
+          "support": 4,
+          "predicted": 5
+        },
+        "USERNAME": {
+          "tp": 5,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "precision_ci95": [
+            0.5655,
+            1.0
+          ],
+          "recall_ci95": [
+            0.5655,
+            1.0
+          ],
+          "undefined": [],
+          "support": 5,
+          "predicted": 5
+        }
+      },
+      "micro": {
+        "tp": 8,
+        "fp": 2,
+        "fn": 1,
+        "precision": 0.8,
+        "recall": 0.8889,
+        "f1": 0.8421,
+        "precision_ci95": [
+          0.4902,
+          0.9433
+        ],
+        "recall_ci95": [
+          0.565,
+          0.9801
+        ],
+        "undefined": []
+      },
+      "macro": {
+        "labels_averaged": [
+          "PERSON_NAME",
+          "USERNAME"
+        ],
+        "precision": 0.8,
+        "recall": 0.875,
+        "f1": 0.8334
+      },
+      "negative_fields": {
+        "scored": 3,
+        "with_false_positive": 2,
+        "by_category": {
+          "hard_negative:company_name": {
+            "scored": 1,
+            "with_false_positive": 0
+          },
+          "hard_negative:given_name_lookalike": {
+            "scored": 1,
+            "with_false_positive": 1
+          },
+          "hard_negative:identifier_lookalike": {
+            "scored": 1,
+            "with_false_positive": 1
+          }
+        }
+      },
+      "categories": {
+        "hard_negative:company_name": {
+          "scored": 1,
+          "with_false_positive": 0
+        },
+        "hard_negative:given_name_lookalike": {
+          "scored": 1,
+          "with_false_positive": 1
+        },
+        "hard_negative:identifier_lookalike": {
+          "scored": 1,
+          "with_false_positive": 1
+        },
+        "positive:request": {
+          "scored": 9,
+          "with_false_positive": 0
+        }
+      },
+      "error_breakdown": {
+        "false_positive": {
+          "negative_field": 2
+        },
+        "false_negative": {
+          "missed": 1
+        }
+      },
+      "true_positives_by_detector": {
+        "bilstm": 8
+      },
+      "error_samples": [
+        {
+          "error": "false_negative",
+          "type": "missed",
+          "field_id": "show04",
+          "label": "PERSON_NAME",
+          "gold_span": [
+            0,
+            12
+          ]
+        },
+        {
+          "error": "false_positive",
+          "type": "negative_field",
+          "field_id": "show05",
+          "label": "PERSON_NAME",
+          "predicted_span": [
+            0,
+            3
+          ],
+          "detectors": [
+            "bilstm"
+          ]
+        },
+        {
+          "error": "false_positive",
+          "type": "negative_field",
+          "field_id": "show10",
+          "label": "PERSON_NAME",
+          "predicted_span": [
+            0,
+            7
+          ],
+          "detectors": [
+            "bilstm"
+          ]
+        }
+      ],
+      "error_samples_truncated": false
+    },
+    "rules_plus_model": {
+      "description": "Union of rule and model predictions; an identical span from both counts once.",
+      "scored_fields": 12,
+      "unscored_fields": {},
+      "gold_spans_scored": 9,
+      "predicted_spans": 11,
+      "per_label": {
+        "PERSON_NAME": {
+          "tp": 4,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.6667,
+          "recall": 1.0,
+          "f1": 0.8,
+          "precision_ci95": [
+            0.3,
+            0.9032
+          ],
+          "recall_ci95": [
+            0.5101,
+            1.0
+          ],
+          "undefined": [],
+          "support": 4,
+          "predicted": 6
+        },
+        "USERNAME": {
+          "tp": 5,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "precision_ci95": [
+            0.5655,
+            1.0
+          ],
+          "recall_ci95": [
+            0.5655,
+            1.0
+          ],
+          "undefined": [],
+          "support": 5,
+          "predicted": 5
+        }
+      },
+      "micro": {
+        "tp": 9,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.8182,
+        "recall": 1.0,
+        "f1": 0.9,
+        "precision_ci95": [
+          0.523,
+          0.9486
+        ],
+        "recall_ci95": [
+          0.7009,
+          1.0
+        ],
+        "undefined": []
+      },
+      "macro": {
+        "labels_averaged": [
+          "PERSON_NAME",
+          "USERNAME"
+        ],
+        "precision": 0.8334,
+        "recall": 1.0,
+        "f1": 0.9
+      },
+      "negative_fields": {
+        "scored": 3,
+        "with_false_positive": 2,
+        "by_category": {
+          "hard_negative:company_name": {
+            "scored": 1,
+            "with_false_positive": 0
+          },
+          "hard_negative:given_name_lookalike": {
+            "scored": 1,
+            "with_false_positive": 1
+          },
+          "hard_negative:identifier_lookalike": {
+            "scored": 1,
+            "with_false_positive": 1
+          }
+        }
+      },
+      "categories": {
+        "hard_negative:company_name": {
+          "scored": 1,
+          "with_false_positive": 0
+        },
+        "hard_negative:given_name_lookalike": {
+          "scored": 1,
+          "with_false_positive": 1
+        },
+        "hard_negative:identifier_lookalike": {
+          "scored": 1,
+          "with_false_positive": 1
+        },
+        "positive:request": {
+          "scored": 9,
+          "with_false_positive": 0
+        }
+      },
+      "error_breakdown": {
+        "false_positive": {
+          "negative_field": 2
+        },
+        "false_negative": {}
+      },
+      "true_positives_by_detector": {
+        "bilstm": 5,
+        "bilstm+rule": 3,
+        "rule": 1
+      },
+      "error_samples": [
+        {
+          "error": "false_positive",
+          "type": "negative_field",
+          "field_id": "show05",
+          "label": "PERSON_NAME",
+          "predicted_span": [
+            0,
+            3
+          ],
+          "detectors": [
+            "bilstm"
+          ]
+        },
+        {
+          "error": "false_positive",
+          "type": "negative_field",
+          "field_id": "show10",
+          "label": "PERSON_NAME",
+          "predicted_span": [
+            0,
+            7
+          ],
+          "detectors": [
+            "bilstm"
+          ]
+        }
+      ],
+      "error_samples_truncated": false
+    }
+  },
+  "out_of_scope_detections": {
+    "rules": {
+      "EMAIL": 6,
+      "CREDENTIAL_OR_TOKEN": 2,
+      "PHONE": 1,
+      "CREDIT_CARD": 1
+    },
+    "model": {}
+  },
+  "notes": [
+    "Metrics describe this capture and these annotations only; they are not a general accuracy claim for TRACE or the model.",
+    "Spans are matched exactly (same field, label, start and end in code points); near-misses count as an error.",
+    "Confidence intervals are Wilson binomial intervals that treat spans as independent; no F1 interval is computed.",
+    "Rule findings for USERNAME and PERSON_NAME_CANDIDATE cover the whole field value and are scored as whole-field spans."
+  ]
+}

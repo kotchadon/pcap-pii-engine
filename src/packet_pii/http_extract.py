@@ -400,3 +400,34 @@ def extract_fields(message: HttpMessage) -> list[tuple[str, str]]:
         elif body and (lower_ct.startswith('text/') or not lower_ct):
             fields.append(('body.text', text))
     return fields[:MAX_FIELDS]
+
+
+@dataclass(frozen=True)
+class HttpParseResult:
+    """Compatibility with the detailed-parser API used by the labelled evaluator."""
+    spans: list[HttpSpan]
+    parsed_bytes: int
+    total_bytes: int
+    unterminated_http: bool
+
+
+def parse_http_stream_detailed(data: bytes) -> HttpParseResult:
+    diagnostics: list[HttpParseDiagnostic] = []
+    spans = parse_http_stream_with_spans(data, diagnostics=diagnostics)
+    parsed_bytes = spans[-1].end_offset if spans else 0
+    return HttpParseResult(spans, parsed_bytes, len(data),
+                           any(d.incomplete for d in diagnostics))
+
+
+def body_skip_reason(message: HttpMessage) -> str | None:
+    """Sanitized reason an HTTP body was not inspected."""
+    if not message.body:
+        return None
+    encoding = message.headers.get('content-encoding', 'identity').strip().lower()
+    if encoding in ('', 'identity') and len(message.body) <= MAX_HTTP_BODY:
+        return None
+    if _decompress_body(message) is not None:
+        return None
+    return ('unsupported_content_encoding'
+            if encoding not in ('', 'identity', 'gzip', 'deflate')
+            else 'undecodable_body')

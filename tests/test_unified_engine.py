@@ -97,19 +97,24 @@ def test_streamed_hybrid_matches_in_memory_with_private_provenance(capture, tmp_
             assert actual['summary'][key] == value
     assert receipt['summary'] == actual['summary'] and 'findings' not in receipt
     assert target.stat().st_mode & 0o777 == 0o600
+    # Coverage disposition rows are persisted and streamed independently
+    # of PII findings; discarding them would break manifest evaluation.
     assert actual['ml_field_coverage'] == expected['ml_field_coverage']
-    assert len(rows) == sum(len(actual[key]) for key in ('flows', 'findings', 'ml_field_coverage'))
+    assert len(rows) == (len(actual['flows']) + len(actual['findings'])
+                         + len(actual['ml_field_coverage']))
+    assert sum(kind == 'ml_field_coverage' for kind, _ in rows) == len(actual['ml_field_coverage'])
     assert events[-1]['stage'] == 'complete'
     assert 'Alex Example' not in target.read_text() + json.dumps(events)
     assert not list(tmp_path.glob('.pcap-pii-*'))
 
 
 def test_scan_wide_ml_bound_marks_partial_analysis(capture, tmp_path, monkeypatch):
+    from packet_pii.ml_runner import MLWorkBudget
     monkeypatch.setattr(engine, 'extract_fields',
                         lambda message: [('json_body.name', 'Alex'), ('json_body.other', 'Pat')])
     model = Model(False)
     result = engine.analyze_to_report(capture, tmp_path / 'bounded.json', ml_detector=model,
-                                     ml_work_budget=engine.MLWorkBudget(max_total_fields=1))
+                                      ml_budget=MLWorkBudget(max_fields=1))
     s = result['summary']
     assert s['ml_fields_evaluated'] == 1
     assert s['ml_fields_skipped'] > 0
