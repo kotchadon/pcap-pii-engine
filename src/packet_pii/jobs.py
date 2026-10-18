@@ -242,16 +242,24 @@ class JobManager:
                 job.receipt={k:v for k,v in receipt.items() if k!='output_path'}
                 job.status='completed';job.updated=time.monotonic()
         except Exception as exc:
-            with self.lock:
-                job.status='cancelled' if isinstance(exc,JobCancelled) else 'failed'
-                job.reason_type=type(exc).__name__
-                job.ml_failed=bool(getattr(exc,'ml_inference_failed',False))
-                job.error=('Scan cancelled' if job.status=='cancelled' else
-                           'Scan exceeded a configured resource budget' if isinstance(exc,AnalysisLimitError) else
-                           'Scan could not complete; no complete result is available')
-                job.progress={'stage':job.status};job.updated=time.monotonic();job.evaluation=None
-            if conn is not None:conn.close();conn=None
-            self._remove_files(job)
+            # Never advertise a terminal failure while its partial private
+            # report, index or capture still exists. A status poll must not
+            # observe a completed cleanup until the cleanup actually finishes.
+            try:
+                if conn is not None:
+                    conn.close()
+                    conn=None
+                self._remove_files(job)
+                job.capture.unlink(missing_ok=True)
+            finally:
+                with self.lock:
+                    job.status='cancelled' if isinstance(exc,JobCancelled) else 'failed'
+                    job.reason_type=type(exc).__name__
+                    job.ml_failed=bool(getattr(exc,'ml_inference_failed',False))
+                    job.error=('Scan cancelled' if job.status=='cancelled' else
+                               'Scan exceeded a configured resource budget' if isinstance(exc,AnalysisLimitError) else
+                               'Scan could not complete; no complete result is available')
+                    job.progress={'stage':job.status};job.updated=time.monotonic();job.evaluation=None
         finally:
             job.capture.unlink(missing_ok=True)
             self._release(job)
