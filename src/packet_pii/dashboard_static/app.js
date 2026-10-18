@@ -140,6 +140,7 @@ function rememberJob(id){try{if(id)localStorage.setItem('trace-last-job',id);els
 function profileChanged(){state.profile=$('analysis-profile').value;const limit=Number(state.profiles[state.profile]?.max_capture_bytes)||state.serverMaxBytes;state.maxBytes=Math.min(state.serverMaxBytes,limit);setText('max-file',Math.round(state.maxBytes/1048576)+' MiB');setText('profile-caption',Math.round(state.maxBytes/1048576)+' MiB maximum · profile limits may yield incomplete analysis.');}
 function markLatestScan(status,message){
  setLiveEvidence({summary:{}});
+ renderCoverage(null);
  const title=status==='running'?'Latest scan is in progress':status==='unknown'?'Latest scan status is unavailable':'Latest scan '+status+' — incomplete analysis';
  setText('obs-title',title);setText('obs-text',message);setText('model-active','RESEARCH · '+status.toUpperCase());setText('model-live-text',message);
  setText('mode','LATEST SCAN · '+status.toUpperCase());setText('live-model-state','UNKNOWN');setText('live-inference-status',status==='running'?'Pending':status==='unknown'?'Unavailable':status+' / incomplete');
