@@ -82,8 +82,8 @@ class _BudgetWriter:
 
 
 class _Rows:
-    def __init__(self, stream, owner):
-        self.stream, self.owner, self.count = stream, owner, 0
+    def __init__(self, stream, owner, kind):
+        self.stream, self.owner, self.kind, self.count = stream, owner, kind, 0
 
     def __len__(self):
         return self.count
@@ -95,6 +95,8 @@ class _Rows:
             raise ReportLimitError('Report spool exceeds configured byte budget')
         self.stream.write(text)
         self.owner.written += size
+        if self.owner.row_observer is not None:
+            self.owner.row_observer(self.kind, row)
         self.count += 1
 
     def iter_json(self):
@@ -105,8 +107,9 @@ class _Rows:
 
 class ReportSpool:
     """Private temporary row storage, bounded by encoded bytes, no pickle."""
-    def __init__(self,directory,maximum):
+    def __init__(self,directory,maximum,*,row_observer=None):
         self.directory,self.maximum,self.written = directory,maximum,0
+        self.row_observer = row_observer
         self.stack=ExitStack()
 
     def __enter__(self):
@@ -115,7 +118,7 @@ class ReportSpool:
                 stream=self.stack.enter_context(tempfile.TemporaryFile(
                     mode='w+t',encoding='utf-8',prefix='.pcap-pii-',dir=self.directory))
                 os.fchmod(stream.fileno(),0o600)
-                setattr(self,name,_Rows(stream,self))
+                setattr(self,name,_Rows(stream,self,name))
             return self
         except BaseException:
             self.stack.close()

@@ -1,0 +1,52 @@
+{
+  "full_suite": {
+    "passed": 320,
+    "failed": 11,
+    "seconds": 36.95,
+    "tests_deselected": 0
+  },
+  "failure_cause": "Authentic committed model.pt files or v2 train.jsonl.gz unavailable locally. No tests skipped or modified to mask these failures. Nine inherited main failures plus two imported real-checkpoint integration/showcase tests.",
+  "failed_nodes": [
+    "tests/test_hybrid_integration.py::test_real_saved_checkpoint_live_inference",
+    "tests/test_ml_bilstm.py::test_committed_checkpoint_loads_on_cpu_and_is_deterministic",
+    "tests/test_ml_input_probe.py::test_committed_v2_artifact_contract_and_examples",
+    "tests/test_ml_metrics_report.py::test_evaluate_default_exports_no_raw_text",
+    "tests/test_ml_metrics_report.py::test_evaluate_include_text_is_explicit_opt_in",
+    "tests/test_ml_v2_data.py::test_committed_v2_splits_match_manifest",
+    "tests/test_ml_v2_ensemble.py::test_v1_checkpoint_identity_preserved",
+    "tests/test_ml_v2_ensemble.py::test_committed_v2_ensemble_integrity_and_separation_from_v1",
+    "tests/test_ml_v2_ensemble.py::test_committed_v2_deterministic_unicode_and_repeated_locations",
+    "tests/test_ml_v2_model.py::test_v1_checkpoint_still_loads_and_is_unchanged",
+    "tests/test_showcase_live_evidence.py::test_showcase_with_real_saved_model_when_available"
+  ],
+  "subsequent_targeted_invalid_output_tests": {
+    "passed": 2,
+    "deselected": 8,
+    "seconds": 1.13
+  },
+  "first_checkpoint_engine": {
+    "passed": 71,
+    "deselected": 1
+  },
+  "first_checkpoint_dashboard": {
+    "passed": 18,
+    "deselected": 1
+  },
+  "jobs_ui_checkpoint": {
+    "passed": 24,
+    "deselected": 1
+  },
+  "review_fixes": {
+    "passed": 23,
+    "deselected": 1
+  },
+  "real_v2_inference": "blocked_missing_authentic_checkpoints",
+  "mac_m3": "not_run",
+  "browser_layout": "not_run; browser executable unavailable, Node behavior and actual loopback HTTP tested",
+  "subsequent_worker_start_regression": {
+    "passed": 1,
+    "deselected": 10,
+    "seconds": 0.06
+  },
+  "github_ci_scope": "Existing workflow installs base package and pytest on Python3.11; it does not install the optional torch dependency, so green CI does not prove real V2 inference."
+}
