@@ -514,6 +514,15 @@ def _analyze(path: str | Path, threshold: float = 0.8,
         runner.flush()
         drain()
         assert not contexts, 'every message must be released after the final flush'
+        # Even when a zero-field ML budget produces no detector calls, publish
+        # truthful zero-work progress rather than silently omitting this stage.
+        emit('ml_inference', packets=frames, endpoint_pairs=len(flow_packets),
+             sessions=sessions_processed, http_messages=http_count,
+             findings=len(findings), ml_fields_eligible=runner.eligible,
+             ml_fields_evaluated=runner.evaluated,
+             ml_fields_skipped=runner.skipped,
+             ml_inference_batches=runner.batches,
+             ml_characters_evaluated=runner.characters)
         stages['ml_inference'] = runner.seconds
         ml_eligible, ml_evaluated, ml_skipped = runner.eligible, runner.evaluated, runner.skipped
         ml_excluded, ml_empty, ml_seconds, ml_invoked = runner.excluded, runner.empty, runner.seconds, runner.invoked
