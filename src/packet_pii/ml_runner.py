@@ -50,8 +50,9 @@ class MLWorkBudget:
     def __post_init__(self) -> None:
         for key in ('max_fields', 'max_characters', 'batch_fields', 'batch_characters', 'max_field_chars'):
             value = getattr(self, key)
-            if type(value) is not int or value <= 0:
-                raise ValueError(f'{key} must be a positive integer')
+            minimum = 0 if key in ('max_fields', 'max_characters') else 1
+            if type(value) is not int or value < minimum:
+                raise ValueError(f'{key} must be an integer >= {minimum}')
         if type(self.max_seconds) not in (int, float) or not 0 < self.max_seconds <= self.CEILING_SECONDS:
             raise ValueError('max_seconds must be in (0, 7200]')
         if self.max_fields > self.CEILING_FIELDS or self.max_characters > self.CEILING_CHARACTERS:
