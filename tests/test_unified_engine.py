@@ -97,7 +97,12 @@ def test_streamed_hybrid_matches_in_memory_with_private_provenance(capture, tmp_
             assert actual['summary'][key] == value
     assert receipt['summary'] == actual['summary'] and 'findings' not in receipt
     assert target.stat().st_mode & 0o777 == 0o600
-    assert len(rows) == len(actual['flows']) + len(actual['findings'])
+    # Coverage disposition rows are persisted and streamed independently
+    # of PII findings; discarding them would break manifest evaluation.
+    assert actual['ml_field_coverage'] == expected['ml_field_coverage']
+    assert len(rows) == (len(actual['flows']) + len(actual['findings'])
+                         + len(actual['ml_field_coverage']))
+    assert sum(kind == 'ml_field_coverage' for kind, _ in rows) == len(actual['ml_field_coverage'])
     assert events[-1]['stage'] == 'complete'
     assert 'Alex Example' not in target.read_text() + json.dumps(events)
     assert not list(tmp_path.glob('.pcap-pii-*'))
