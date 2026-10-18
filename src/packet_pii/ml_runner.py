@@ -50,9 +50,8 @@ class MLWorkBudget:
     def __post_init__(self) -> None:
         for key in ('max_fields', 'max_characters', 'batch_fields', 'batch_characters', 'max_field_chars'):
             value = getattr(self, key)
-            minimum = 0 if key in ('max_fields', 'max_characters') else 1
-            if type(value) is not int or value < minimum:
-                raise ValueError(f'{key} must be an integer >= {minimum}')
+            if type(value) is not int or value <= 0:
+                raise ValueError(f'{key} must be a positive integer')
         if type(self.max_seconds) not in (int, float) or not 0 < self.max_seconds <= self.CEILING_SECONDS:
             raise ValueError('max_seconds must be in (0, 7200]')
         if self.max_fields > self.CEILING_FIELDS or self.max_characters > self.CEILING_CHARACTERS:
@@ -110,13 +109,14 @@ class MLBatchRunner:
 
     def __init__(self, detector: ContextualPIIDetector, budget: MLWorkBudget, *, include_values: bool = False,
                  checkpoint: Callable[[dict], None] | None = None, max_pending_messages: int = 4096,
-                 disposition: Callable[[object, int, str], None] | None = None):
+                 disposition: Callable[[object, int, str], None] | None = None,
+                 zero_work: bool = False):
         if not isinstance(budget, MLWorkBudget):
             raise TypeError('budget must be an MLWorkBudget')
         self.detector, self.budget, self.include_values = detector, budget, include_values
         self._checkpoint, self._max_pending_messages = checkpoint, max_pending_messages
         self._disposition = disposition  # optional (ticket key, field index, status) audit hook; carries no text
-        self._field_limit, self._char_limit = budget.max_fields, budget.max_characters
+        self._field_limit, self._char_limit = (0 if zero_work else budget.max_fields), budget.max_characters
         self._pending: list[_Item] = []
         self._pending_chars = 0
         self._order: deque[_Ticket] = deque()
