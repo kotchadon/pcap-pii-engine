@@ -24,6 +24,15 @@ import sys
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
+# Python 3.11 may let zlib supply the gzip OS header byte; newer versions
+# normalise it to 255. Stable fixture bytes must not depend on Python minor
+# version or operating system. RFC 1952 defines 255 as 'unknown OS'.
+def _portable_gzip(data: bytes) -> bytes:
+    encoded = bytearray(gzip.compress(data, mtime=0))
+    encoded[9] = 255
+    return bytes(encoded)
+
+
 CLIENT, SERVER = '192.0.2.', '198.51.100.'
 BASE_TIME = 1_760_100_000
 MARK = re.compile(r'⟦(PN|UN):([^⟧]+)⟧')
@@ -184,7 +193,7 @@ def build_message(kind, start_line, headers, body, is_request, cats):
         raw = json.dumps(tree, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
         hdr['Content-Type'] = 'application/json'
         if kind == 'gzip-json':
-            wire_body, hdr['Content-Encoding'] = gzip.compress(raw, mtime=0), 'gzip'
+            wire_body, hdr['Content-Encoding'] = _portable_gzip(raw), 'gzip'
         elif kind == 'chunked-json':
             mid = len(raw) // 2
             wire_body = (f'{mid:X}\r\n'.encode() + raw[:mid] + b'\r\n' + f'{len(raw) - mid:X}\r\n'.encode() + raw[mid:] + b'\r\n0\r\n\r\n')
