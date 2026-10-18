@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from .engine import AnalysisLimits, analyze_to_report
+from .hybrid import load_experimental_bilstm
 
 
 def main(argv=None) -> int:
@@ -19,6 +20,8 @@ def main(argv=None) -> int:
                         help='Private JSON report path (refuses overwrite by default)')
     parser.add_argument('--overwrite', action='store_true',
                         help='Explicitly replace an existing output report')
+    parser.add_argument('--ml-checkpoint', default=None,
+                        help='Opt in to experimental BiLSTM using a local checkpoint directory')
     parser.add_argument('--include-values', action='store_true',
                         help='Include raw detected data (SENSITIVE; local only)')
     parser.add_argument('--profile', choices=('standard','large','stress'), default='standard',
@@ -60,8 +63,10 @@ def main(argv=None) -> int:
             if value is not None:
                 overrides[field]=value*multiplier
         limits = AnalysisLimits.for_profile(args.profile,**overrides)
+        model = load_experimental_bilstm(args.ml_checkpoint) if args.ml_checkpoint else None
         report = analyze_to_report(input_path,output_path,args.threshold,args.include_values,
-                                   profile=args.profile,limits=limits,overwrite=args.overwrite)
+                                   profile=args.profile,limits=limits,overwrite=args.overwrite,
+                                   ml_detector=model)
         if args.include_values:
             print('WARNING: report contains unmasked PII/credentials; restrict its distribution.',
                   file=sys.stderr)
@@ -71,7 +76,7 @@ def main(argv=None) -> int:
               f"{report['summary']['potential_leaks']} potential PII findings. "
               f"Report: {args.output}")
         return 0
-    except (OSError, ValueError, TypeError) as exc:
+    except (OSError, ValueError, TypeError, ImportError, RuntimeError) as exc:
         print(f'Error: {exc}', file=sys.stderr)
         return 1
 

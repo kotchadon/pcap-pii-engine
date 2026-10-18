@@ -22,6 +22,8 @@ from .capture import (CaptureDiagnostics, read_frames, decode_tcp,
 from .http_extract import (HttpMessage, parse_http_stream_with_spans, extract_fields,
                            MAX_MESSAGES, MAX_FIELDS)
 from .detect import detect_fields, MAX_FIELD_LENGTH
+from .hybrid import infer_http_fields, MAX_SCAN_ML_FIELDS, MAX_SCAN_ML_CHARACTERS
+from .ml.detector import ContextualPIIDetector
 
 
 class AnalysisLimitError(ValueError):
@@ -196,7 +198,8 @@ def _pair_requests(records: list[_Record], fid: str) -> tuple[int, int, int]:
 def _analyze(path: str | Path, threshold: float = 0.8,
             include_values: bool = False, *,
             limits: AnalysisLimits | None = None, profile: str = 'standard',
-            progress=None, _rows=None, timings=None) -> dict:
+            progress=None, _rows=None, timings=None,
+            ml_detector: ContextualPIIDetector | None = None) -> dict:
     if not 0 <= threshold <= 1:
         raise ValueError('Confidence threshold must be in [0,1]')
     selected = AnalysisLimits.for_profile(profile)
@@ -204,10 +207,16 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     if not isinstance(budget, AnalysisLimits):
         raise TypeError('limits must be AnalysisLimits')
     _check_memory(budget)
+    model_version = None
+    if ml_detector is not None:
+        model_version = ml_detector.model_version
+        if (not isinstance(model_version, str) or not model_version.strip()
+                or len(model_version) > 128):
+            raise ValueError('ML detector must have a valid model_version')
     started = time.monotonic()
     stages = timings if timings is not None else {}
     for stage in ('read_decode_group','session_segmentation','reassembly','http_parse',
-                  'field_extraction','rule_detection','result_aggregation'):
+                  'field_extraction','rule_detection','ml_inference','result_aggregation'):
         stages[stage] = 0.0
     def emit(stage, **counts):
         _check_memory(budget)
@@ -249,6 +258,11 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     flow_summaries = [] if _rows is None else _rows.flows
     sessions_processed = 0
     result_bytes = 0
+    fields_extracted = rules_findings = ml_findings = 0
+    ml_evaluated = ml_skipped = ml_excluded = ml_eligible = ml_empty = ml_characters = 0
+    ml_invoked = False
+    ml_seconds = 0.0
+    ml_labels = {'PERSON_NAME': 0, 'USERNAME': 0}
 
     for i, (endpoints, packed) in enumerate(flow_packets.items(), start=1):
         tick = time.perf_counter()
@@ -311,22 +325,42 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 if len(fields) >= MAX_FIELDS or any(len(value)>MAX_FIELD_LENGTH for _,value in fields):
                     raise AnalysisLimitError('HTTP field limits prevent complete detection')
                 stages['field_extraction'] += time.perf_counter()-tick
+                fields_extracted += len(fields)
                 tick = time.perf_counter()
                 detections = detect_fields(fields, threshold, include_values)
                 if len(detections) >= 10000:
                     raise AnalysisLimitError('Per-message detection limit prevents complete analysis')
                 stages['rule_detection'] += time.perf_counter()-tick
-                tick = time.perf_counter()
+                rules_findings += len(detections)
+                entries = []
                 for detected in detections:
+                    entry = asdict(detected)
+                    # Never export unsalted PII/credential fingerprints.
+                    entry.pop('fingerprint', None)
+                    entries.append(entry)
+                if ml_detector is not None:
+                    ml_result = infer_http_fields(
+                        fields, ml_detector, include_values=include_values,
+                        max_fields=MAX_SCAN_ML_FIELDS-ml_evaluated,
+                        max_characters=MAX_SCAN_ML_CHARACTERS-ml_characters)
+                    ml_evaluated += ml_result.fields_evaluated
+                    ml_skipped += ml_result.fields_skipped
+                    ml_excluded += ml_result.fields_excluded
+                    ml_eligible += ml_result.fields_eligible
+                    ml_empty += ml_result.fields_empty
+                    ml_characters += ml_result.characters_evaluated
+                    ml_seconds += ml_result.processing_time_seconds
+                    stages['ml_inference'] = ml_seconds
+                    ml_invoked = ml_invoked or ml_result.invoked
+                    ml_findings += len(ml_result.findings)
+                    for entry in ml_result.findings:
+                        ml_labels[entry['pii_type']] += 1
+                    entries.extend(ml_result.findings)
+                tick = time.perf_counter()
+                for entry in entries:
                     if len(findings) >= budget.max_findings:
                         raise AnalysisLimitError('Analysis exceeded configured findings limit')
-                    # Do not publish unsalted deterministic hashes of PII/credentials.
-                    # Low-entropy values could be recovered by offline guessing.
-                    # The detector may retain internal fingerprints for deduplication,
-                    # but the public report deliberately excludes them.
-                    entry = asdict(detected)
-                    entry.pop('fingerprint', None)
-                    entry['location'] = safe_field_location(detected.location, include_values)
+                    entry['location'] = safe_field_location(entry['location'], include_values)
                     entry.update({
                         'flow_id': fid,
                         'http_message_id': record.message_id,
@@ -371,8 +405,14 @@ def _analyze(path: str | Path, threshold: float = 0.8,
         'metadata': {
             'engine': 'pcap-pii-engine', 'version': '0.1.0',
             'report_schema_version': '1.0.0',
-            'detection_method': 'rules_only',
-            'confidence_type': 'heuristic_not_calibrated',
+            'detection_method': 'rules_plus_bilstm' if ml_detector is not None else 'rules_only',
+            'confidence_type': ('separate_rule_heuristic_and_uncalibrated_model_scores'
+                                if ml_detector is not None else 'heuristic_not_calibrated'),
+            'ml_requested': ml_detector is not None,
+            'ml_model_loaded': ml_detector is not None,
+            'ml_model_version': model_version,
+            'ml_work_limits': {'max_fields': MAX_SCAN_ML_FIELDS,
+                               'max_characters': MAX_SCAN_ML_CHARACTERS},
             'threshold': threshold, 'raw_values_included': include_values,
             'scope': 'unencrypted HTTP/1.x over TCP',
             'analysis_limits': {k:v for k,v in asdict(budget).items() if k in
@@ -395,10 +435,23 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'total_data_bytes': bytes_processed,
             'processing_time_seconds': round(time.monotonic() - started, 4),
             'potential_leaks': len(findings),
+            'fields_extracted': fields_extracted,
+            'rules_findings': rules_findings,
+            'ml_findings': ml_findings,
+            'ml_fields_eligible': ml_eligible,
+            'ml_fields_evaluated': ml_evaluated,
+            'ml_fields_excluded_by_policy': ml_excluded,
+            'ml_fields_skipped': ml_skipped,
+            'ml_fields_empty': ml_empty,
+            'ml_predictions_by_label': ml_labels,
+            'ml_processing_time_seconds': ml_seconds,
+            'ml_invoked': ml_invoked,
+            'ml_inference_failed': False,
+            'ml_incomplete': ml_skipped > 0,
             'stream_gaps': gaps,
             'capture_truncated_records': diagnostics.truncated_records,
             'capture_malformed_records': diagnostics.malformed_records,
-            'analysis_incomplete': diagnostics.incomplete or gaps > 0,
+            'analysis_incomplete': diagnostics.incomplete or gaps > 0 or ml_skipped > 0,
         },
         'flows': flow_summaries, 'findings': findings,
         'limitations': [
@@ -406,7 +459,12 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'No IP fragmentation; unobserved TCP lifecycle and delayed packets after tuple reuse remain ambiguous',
             'HTTP/2 and HTTP/3 not decoded; incomplete streams are ignored',
             'HTTP/1.x request-response pairing is best-effort (direction, stream order, packet timing)',
-            'Rule-based detection only; contextual ML is not yet integrated',
+            ('Experimental BiLSTM enabled: model scores are uncalibrated; no real-traffic precision/recall established'
+             if ml_detector is not None else 'Rules only; optional contextual ML is not enabled'),
+            *(['Headers and obvious credential/contact fields are excluded from ML and still evaluated by rules']
+              if ml_detector is not None else []),
+            *(['ML processing limits skipped eligible fields: hybrid analysis is incomplete']
+              if ml_skipped else []),
             'TCP is buffered until EOF under explicit budgets; large results should use analyze_to_report',
             'No SYN/FIN does not prove capture completeness; analysis_incomplete flags observed damage',
             'Findings mean possible PII exposure, not proof of exfiltration',
@@ -418,12 +476,13 @@ def _analyze(path: str | Path, threshold: float = 0.8,
 
 def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = False,
             *, limits: AnalysisLimits | None = None, profile: str = 'standard',
-            progress=None, timings=None) -> dict:
+            progress=None, timings=None,
+            ml_detector: ContextualPIIDetector | None = None) -> dict:
     """Compatible in-memory report API; use analyze_to_report for large outputs."""
     from .reporting import ReportLimitError
     try:
         report = _analyze(path, threshold, include_values, limits=limits, profile=profile,
-                          progress=progress, timings=timings)
+                          progress=progress, timings=timings, ml_detector=ml_detector)
         budget = limits if limits is not None else AnalysisLimits.for_profile(profile)
         _check_memory(budget)
         # Include containers, metadata and UTF-8 encoding without a giant string.
@@ -442,7 +501,8 @@ def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = Fal
 def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0.8,
                       include_values: bool = False, *, limits: AnalysisLimits | None = None,
                       profile: str = 'standard', overwrite: bool = False,
-                      progress=None, timings=None) -> dict:
+                      progress=None, timings=None, row_observer=None,
+                      ml_detector: ContextualPIIDetector | None = None) -> dict:
     """Bounded disk-backed results, atomic JSON publication, small receipt.
 
     Temporary results stay private next to target and are removed on success or
@@ -462,9 +522,9 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
         raise TypeError('limits must be AnalysisLimits')
     clock=time.monotonic()
     try:
-        with ReportSpool(output.parent,budget.max_report_bytes) as rows:
+        with ReportSpool(output.parent,budget.max_report_bytes,row_observer=row_observer) as rows:
             report = _analyze(source,threshold,include_values,limits=budget,profile=profile,
-                              progress=progress,_rows=rows,timings=timings)
+                              progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector)
             report['flows'], report['findings'] = [], []
             _check_memory(budget)
             if progress is not None:
