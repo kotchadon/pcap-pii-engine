@@ -218,8 +218,8 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             raise ValueError('Choose ml_budget or ml_work_budget, not both')
         if not isinstance(ml_work_budget, LegacyMLWorkBudget):
             raise TypeError('ml_work_budget must be hybrid.MLWorkBudget')
-        ml_budget = MLWorkBudget(max_fields=ml_work_budget.max_total_fields,
-                                 max_characters=ml_work_budget.max_total_characters,
+        ml_budget = MLWorkBudget(max_fields=max(1, ml_work_budget.max_total_fields),
+                                 max_characters=max(1, ml_work_budget.max_total_characters),
                                  batch_fields=ml_work_budget.max_fields_per_batch,
                                  batch_characters=ml_work_budget.max_characters_per_batch,
                                  max_field_chars=ml_work_budget.max_field_characters,
@@ -286,6 +286,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     location_signals: dict[int, int] = {}  # digest(flow, message, location) -> bit 1 rules, bit 2 model; no values retained
     transactions = orphan_requests = orphan_responses = 0
     flow_summaries = [] if _rows is None else _rows.flows
+    ml_coverage = [] if _rows is None else _rows.ml_field_coverage
     sessions_processed = 0
     result_bytes = 0
     fields_extracted = rules_findings = ml_findings = 0
@@ -293,12 +294,30 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     ticket_seq = 0
     runner = None
     if ml_detector is not None:
-        def ml_checkpoint(counts):  # progress + cooperative cancellation between detector calls
-            emit('ml_inference', findings=len(findings), **counts)
-        runner = MLBatchRunner(ml_detector, ml_budget, include_values=include_values, checkpoint=ml_checkpoint,
-                               disposition=(None if disposition_observer is None else
-                                            lambda ticket, index, status: disposition_observer(
-                                                contexts[ticket][0]['http_message_id'], index, status)))
+        def ml_checkpoint(counts):
+            emit('ml_inference', findings=len(findings),
+                 ml_inference_batches=counts.get('ml_batches', 0),
+                 ml_fields_evaluated=counts.get('ml_fields_evaluated_so_far', 0), **counts)
+        def observe_disposition(ticket, index, raw_status):
+            row = contexts[ticket][2]
+            status = raw_status.split(':', 1)[0]
+            if status not in row['index_ranges_by_status']:
+                raise ValueError('Unrecognised ML field status')
+            def append_index(ranges):
+                if ranges and ranges[-1][1] == index:
+                    ranges[-1][1] = index + 1
+                else:
+                    ranges.append([index, index + 1])
+            append_index(row['index_ranges_by_status'][status])
+            if status == 'skipped':
+                reason = raw_status.split(':', 1)[1]
+                reason = 'ml_field_path_too_long' if reason == 'location_too_long' else 'ml_' + reason
+                append_index(row['skip_reason_index_ranges'].setdefault(reason, []))
+            if disposition_observer is not None:
+                disposition_observer(contexts[ticket][0]['http_message_id'], index, raw_status)
+        runner = MLBatchRunner(ml_detector, ml_budget, include_values=include_values,
+                               checkpoint=ml_checkpoint, disposition=observe_disposition,
+                               zero_work=bool(ml_work_budget and ml_work_budget.max_total_fields == 0))
 
     def publish(provenance, entries):
         """Attach provenance and append one message's findings (rules first, then model), enforcing result budgets."""
@@ -325,7 +344,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
 
     def drain():
         for ticket, model_entries in runner.take_ready():
-            provenance, rule_entries = contexts.pop(ticket)
+            provenance, rule_entries, _coverage_row = contexts.pop(ticket)
             publish(provenance, rule_entries + model_entries)
 
     for i, (endpoints, packed) in enumerate(flow_packets.items(), start=1):
@@ -452,11 +471,20 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     publish(provenance, entries)
                 else:
                     ticket_seq += 1
-                    contexts[ticket_seq] = (provenance, entries)
+                    coverage_row = {
+                        'flow_id': fid,
+                        'http_message_id': record.message_id,
+                        'fields_extracted': len(fields),
+                        'index_ranges_by_status': {name: [] for name in
+                            ('evaluated', 'excluded_by_policy', 'empty', 'skipped')},
+                        'skip_reason_index_ranges': {},
+                    }
+                    contexts[ticket_seq] = (provenance, entries, coverage_row)
                     quality = {**({'stream_gap': 'true'} if flow_gaps else {}),
                                **({'capture_incomplete': 'true'} if diagnostics.incomplete else {}),
                                **({'truncated': 'true'} if flow_unterminated else {})}
                     runner.add(ticket_seq, fields, quality)
+                    ml_coverage.append(coverage_row)
                     drain()
             tick = time.perf_counter()
             flow_summary = {
@@ -571,7 +599,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'analysis_incomplete': diagnostics.incomplete or gaps > 0 or unterminated > 0 or ml_skipped > 0
                                    or evidence_loss_packets > 0 or bool(bodies_skipped) or http2_streams > 0,
         },
-        'flows': flow_summaries, 'findings': findings,
+        'flows': flow_summaries, 'findings': findings, 'ml_field_coverage': ml_coverage,
         'limitations': [
             'Encrypted HTTPS payloads cannot be inspected without decryption',
             'IP fragments are not reassembled (counted and flagged); unobserved TCP lifecycle and delayed packets after tuple reuse remain ambiguous',
@@ -657,7 +685,7 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
             report = _analyze(source,threshold,include_values,limits=budget,profile=profile,
                               progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,ml_budget=ml_budget, ml_work_budget=ml_work_budget,
                               field_observer=field_observer,disposition_observer=disposition_observer)
-            report['flows'], report['findings'] = [], []
+            report['flows'], report['findings'], report['ml_field_coverage'] = [], [], []
             _check_memory(budget)
             if progress is not None:
                 progress(dict(stage='writing_report',elapsed_seconds=time.monotonic()-clock,
@@ -665,10 +693,11 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
             tick=time.perf_counter()
             write_private_report(report,output,overwrite=overwrite,max_bytes=budget.max_report_bytes,
                                  row_sources={'flows':rows.flows.iter_json(),
-                                              'findings':rows.findings.iter_json()})
+                                              'findings':rows.findings.iter_json(),
+                                              'ml_field_coverage':rows.ml_field_coverage.iter_json()})
             if timings is not None:
                 timings['report_write']=time.perf_counter()-tick
-        receipt={k:v for k,v in report.items() if k not in ('flows','findings')}
+        receipt={k:v for k,v in report.items() if k not in ('flows','findings','ml_field_coverage')}
         receipt['output_bytes']=output.stat().st_size
         receipt['output_path']=str(output)
         if progress is not None:
