@@ -61,6 +61,9 @@ function renderFlows(){const flows=state.report?.flows||[];const root=$('flows-b
 function setModel(enabled,version){setText('mode',enabled?'EXPERIMENTAL HYBRID ACTIVE':'RULES-ONLY ACTIVE');setText('model-active',enabled?'RESEARCH · INFERENCE ACTIVE':'RESEARCH · RULES-ONLY');setText('model-live-text',enabled?`Model ${version||'unknown'} was used on eligible HTTP fields in this completed scan. Findings are separate from benchmark results and ML scores are uncalibrated.`:(state.modelAvailable?'The BiLSTM model is loaded and available. Choose AI-assisted hybrid before analysing a capture to invoke it.':'The contextual model is unavailable. Start the dashboard with --ml-checkpoint to load it.'))}
 function render(payload){
  state.report=payload.report;state.file=payload.filename;
+ setText('selected-name',payload.filename||'capture.pcap');
+ setText('selected-meta',((Number(payload.capture_bytes)||0)/1048576).toFixed(3)+' MiB · analysed PCAP');
+ $('file-preview').classList.remove('hidden');
  setModel(!!payload.model_enabled,payload.report.metadata?.ml_model_version);
  setLiveEvidence(payload.report,!!payload.model_enabled);
  renderSummary();renderFindings();renderFlows();
