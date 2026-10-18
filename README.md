@@ -68,12 +68,35 @@ After installing, the CLI also works with `pcap-pii demo.pcap -o demo-report.jso
 | gzip/deflate bodies | Implemented with output size cap |
 | Email/IP/phone/card/credential/username/structured name candidates | Implemented as rules and validators |
 | Confidence threshold + structured JSON report | Implemented; scores are heuristics, not calibrated probabilities |
-| Contextual ML, BiLSTM, training and validation | **NOT implemented yet** |
+| Contextual ML (BiLSTM V2, opt-in via `--ml-checkpoint`) | Implemented, **experimental**; bounded work budgets with explicit coverage accounting (see below) |
 | TLS HTTPS without session keys, HTTP/2, HTTP/3 | **NOT supported** |
-| IP fragmentation, TCP seq wrap, repeated connection tuple/session separation | **NOT supported** |
+| TCP sequence wraparound, repeated connection tuples | Handled (reused tuples are split into separate flows) |
+| IP fragments, IPv6 extension headers, HTTP/2, undecodable bodies | **NOT supported**; counted by reason and the report is flagged `analysis_incomplete` |
 | Production-grade HTTP framing, large-scale streaming, comprehensive evasion handling | **NOT supported** |
 
 The parser **skips malformed and incomplete traffic** rather than treating it as complete. Its output is not a forensic guarantee.
+
+## Contextual ML coverage and ground-truth evaluation
+
+Hybrid mode runs the experimental BiLSTM V2 over every eligible extracted field (headers and credential fields are excluded by policy) in bounded, batched inference. Work is limited by a validated profile, selected with `X-ML-Coverage` in the dashboard (the *ML coverage* selector) or `ml_budget=` in the API:
+
+| Profile | Eligible fields | Characters | Model time |
+|---|---|---|---|
+| `standard` (default) | 10,000 | 2,000,000 | 60 s |
+| `extended` | 100,000 | 20,000,000 | 300 s |
+| `complete` | 1,000,000 | 200,000,000 | 1,800 s |
+
+There is no unlimited mode. Every eligible field is either evaluated or counted as skipped with a reason; `summary.ml_coverage_status` is `not_requested`, `no_eligible_fields`, `complete` or `partial` (a mid-scan model failure publishes nothing). Partial coverage sets `analysis_incomplete`, and the Model laboratory shows e.g. *"ML coverage limit reached. Analysed 10,000 of 88,192 eligible fields (11.3%). Results are incomplete."* Measured on this repository's synthetic 108,012-eligible-field capture: `standard` 4.6 s (partial, 9.3%), `complete` 40 s (complete) on the development machine.
+
+File-specific precision, recall and F1 exist only when an independent, SHA-256-verified ground-truth manifest for that exact capture is supplied (`schemas/ground-truth-v1.schema.json`):
+
+```bash
+pcap-pii-evaluate examples/groundtruth/controlled_fixture_v1.pcap \
+  examples/groundtruth/controlled_fixture_v1.manifest.json \
+  --ml-checkpoint src/packet_pii/ml/artifacts/bilstm_v2 -o evaluation.json
+```
+
+Without a manifest, TRACE reports no accuracy for an uploaded file. The 81.8 % offline F1 is a different, synthetic benchmark. Method, the controlled fixture and measured V2 results: `docs/ml/GROUND_TRUTH_EVALUATION.md`; engineering handover: `docs/integration/HANDOVER_ML_COVERAGE_GROUNDTRUTH.md`.
 
 ## Security and data-handling
 

@@ -41,3 +41,7 @@ raw packet data; reconstructing missing/garbled stream bytes; non-English prose 
 ## Recommendation
 Do not enable by default. Suitable for the Sunday demonstration as an optional, clearly labelled experimental detector, positioned honestly as ~0.82 F1 on an independent synthetic benchmark. Before any customer-facing claim:
 build `challenge_v2` (fresh), add the formats listed above to the generator, and validate on consented/synthetic-replayed real HTTP fields.
+
+## Deployment coverage and file-specific accuracy (added with the ML-coverage milestone)
+
+Inference in TRACE is budgeted (`standard` 10,000 / `extended` 100,000 / `complete` 1,000,000 eligible fields); the report states whether the model examined all, some or none of the eligible fields, and a partial scan is flagged incomplete. The 81.8 % offline F1 above is a synthetic-benchmark figure. File-specific metrics exist only with a verified ground-truth manifest; the only such measurements so far (controlled synthetic fixture: model-only micro F1 0.671, P 0.608, R 0.750; hand-designed showcase demonstration: F1 0.842) are in `GROUND_TRUTH_EVALUATION.md` with their limits. They are not real-world accuracy figures.

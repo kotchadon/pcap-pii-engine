@@ -1,5 +1,6 @@
 """Transparent rule-based detection baseline. Scores are heuristic, NOT calibrated probabilities."""
 from __future__ import annotations
+import functools
 import hashlib
 import ipaddress
 import re
@@ -33,6 +34,21 @@ class _SecretKeyMatcher:
         return [t.lower() for t in self._SPLIT.split(str(location)) if t]
 
     def search(self, location):
+        # Locations repeat heavily across messages; cache short ones (bounded: 128 chars x 16,384 entries).
+        return self._cached(location) if len(location) <= 128 else self._uncached(location)
+
+    @functools.lru_cache(maxsize=16384)
+    def _cached(self, location):
+        return self._uncached(location)
+
+    def _uncached(self, location):
+        lowered = location.lower()
+        for fragment in self._FRAGMENTS:
+            if fragment in lowered:
+                return self._search(location)
+        return None
+
+    def _search(self, location):
         tokens = self.tokens(location)
         if not tokens:
             return None
@@ -46,6 +62,12 @@ class _SecretKeyMatcher:
         return None
 
 
+# Any location containing none of the fragments any rule can match cannot be a credential key, so most fields skip
+# tokenisation entirely (plain substring tests are much cheaper than a regex alternation). Derived from the rule sets so
+# the two cannot drift apart.
+_SecretKeyMatcher._FRAGMENTS = tuple(sorted(
+    _SecretKeyMatcher._WORDS | set(_SecretKeyMatcher._SUBSTRINGS) | set(_SecretKeyMatcher._SUFFIXES)
+    | {pair[0] for pair in _SecretKeyMatcher._PAIRS}, key=lambda f: (-len(f), f)))
 SECRET_KEYS = _SecretKeyMatcher()
 USERNAME_KEYS = re.compile(r'(?:^|[.\[_-])(?:username|user_name|login)(?:$|[.\]_-])',re.I)
 NAME_KEYS = re.compile(r'(?:^|[.\[_-])(?:full_?name|first_?name|last_?name)(?:$|[.\]_-])',re.I)
