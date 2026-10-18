@@ -1,0 +1,38 @@
+{
+  "capture_bytes": 115343298,
+  "counters": {
+    "packets": 361389,
+    "sessions": 60232,
+    "unsafe_directions": 0,
+    "reassembled_bytes": 90046044,
+    "http_messages": 120462,
+    "fields": 2349009
+  },
+  "flows": 60232,
+  "buffered_payload_bytes": 90046044,
+  "limit_failure": null,
+  "capture_diagnostics": {
+    "truncated_records": 0,
+    "malformed_records": 0
+  },
+  "reassembly_diagnostics": {
+    "final_coverage_unknown": 120463,
+    "initial_coverage_unknown": 1
+  },
+  "wall_seconds": 8.05679674299995,
+  "read_decode_group_seconds": 3.678224533000048,
+  "reassembly_seconds": 1.0555512409555377,
+  "http_parse_seconds": 1.1629008049699223,
+  "field_extraction_seconds": 1.9453710090249388,
+  "peak_rss_mib": 256.69921875,
+  "throughput_mib_s": 13.653061431364083,
+  "limits": {
+    "capture_mib": 256,
+    "packets": 500000,
+    "flows": 100000,
+    "tcp_mib": 192
+  },
+  "python": "3.12.14",
+  "platform": "linux",
+  "note": "Network only; read/decode/group combined. RSS is process lifetime peak."
+}

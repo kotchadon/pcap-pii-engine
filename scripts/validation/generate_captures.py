@@ -115,8 +115,8 @@ def conversation(flow_id, seed):
 
 
 def generate(path: Path, size_mib: float, seed=20261014):
-    if not 0 < size_mib <= 300 or seed < 0:
-        raise ValueError('size_mib must be in (0, 300]; seed must be nonnegative')
+    if not 0 < size_mib <= 512 or seed < 0:
+        raise ValueError('size_mib must be in (0, 512]; seed must be nonnegative')
     size,packet_count,flow_id,http_count,payload_count = 24,0,0,0,0
     digest = hashlib.sha256()
     with path.open('xb') as out:
