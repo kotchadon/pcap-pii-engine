@@ -98,6 +98,10 @@ pcap-pii-evaluate examples/groundtruth/controlled_fixture_v1.pcap \
 
 Without a manifest, TRACE reports no accuracy for an uploaded file. The 81.8 % offline F1 is a different, synthetic benchmark. Method, the controlled fixture and measured V2 results: `docs/ml/GROUND_TRUTH_EVALUATION.md`; engineering handover: `docs/integration/HANDOVER_ML_COVERAGE_GROUNDTRUTH.md`.
 
+### Automated model quality assessment (synthetic probes)
+
+After every AI-assisted scan the dashboard automatically runs a small, bounded, local assessment: fictional, labelled probes (names, usernames, hard negatives) built from a privacy-safe structural summary of the capture are scored with the real V2 model. The result is called **Context-matched synthetic probe F1** and is *not* the accuracy of your capture (no values or field names from it are used). It is shown in Model laboratory → Automated Model Quality Assessment, separate from live coverage, from manifest-based ground-truth evaluation, and from the offline benchmark. `--assessment-probes 0` disables it. Details: `docs/ml/AUTOMATED_MODEL_QUALITY_ASSESSMENT.md`.
+
 ## Security and data-handling
 
 - `.pcap`, `.pcapng`, and `*report.json` are excluded by `.gitignore`.

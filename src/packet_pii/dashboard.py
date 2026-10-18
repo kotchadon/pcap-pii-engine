@@ -21,9 +21,10 @@ from http.cookies import SimpleCookie
 
 from .engine import AnalysisLimits, analyze
 from .hybrid import load_experimental_bilstm, MLWorkBudget as LegacyMLWorkBudget
-from .ml_runner import ML_PROFILES
+from .ml_runner import ML_PROFILES, shared
 from threading import Lock, BoundedSemaphore
 from .jobs import JobManager, JobBusy, JobQuota
+from .quality import AssessmentBudget
 from .groundtruth import MAX_MANIFEST_BYTES, ManifestError, load_manifest, parse_manifest
 
 _STATIC = Path(__file__).with_name('dashboard_static')
@@ -40,7 +41,7 @@ class DashboardServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, addr: tuple[str, int], max_upload: int = _MAX_UPLOAD, ml_detector=None,
-                 *, job_disk_mib: int = 12288, ml_budget_profile: str = 'standard'):
+                 *, job_disk_mib: int = 12288, ml_budget_profile: str = 'standard', assessment_budget='default'):
         if addr[0] != '127.0.0.1':
             raise ValueError('Dashboard must bind to 127.0.0.1')
         if type(max_upload) is not int or not 24 <= max_upload <= _MAX_UPLOAD:
@@ -49,10 +50,10 @@ class DashboardServer(ThreadingHTTPServer):
         self.ml_budget_profile = ml_budget_profile
         self.max_upload = max_upload
         self.token = secrets.token_urlsafe(32)
-        self.ml_detector = ml_detector
+        self.ml_detector = shared(ml_detector)
         self.analysis_lock = Lock()
         self.request_slots = BoundedSemaphore(8)
-        self.jobs = JobManager(self.analysis_lock,ml_detector,disk_quota_bytes=job_disk_mib*1024*1024,
+        self.jobs = JobManager(self.analysis_lock,self.ml_detector,assessment_budget=assessment_budget,disk_quota_bytes=job_disk_mib*1024*1024,
                                ml_work_budget=LegacyMLWorkBudget.for_profile(ml_budget_profile))
 
     def process_request(self, request, client_address):
@@ -303,7 +304,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self._reply({'manifest_id':self.server.jobs.add_manifest(manifest),'manifest':manifest.public()},201)
 
     def _job_get(self,path):
-        match=re.fullmatch(r'/api/jobs/([0-9a-f]{32})(?:/(findings|flows|report|evaluation))?',path)
+        match=re.fullmatch(r'/api/jobs/([0-9a-f]{32})(?:/(findings|flows|report|evaluation|assessment))?',path)
         if not match:
             self._reply({'error':'Job not found'},404);return
         job_id,kind=match.groups()
@@ -318,7 +319,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._reply({'error':'Request refused'},403);return
         try:
             job=self.server.jobs.get(job_id)
-            if kind=='evaluation':
+            if kind=='assessment':
+                self._reply(self.server.jobs.assessment_snapshot(job))
+            elif kind=='evaluation':
                 if job.status!='completed' or job.evaluation is None:raise ValueError('No evaluation available')
                 body=json.dumps(job.evaluation,ensure_ascii=False,allow_nan=False).encode('utf-8')
                 download=f'trace-evaluation-{job_id}.json' if 'download' in parse_qs(urlsplit(self.path).query) else None
@@ -344,6 +347,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except (OSError,sqlite3.Error):self._reply({'error':'Result unavailable'},404)
 
     def _job_post(self,path):
+        acancel=re.fullmatch(r'/api/jobs/([0-9a-f]{32})/assessment/cancel',path)
+        if acancel:
+            try:self._reply(self.server.jobs.cancel_assessment(self.server.jobs.get(acancel[1])))
+            except KeyError:self._reply({'error':'Job unavailable or expired'},404)
+            return
         cancel=re.fullmatch(r'/api/jobs/([0-9a-f]{32})/cancel',path)
         if cancel:
             try:self._reply(self.server.jobs.cancel_job(self.server.jobs.get(cancel[1])))
@@ -434,12 +442,14 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument('--port', type=int, default=8765)
     p.add_argument('--ml-checkpoint', default=None, help='Opt in to offline research BiLSTM checkpoint')
     p.add_argument('--job-disk-mib',type=int,default=12288,help='Private job disk quota MiB; conservative capacity is checked before accepting a scan')
+    p.add_argument('--assessment-probes',type=int,default=480,help='Probe budget for the automated post-scan model quality assessment (0 disables it)')
     p.add_argument('--ml-budget-profile',choices=('standard','extended'),default='standard')
     args = p.parse_args(argv)
     if not 1024 <= args.port <= 65535:
         p.error('Port must be 1024–65535')
     ml_detector = load_experimental_bilstm(args.ml_checkpoint) if args.ml_checkpoint else None
-    server = DashboardServer(('127.0.0.1', args.port), ml_detector=ml_detector,job_disk_mib=args.job_disk_mib,ml_budget_profile=args.ml_budget_profile)
+    server = DashboardServer(('127.0.0.1', args.port), ml_detector=ml_detector,job_disk_mib=args.job_disk_mib,ml_budget_profile=args.ml_budget_profile,
+                             assessment_budget=None if args.assessment_probes==0 else AssessmentBudget(max_probes=args.assessment_probes))
     print(f'PCAP PII dashboard: http://127.0.0.1:{args.port}/ (Ctrl+C to stop)')
     try:
         server.serve_forever()
