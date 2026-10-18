@@ -57,8 +57,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def _reply(self, payload: dict, status: int = 200) -> None:
         body = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode('utf-8')
-        self._headers(status, 'application/json; charset=utf-8', len(body))
-        self.wfile.write(body)
+        try:
+            self._headers(status, 'application/json; charset=utf-8', len(body))
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            # A browser tab/navigation may disconnect after analysis but before
+            # receiving its result. Sending a second HTTP error is impossible.
+            # Never mislabel this transport failure as an engine-analysis failure.
+            self.close_connection = True
 
     def _allowed_host(self) -> bool:
         host = self.headers.get('Host', '')
@@ -102,6 +108,25 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         if requested_mode == 'hybrid' and self.server.ml_detector is None:
             self._reply({'error': 'Contextual AI model is unavailable; start with --ml-checkpoint'}, 422)
+            return
+        if path == '/api/showcase':
+            # A richer deterministic fixture, analysed by the same engine as uploads.
+            # No precomputed labels, PII findings, scores, or report JSON.
+            from importlib.util import module_from_spec, spec_from_file_location
+            generator = Path(__file__).resolve().parents[2] / 'examples' / 'generate_showcase.py'
+            if not generator.is_file():
+                self._reply({'error': 'Synthetic showcase generator unavailable'}, 404)
+                return
+            spec = spec_from_file_location('_packet_pii_showcase', generator)
+            if spec is None or spec.loader is None:
+                self._reply({'error': 'Synthetic showcase generator unavailable'}, 500)
+                return
+            module = module_from_spec(spec)
+            spec.loader.exec_module(module)
+            with tempfile.TemporaryDirectory(prefix='trace_showcase_') as directory:
+                capture = Path(directory) / 'trace-vp-showcase.pcap'
+                module.write_pcap(capture)
+                self._analyze(capture, 'trace-vp-showcase.pcap', requested_mode)
             return
         if path == '/api/demo':
             # Demo data are synthetic. Only demo traffic is used, never user data.
@@ -151,7 +176,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         return
                     output.write(block)
                     remaining -= len(block)
-            self._analyze(capture, 'uploaded-capture', requested_mode)
+            from urllib.parse import unquote
+            safe_name = unquote(name).replace('\\', '/').split('/')[-1]
+            safe_name = ''.join(ch for ch in safe_name if ch.isprintable())[:120] or 'uploaded-capture'
+            self._analyze(capture, safe_name, requested_mode)
 
     def _analyze(self, capture: Path, label: str, requested_mode: str | None = None) -> None:
         try:
@@ -162,14 +190,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 report = analyze(capture, include_values=False,
                                  limits=AnalysisLimits(max_capture_bytes=self.server.max_upload),
                                  ml_detector=self.server.ml_detector if use_ml else None)
-            self._reply({'filename': label, 'report': report,
+            self._reply({'filename': label, 'capture_bytes': capture.stat().st_size,
+                         'report': report,
                          'model_enabled': use_ml,
                          'model_available': self.server.ml_detector is not None,
                          'scan_mode': 'hybrid' if use_ml else 'rules'})
         except (OSError, ValueError, TypeError, OverflowError) as exc:
             # Engine errors may include paths; never expose them verbatim in the UI.
-            self._reply({'error': 'Capture rejected or analysis could not complete',
-                         'reason_type': type(exc).__name__}, 422)
+            from .engine import AnalysisLimitError
+            if isinstance(exc, AnalysisLimitError):
+                # Safe diagnostic: predefined bounded budget failure, not a user path.
+                self._reply({'error': str(exc), 'reason_type': 'AnalysisLimitError'}, 422)
+            else:
+                self._reply({'error': 'Capture rejected or analysis could not complete',
+                             'reason_type': type(exc).__name__}, 422)
 
 
 def main(argv: list[str] | None = None) -> None:
