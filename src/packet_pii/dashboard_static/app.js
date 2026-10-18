@@ -42,7 +42,7 @@ function renderGroundTruth(e,report){
  $('groundtruth-metrics').classList.add('hidden');$('groundtruth-evidence').classList.add('hidden');
  for(const id of ['groundtruth-precision','groundtruth-recall','groundtruth-f1','groundtruth-tp','groundtruth-fp','groundtruth-fn','groundtruth-scope'])setText(id,'—');
  setText('groundtruth-status','NOT VERIFIED');
- setText('groundtruth-explanation','TRACE has analysed this PCAP, but no independently verified labels are linked to it. Actual file-specific precision, recall and F1 need known correct entity spans and reviewed negative fields.');
+ setText('groundtruth-explanation','No live-file precision/recall/F1 is available without independently verified labels for this capture. TRACE can analyse PCAP input, but correctness requires reviewed decoded-field spans and negative fields.');
  setText('groundtruth-guidance','A compatible evaluator must verify a label manifest against the capture, model version, decoded fields and coverage scope. No invented percentage is shown.');
  if(!e)return;
  const m=report?.metadata||{},s=report?.summary||{},c=e.counts||{},okCount=n=>Number.isSafeInteger(n)&&n>=0,okHash=h=>typeof h==='string'&&/^[0-9a-f]{64}$/i.test(h);
