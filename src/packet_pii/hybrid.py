@@ -15,6 +15,12 @@ from .detect import _mask, SECRET_KEYS
 from .ml import FieldInput, run_detector
 from .ml.detector import ContextualPIIDetector
 from .ml.schema import DEFAULT_MAX_FIELD_CHARS, DEFAULT_MAX_FIELDS
+from .ml.schema import MlValidationError
+
+
+class InferenceError(RuntimeError):
+    """Sanitized failure of requested contextual inference; never a fallback."""
+    ml_inference_failed = True
 
 
 @dataclass(frozen=True)
@@ -85,16 +91,27 @@ def infer_http_fields(
         return InferenceResult([], 0, skipped, excluded, skipped, empty)
 
     started = time.perf_counter()
-    predictions = run_detector(detector, eligible)
+    try:
+        predictions = run_detector(detector, eligible)
+    except MlValidationError as exc:
+        # Contract errors contain indices/types, never field text.
+        exc.ml_inference_failed = True
+        raise
+    except Exception as exc:
+        raise InferenceError('Contextual model inference failed') from exc
     elapsed = time.perf_counter() - started
     lookup = {item.field_index: item for item in eligible}
     findings: list[dict] = []
     for span in predictions:
         field = lookup[span.field_index]
         if span.model_version != detector.model_version:
-            raise ValueError('Detector returned a different model version')
+            error = MlValidationError('Detector returned a different model version')
+            error.ml_inference_failed = True
+            raise error
         if span.score is None:
-            raise ValueError("Experimental detector must provide a typed score for report output")
+            error = MlValidationError('Experimental detector must provide a typed score for report output')
+            error.ml_inference_failed = True
+            raise error
         original_value = field.text[span.start:span.end]
         findings.append({
             'pii_type': span.label.value,
