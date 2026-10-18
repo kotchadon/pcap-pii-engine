@@ -24,6 +24,7 @@ from .http_extract import (HttpMessage, parse_http_stream_detailed, extract_fiel
                            MAX_MESSAGES, MAX_FIELDS)
 from .detect import detect_fields, MAX_FIELD_LENGTH
 from .ml_runner import MLBatchRunner, MLWorkBudget
+from .hybrid import MLWorkBudget as LegacyMLWorkBudget
 from .ml.detector import ContextualPIIDetector
 
 
@@ -203,6 +204,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             progress=None, _rows=None, timings=None,
             ml_detector: ContextualPIIDetector | None = None,
             ml_budget: 'MLWorkBudget | str | None' = None,
+            ml_work_budget: 'LegacyMLWorkBudget | None' = None,
             field_observer=None, disposition_observer=None) -> dict:
     if not 0 <= threshold <= 1:
         raise ValueError('Confidence threshold must be in [0,1]')
@@ -211,6 +213,17 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     if not isinstance(budget, AnalysisLimits):
         raise TypeError('limits must be AnalysisLimits')
     _check_memory(budget)
+    if ml_work_budget is not None:
+        if ml_budget is not None:
+            raise ValueError('Choose ml_budget or ml_work_budget, not both')
+        if not isinstance(ml_work_budget, LegacyMLWorkBudget):
+            raise TypeError('ml_work_budget must be hybrid.MLWorkBudget')
+        ml_budget = MLWorkBudget(max_fields=ml_work_budget.max_total_fields,
+                                 max_characters=ml_work_budget.max_total_characters,
+                                 batch_fields=ml_work_budget.max_fields_per_batch,
+                                 batch_characters=ml_work_budget.max_characters_per_batch,
+                                 max_field_chars=ml_work_budget.max_field_characters,
+                                 name='legacy_explicit')
     if ml_budget is None:
         ml_budget = MLWorkBudget.for_profile('standard')
     elif isinstance(ml_budget, str):
@@ -521,6 +534,11 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'ml_fields_excluded_by_policy': ml_excluded,
             'ml_fields_skipped': ml_skipped,
             'ml_fields_skipped_by_reason': ml_skip_reasons,
+            'ml_skip_reasons': {('ml_field_path_too_long' if k == 'location_too_long' else 'ml_' + k): v
+                                for k, v in ml_skip_reasons.items()},
+            'ml_inference_complete': (ml_skipped == 0 if ml_detector is not None else None),
+            'ml_inference_invoked': ml_invoked,
+            'ml_inference_batches': ml_batches,
             'ml_coverage_status': ml_status,
             'ml_coverage_ratio': ml_ratio,
             'ml_batches': ml_batches,
@@ -532,6 +550,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'ml_incomplete': ml_skipped > 0,
             'stream_gaps': gaps,
             'unterminated_http_messages': unterminated,
+            'http_incomplete_streams': unterminated,
             'http2_streams_not_decoded': http2_streams,
             'tls_streams_not_inspected': tls_streams,
             'http_bodies_not_inspected': sum(bodies_skipped.values()),
@@ -573,12 +592,13 @@ def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = Fal
             progress=None, timings=None,
             ml_detector: ContextualPIIDetector | None = None,
             ml_budget: 'MLWorkBudget | str | None' = None,
+            ml_work_budget: 'LegacyMLWorkBudget | None' = None,
             field_observer=None, disposition_observer=None) -> dict:
     """Compatible in-memory report API; use analyze_to_report for large outputs."""
     from .reporting import ReportLimitError
     try:
         report = _analyze(path, threshold, include_values, limits=limits, profile=profile,
-                          progress=progress, timings=timings, ml_detector=ml_detector, ml_budget=ml_budget,
+                          progress=progress, timings=timings, ml_detector=ml_detector, ml_budget=ml_budget, ml_work_budget=ml_work_budget,
                           field_observer=field_observer, disposition_observer=disposition_observer)
         budget = limits if limits is not None else AnalysisLimits.for_profile(profile)
         _check_memory(budget)
@@ -601,6 +621,7 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
                       progress=None, timings=None, row_observer=None,
                       ml_detector: ContextualPIIDetector | None = None,
                       ml_budget: 'MLWorkBudget | str | None' = None,
+            ml_work_budget: 'LegacyMLWorkBudget | None' = None,
                       field_observer=None, disposition_observer=None) -> dict:
     """Bounded disk-backed results, atomic JSON publication, small receipt.
 
@@ -623,7 +644,7 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
     try:
         with ReportSpool(output.parent,budget.max_report_bytes,row_observer=row_observer) as rows:
             report = _analyze(source,threshold,include_values,limits=budget,profile=profile,
-                              progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,ml_budget=ml_budget,
+                              progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,ml_budget=ml_budget, ml_work_budget=ml_work_budget,
                               field_observer=field_observer,disposition_observer=disposition_observer)
             report['flows'], report['findings'] = [], []
             _check_memory(budget)
