@@ -20,6 +20,8 @@ import time
 from .engine import AnalysisLimits, AnalysisLimitError, analyze_to_report
 from .groundtruth import EvaluationCollector, EvaluationRejected, Manifest, RESULT_SCHEMA_VERSION, sha256_file
 from .ml_runner import ML_PROFILES
+from .hybrid import MLWorkBudget as LegacyMLWorkBudget
+from dataclasses import asdict
 
 MIB = 2**20
 TERMINAL = {'completed','failed','cancelled'}
@@ -57,6 +59,8 @@ class Job:
     upload_abort: object = None
     ml_failed: bool = False
     ml_profile: str | None = None
+    ml_work_budget: LegacyMLWorkBudget = field(default_factory=LegacyMLWorkBudget)
+    use_legacy_budget: bool = False
     manifest: Manifest | None = None
     evaluation: dict | None = None
 
@@ -70,10 +74,13 @@ class Job:
 
 class JobManager:
     def __init__(self, analysis_lock, detector=None, *, disk_quota_bytes=12*2**30,
-                 max_retained=3, ttl_seconds=3600):
+                 max_retained=3, ttl_seconds=3600, ml_work_budget=None):
         if type(disk_quota_bytes) is not int or disk_quota_bytes < 32*MIB:
             raise ValueError('Job disk quota must be at least 32 MiB')
         self.analysis_lock, self.detector = analysis_lock, detector
+        self.ml_work_budget = LegacyMLWorkBudget() if ml_work_budget is None else ml_work_budget
+        if not isinstance(self.ml_work_budget, LegacyMLWorkBudget):
+            raise TypeError('ml_work_budget must be hybrid.MLWorkBudget')
         self.disk_quota = disk_quota_bytes
         self.max_retained, self.ttl = max_retained, ttl_seconds
         self.root = Path(tempfile.mkdtemp(prefix='trace_jobs_'));self.root.chmod(0o700)
@@ -114,13 +121,15 @@ class JobManager:
                 raise KeyError('Ground-truth manifest unavailable or expired')
             return entry[0]
 
-    def reserve(self, request_id, *, filename, source, size, mode, profile, ml_profile='standard', manifest=None):
+    def reserve(self, request_id, *, filename, source, size, mode, profile, ml_profile='standard', manifest=None, ml_work_budget=None):
         limits = AnalysisLimits.for_profile(profile)
+        legacy_budget = self.ml_work_budget if ml_work_budget is None else ml_work_budget
+        if not isinstance(legacy_budget, LegacyMLWorkBudget):raise TypeError('ml_work_budget must be MLWorkBudget')
         if ml_profile not in ML_PROFILES:raise ValueError('Unknown ML coverage profile')
         ml_profile = ml_profile if mode == 'hybrid' else None
         if size > limits.max_capture_bytes:raise AnalysisLimitError('Capture exceeds selected profile')
         if mode == 'hybrid' and self.detector is None:raise ValueError('Model unavailable')
-        fingerprint=(filename,source,size,mode,profile,ml_profile,None if manifest is None else manifest.sha256)
+        fingerprint=(filename,source,size,mode,profile,ml_profile,legacy_budget,None if manifest is None else manifest.sha256)
         with self.lock:
             if self.closed:raise JobBusy('Server is stopping')
             for job in self.jobs.values():
@@ -137,7 +146,10 @@ class JobManager:
             try:
                 job_id=secrets.token_hex(16);directory=self.root/job_id;directory.mkdir(mode=0o700)
                 job=Job(job_id,request_id,fingerprint,directory,filename,mode,profile,limits,
-                        self.detector is not None,reserved_bytes=reserve,ml_profile=ml_profile,manifest=manifest)
+                        self.detector is not None,reserved_bytes=reserve,ml_profile=ml_profile,
+                        ml_work_budget=legacy_budget,
+                        use_legacy_budget=ml_work_budget is not None or legacy_budget != LegacyMLWorkBudget(),
+                        manifest=manifest)
                 job.thread=threading.current_thread()
                 self.jobs[job_id]=job
                 return job,True
@@ -212,7 +224,9 @@ class JobManager:
                 with self.lock:
                     job.progress=dict(event);job.updated=time.monotonic()
             receipt=analyze_to_report(job.capture,job.report,profile=job.profile,limits=job.limits,
-                ml_detector=self.detector if job.mode=='hybrid' else None,ml_budget=job.ml_profile or 'standard',
+                ml_detector=self.detector if job.mode=='hybrid' else None,
+                ml_budget=None if job.use_legacy_budget else job.ml_profile or 'standard',
+                ml_work_budget=job.ml_work_budget if job.use_legacy_budget else None,
                 progress=progress,row_observer=observe,
                 field_observer=None if collector is None else collector.observe_message,
                 disposition_observer=None if collector is None else collector.observe_disposition)
@@ -264,7 +278,11 @@ class JobManager:
                 model_enabled=job.mode=='hybrid',scan_mode=job.mode,profile=job.profile,ml_profile=job.ml_profile,
                 progress=dict(job.progress),elapsed_seconds=time.monotonic()-job.created,
                 error=job.error,reason_type=job.reason_type,
-                ml_inference_failed=job.ml_failed,evaluation_requested=job.manifest is not None,
+                ml_inference_failed=job.ml_failed, ml_work_budget=asdict(job.ml_work_budget),
+                cancellation_requested=job.cancel.is_set(),
+                cancellation_completed=job.status=='cancelled',
+                reason_code='ml_cancelled' if job.status=='cancelled' else None,
+                evaluation_requested=job.manifest is not None,
                 evaluation_status=None if job.evaluation is None else job.evaluation['status'])
             if job.status=='completed':
                 report={k:v for k,v in job.receipt.items() if k not in ('output_path','output_bytes')}
@@ -319,6 +337,6 @@ class JobManager:
                     try:job.upload_abort()
                     except OSError:pass
         for job in active:
-            if job.thread is not None:job.thread.join(timeout=5)
+            if job.thread is not None and job.thread is not threading.current_thread():job.thread.join(timeout=5)
         if all(j.thread is None or not j.thread.is_alive() for j in active):
             shutil.rmtree(self.root,ignore_errors=True)
