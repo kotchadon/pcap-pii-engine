@@ -126,10 +126,17 @@ def test_strong_rules_figure_is_a_research_baseline_not_the_live_rules_engine(ch
     assert round(s["host_detect_py"]["micro"]["f1"], 3) == 0.134 and round(s["rules_strong"]["micro"]["f1"], 3) == 0.317
 
 
-@pytest.mark.xfail(strict=True, reason="QA finding F-07: the dashboard's 'OFFLINE STRONG RULES F1 31.7%' tile does not say it is a research baseline and that the live rule engine scored 13.4% on the same set")
-def test_ui_labels_the_strong_rules_tile_as_a_research_baseline():
-    html = _text(UI[0]).lower()
-    assert "research baseline" in html or "13.4" in html
+def test_benchmark_comparators_are_labelled_research_baseline_vs_live_rule_engine():
+    """F-07 fixed. The static 'strong rules' tile no longer exists: /api/benchmark now serves both comparators with explicit
+    labels and the Model Laboratory renders each label and note next to its numbers."""
+    from packet_pii.research import benchmark_metadata
+    comparators = {c["key"]: c for c in benchmark_metadata()["comparators"]}
+    assert comparators["rules_strong"]["label"].startswith("Research baseline") and "not the rule engine in this application" in comparators["rules_strong"]["note"]
+    assert comparators["host_detect_py"]["label"].startswith("Live rule engine")
+    assert round(comparators["host_detect_py"]["f1"], 3) == 0.134 and round(comparators["rules_strong"]["f1"], 3) == 0.317
+    lab = (ROOT / "src/packet_pii/dashboard_static/lab.js").read_text(encoding="utf-8")
+    assert "c.label" in lab and "c.note" in lab and "not met" in lab
+    assert benchmark_metadata()["target"] == {"f1": 0.88, "met": False, "note": "Engineering target for an independent set; not met by the measured V2 result."}
 
 
 # ------------------------------------------------------------------ (5) no claim of theft / exfiltration / breach

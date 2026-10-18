@@ -24,13 +24,15 @@ from .hybrid import load_experimental_bilstm
 from .ml_runner import ML_PROFILES
 from threading import Lock, BoundedSemaphore
 from .jobs import JobManager, JobBusy, JobQuota
+from .groundtruth import MAX_MANIFEST_BYTES, ManifestError, load_manifest, parse_manifest
 
 _STATIC = Path(__file__).with_name('dashboard_static')
 _MAX_UPLOAD = 512 * 1024 * 1024
 _MAX_SYNC_UPLOAD = 8 * 1024 * 1024
 _ALLOWED = {'/': ('index.html', 'text/html; charset=utf-8'),
             '/app.css': ('app.css', 'text/css; charset=utf-8'),
-            '/app.js': ('app.js', 'text/javascript; charset=utf-8')}
+            '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
+            '/lab.js': ('lab.js', 'text/javascript; charset=utf-8')}
 
 
 class DashboardServer(ThreadingHTTPServer):
@@ -164,6 +166,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if path.startswith('/api/jobs'):
             self._job_post(path)
             return
+        if path in ('/api/manifests', '/api/manifests/showcase'):
+            self._manifest_post(path)
+            return
         requested_mode = self.headers.get('X-Detection-Mode')
         if requested_mode is not None and requested_mode not in ('rules', 'hybrid'):
             self._reply({'error': 'Invalid detection mode'}, 400)
@@ -273,13 +278,33 @@ class DashboardHandler(BaseHTTPRequestHandler):
         finally:
             self.server.analysis_lock.release()
 
+    def _manifest_post(self,path):
+        try:
+            if path=='/api/manifests/showcase':
+                manifest=load_manifest(Path(__file__).resolve().parents[2]/'examples'/'groundtruth'/'showcase_demo.manifest.json')
+            else:
+                if self.headers.get('Content-Type','').split(';')[0].strip()!='application/json':
+                    self._reply({'error':'Expected application/json'},415);return
+                length=self.headers.get('Content-Length','')
+                if not re.fullmatch(r'[0-9]{1,12}',length) or int(length)<2:
+                    self._reply({'error':'Invalid Content-Length'},400);return
+                if int(length)>MAX_MANIFEST_BYTES:
+                    self.close_connection=True
+                    self._reply({'error':'Manifest is too large'},413);return
+                manifest=parse_manifest(self.rfile.read(int(length)))
+        except ManifestError as exc:
+            self._reply({'error':'Invalid ground-truth manifest: '+str(exc)[:160]},400);return
+        except OSError:
+            self._reply({'error':'Manifest unavailable'},404);return
+        self._reply({'manifest_id':self.server.jobs.add_manifest(manifest),'manifest':manifest.public()},201)
+
     def _job_get(self,path):
-        match=re.fullmatch(r'/api/jobs/([0-9a-f]{32})(?:/(findings|flows|report))?',path)
+        match=re.fullmatch(r'/api/jobs/([0-9a-f]{32})(?:/(findings|flows|report|evaluation))?',path)
         if not match:
             self._reply({'error':'Job not found'},404);return
         job_id,kind=match.groups()
         authenticated=self.headers.get('X-Dashboard-Token')==self.server.token
-        if kind=='report' and not authenticated:
+        if kind in ('report','evaluation') and not authenticated:
             try:
                 cookie=SimpleCookie(self.headers.get('Cookie',''))
                 authenticated=cookie.get('trace_session') is not None and secrets.compare_digest(cookie['trace_session'].value,self.server.token)
@@ -289,7 +314,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._reply({'error':'Request refused'},403);return
         try:
             job=self.server.jobs.get(job_id)
-            if kind=='report':
+            if kind=='evaluation':
+                if job.status!='completed' or job.evaluation is None:raise ValueError('No evaluation available')
+                body=json.dumps(job.evaluation,ensure_ascii=False,allow_nan=False).encode('utf-8')
+                download=f'trace-evaluation-{job_id}.json' if 'download' in parse_qs(urlsplit(self.path).query) else None
+                self._headers(200,'application/json; charset=utf-8',len(body),download=download)
+                self.wfile.write(body)
+            elif kind=='report':
                 if job.status!='completed':raise ValueError('Result not complete')
                 with job.report.open('rb') as stream:
                     self._headers(200,'application/json',os.fstat(stream.fileno()).st_size,
@@ -319,11 +350,19 @@ class DashboardHandler(BaseHTTPRequestHandler):
         mode=self.headers.get('X-Detection-Mode','rules')
         profile=self.headers.get('X-Analysis-Profile','standard')
         ml_profile=self.headers.get('X-ML-Coverage','standard')
+        manifest_id=self.headers.get('X-Ground-Truth-Manifest')
         request_id=self.headers.get('X-Request-ID','')
         if mode not in ('rules','hybrid') or profile not in ('standard','large','stress') or ml_profile not in ML_PROFILES or not re.fullmatch(r'[A-Za-z0-9_-]{8,80}',request_id):
             self._reply({'error':'Valid scan mode, profile, ML coverage profile and request ID are required'},400);return
         if mode=='hybrid' and self.server.ml_detector is None:
             self._reply({'error':'Requested model is unavailable'},422);return
+        manifest=None
+        if manifest_id is not None:
+            try:
+                if not re.fullmatch(r'[0-9a-f]{32}',manifest_id):raise KeyError
+                manifest=self.server.jobs.get_manifest(manifest_id)
+            except KeyError:
+                self._reply({'error':'Ground-truth manifest unavailable or expired; upload it again'},400);return
         source=path.rsplit('/',1)[-1]
         size=0
         label='trace-vp-showcase.pcap' if source=='showcase' else 'synthetic-demo.pcap'
@@ -344,7 +383,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         job=None
         started=False
         try:
-            job,created=self.server.jobs.reserve(request_id,filename=label,source=source,size=size,mode=mode,profile=profile,ml_profile=ml_profile)
+            job,created=self.server.jobs.reserve(request_id,filename=label,source=source,size=size,mode=mode,profile=profile,ml_profile=ml_profile,manifest=manifest)
             if not created:
                 self.close_connection=True
                 self._reply({'job_id':job.job_id,'status':job.status},202);return

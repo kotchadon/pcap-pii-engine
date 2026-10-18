@@ -18,6 +18,7 @@ import threading
 import time
 
 from .engine import AnalysisLimits, AnalysisLimitError, analyze_to_report
+from .groundtruth import EvaluationCollector, EvaluationRejected, Manifest, RESULT_SCHEMA_VERSION, sha256_file
 from .ml_runner import ML_PROFILES
 
 MIB = 2**20
@@ -56,6 +57,8 @@ class Job:
     upload_abort: object = None
     ml_failed: bool = False
     ml_profile: str | None = None
+    manifest: Manifest | None = None
+    evaluation: dict | None = None
 
     @property
     def capture(self): return self.directory/'capture.bin'
@@ -76,6 +79,7 @@ class JobManager:
         self.root = Path(tempfile.mkdtemp(prefix='trace_jobs_'));self.root.chmod(0o700)
         self.lock = threading.RLock()
         self.jobs: dict[str,Job] = {}
+        self.manifests: dict[str,tuple[Manifest,float]] = {}
         self.closed = False
 
     def _prune(self):
@@ -89,13 +93,34 @@ class JobManager:
     def _used(self):
         return sum(p.stat().st_size for p in self.root.glob('*/*') if p.is_file())
 
-    def reserve(self, request_id, *, filename, source, size, mode, profile, ml_profile='standard'):
+    MAX_MANIFESTS = 4
+
+    def add_manifest(self, manifest):
+        """Hold a validated manifest in memory (never on disk) until a scan consumes it or it expires."""
+        with self.lock:
+            now = time.monotonic()
+            for key in [k for k, (_, at) in self.manifests.items() if now - at > self.ttl]:
+                del self.manifests[key]
+            while len(self.manifests) >= self.MAX_MANIFESTS:
+                del self.manifests[next(iter(self.manifests))]
+            manifest_id = secrets.token_hex(16)
+            self.manifests[manifest_id] = (manifest, now)
+            return manifest_id
+
+    def get_manifest(self, manifest_id):
+        with self.lock:
+            entry = self.manifests.get(manifest_id)
+            if entry is None or time.monotonic() - entry[1] > self.ttl:
+                raise KeyError('Ground-truth manifest unavailable or expired')
+            return entry[0]
+
+    def reserve(self, request_id, *, filename, source, size, mode, profile, ml_profile='standard', manifest=None):
         limits = AnalysisLimits.for_profile(profile)
         if ml_profile not in ML_PROFILES:raise ValueError('Unknown ML coverage profile')
         ml_profile = ml_profile if mode == 'hybrid' else None
         if size > limits.max_capture_bytes:raise AnalysisLimitError('Capture exceeds selected profile')
         if mode == 'hybrid' and self.detector is None:raise ValueError('Model unavailable')
-        fingerprint=(filename,source,size,mode,profile,ml_profile)
+        fingerprint=(filename,source,size,mode,profile,ml_profile,None if manifest is None else manifest.sha256)
         with self.lock:
             if self.closed:raise JobBusy('Server is stopping')
             for job in self.jobs.values():
@@ -112,7 +137,7 @@ class JobManager:
             try:
                 job_id=secrets.token_hex(16);directory=self.root/job_id;directory.mkdir(mode=0o700)
                 job=Job(job_id,request_id,fingerprint,directory,filename,mode,profile,limits,
-                        self.detector is not None,reserved_bytes=reserve,ml_profile=ml_profile)
+                        self.detector is not None,reserved_bytes=reserve,ml_profile=ml_profile,manifest=manifest)
                 job.thread=threading.current_thread()
                 self.jobs[job_id]=job
                 return job,True
@@ -165,8 +190,15 @@ class JobManager:
             conn.execute(f'PRAGMA max_page_count={(2*job.limits.max_report_bytes+64*MIB)//4096}')
             conn.execute('CREATE TABLE rows(kind TEXT,n INTEGER,pii_type TEXT,location TEXT,value TEXT,data TEXT,PRIMARY KEY(kind,n))')
             counts=Counter()
+            collector=None;capture_hash=None
+            if job.manifest is not None:
+                # Verify the manifest describes exactly this file before trusting any alignment; analysis still runs either way.
+                capture_hash=sha256_file(job.capture)
+                if capture_hash==job.manifest.capture_sha256:collector=EvaluationCollector(job.manifest)
+                else:job.evaluation=self._rejected(job,capture_hash,'capture SHA-256 does not match the manifest: the annotations describe a different file')
             def observe(kind,row):
                 if job.cancel.is_set():raise JobCancelled()
+                if collector is not None:collector.observe_finding(kind,row)
                 counts[kind]+=1
                 conn.execute('INSERT INTO rows VALUES(?,?,?,?,?,?)',
                     (kind,counts[kind]-1,row.get('pii_type',''),row.get('location',''),row.get('value',''),
@@ -181,8 +213,16 @@ class JobManager:
                     job.progress=dict(event);job.updated=time.monotonic()
             receipt=analyze_to_report(job.capture,job.report,profile=job.profile,limits=job.limits,
                 ml_detector=self.detector if job.mode=='hybrid' else None,ml_budget=job.ml_profile or 'standard',
-                progress=progress,row_observer=observe)
+                progress=progress,row_observer=observe,
+                field_observer=None if collector is None else collector.observe_message,
+                disposition_observer=None if collector is None else collector.observe_disposition)
             conn.commit();conn.close();conn=None
+            if collector is not None:
+                try:
+                    job.evaluation=collector.finish(capture_sha256=capture_hash,capture_bytes=job.capture_bytes,
+                        summary=receipt['summary'],metadata=receipt['metadata'],model_requested=job.mode=='hybrid')
+                except EvaluationRejected as exc:
+                    job.evaluation=self._rejected(job,capture_hash,str(exc))
             with self.lock:
                 if job.cancel.is_set():raise JobCancelled()
                 job.receipt={k:v for k,v in receipt.items() if k!='output_path'}
@@ -195,13 +235,20 @@ class JobManager:
                 job.error=('Scan cancelled' if job.status=='cancelled' else
                            'Scan exceeded a configured resource budget' if isinstance(exc,AnalysisLimitError) else
                            'Scan could not complete; no complete result is available')
-                job.progress={'stage':job.status};job.updated=time.monotonic()
+                job.progress={'stage':job.status};job.updated=time.monotonic();job.evaluation=None
             if conn is not None:conn.close();conn=None
             self._remove_files(job)
         finally:
             job.capture.unlink(missing_ok=True)
             self._release(job)
             if self.closed:shutil.rmtree(self.root,ignore_errors=True)
+
+    @staticmethod
+    def _rejected(job, capture_hash, reason):
+        return {'schema_version':RESULT_SCHEMA_VERSION,'status':'rejected','reason':reason,
+                'scope':'File-specific accuracy unavailable: the supplied ground-truth manifest could not be verified against this capture.',
+                'capture':{'sha256':capture_hash,'verified_against_manifest':False},
+                'manifest':{**job.manifest.public(),'verified':False}}
 
     def get(self, job_id):
         with self.lock:
@@ -217,7 +264,8 @@ class JobManager:
                 model_enabled=job.mode=='hybrid',scan_mode=job.mode,profile=job.profile,ml_profile=job.ml_profile,
                 progress=dict(job.progress),elapsed_seconds=time.monotonic()-job.created,
                 error=job.error,reason_type=job.reason_type,
-                ml_inference_failed=job.ml_failed)
+                ml_inference_failed=job.ml_failed,evaluation_requested=job.manifest is not None,
+                evaluation_status=None if job.evaluation is None else job.evaluation['status'])
             if job.status=='completed':
                 report={k:v for k,v in job.receipt.items() if k not in ('output_path','output_bytes')}
                 report['findings']=self.page(job,'findings')['items']

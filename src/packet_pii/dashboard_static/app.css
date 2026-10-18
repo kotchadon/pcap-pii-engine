@@ -89,3 +89,25 @@ main{max-width:1520px;padding-top:43px}.title-section{margin-bottom:26px}.title-
 .telemetry-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}.telemetry-grid>div{background:#fff;border:1px solid #dfe8f1;border-radius:9px;padding:16px}.telemetry-grid dt{font-size:11px;color:#698297}.telemetry-grid dd{margin:8px 0 0;font-size:20px;font-weight:700;color:#234963}.how-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.how-grid h4{font-size:20px;color:#234963}.how-grid p,.how-grid li{font-size:13px;line-height:1.8;color:#526d83}.how-grid li{padding:6px 0}.how-grid ol{padding-left:20px}@media(max-width:870px){.how-grid{grid-template-columns:1fr}.telemetry-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .profile-control{grid-column:1 / -1;display:flex;align-items:center;gap:12px;padding-top:10px;border-top:1px solid #edf1f5;font-size:11px;color:#536f86}.profile-control select{padding:9px 12px;border:1px solid #cbdbe8;border-radius:7px;color:#234963;background:#f8fbfe}.profile-control span{color:#7b8fa1}.pagination{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:14px;font-size:12px;color:#56738d}.pagination .btn{height:36px}.btn:disabled{opacity:.5;cursor:not-allowed}.metric-word{overflow-wrap:anywhere}@media(max-width:560px){.profile-control{flex-wrap:wrap}.statusbar{flex-wrap:wrap}.profile-control span{width:100%}}
+
+/* ---- Model Laboratory: coverage accounting and ground-truth evaluation ---- */
+.lab-section{margin-top:28px;padding-top:6px}.lab-section+.lab-section{border-top:1px solid #dde6ef;padding-top:26px}
+.lab-heading h4{font-size:19px;letter-spacing:-.3px;margin:7px 0 6px}.lab-heading p{color:#62738a;font-size:12px;line-height:1.65;max-width:820px;margin:0 0 16px}
+.coverage-banner{padding:15px 19px;border-radius:10px;border:1px solid #e9d7c5;background:#fff4e6;color:#7a4c16;font-size:13px;font-weight:700;line-height:1.55;margin-bottom:16px}
+.coverage-banner[data-kind="error"]{background:#fff0ed;border-color:#f0c4b8;color:#a0402a}.coverage-banner[data-kind="info"]{background:#eef6fb;border-color:#cfe1ee;color:#24506f;font-weight:600}
+.coverage-panel{background:#fff;border:1px solid #dfe8f0;border-radius:12px;padding:20px 22px;margin-bottom:16px}
+.coverage-top{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.coverage-top strong{font-size:14px;color:#1b2a3e}
+.coverage-chip{font-size:9.5px;letter-spacing:1.1px;font-weight:800;padding:7px 10px;border-radius:5px;background:#eef2f6;color:#5a6d82}
+.coverage-chip[data-state="complete"]{background:#e3f4ee;color:#16705c}.coverage-chip[data-state="partial"],.coverage-chip[data-state="no_eligible_fields"]{background:#fff0dc;color:#9a5a0e}
+.coverage-chip[data-state="failed"],.coverage-chip[data-state="cancelled"]{background:#ffe9e4;color:#a0402a}.coverage-chip[data-state="running"]{background:#e6f0fb;color:#2b5f9a}
+.coverage-bar{height:10px;border-radius:5px;background:#edf1f5;margin:14px 0 10px;overflow:hidden}.coverage-bar span{display:block;width:0;height:100%;background:#337bdf;border-radius:5px;transition:width .3s ease}
+.coverage-panel[data-state="partial"] .coverage-bar span{background:#d98a2b}.coverage-panel[data-state="failed"] .coverage-bar span{background:#c9573d}
+.coverage-detail{color:#62738a;font-size:12px;line-height:1.65;margin:0 0 14px;max-width:860px}
+.coverage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 18px;margin:0}.coverage-grid>div{border-top:1px solid #edf1f5;padding-top:9px}
+.coverage-grid dt{font-size:9.5px;letter-spacing:.7px;font-weight:760;color:#7d90a4;text-transform:uppercase}.coverage-grid dd{margin:4px 0 0;font-size:13px;font-weight:700;color:#1b2a3e;overflow-wrap:anywhere}
+.gt-controls{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;margin-bottom:14px}.gt-controls .btn{display:inline-flex;align-items:center}.gt-upload{cursor:pointer}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.gt-detail{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}.gt-detail>div{background:#fff;border:1px solid #dfe8f0;border-radius:10px;padding:14px 18px;font-size:12px;color:#4f6277}
+.gt-detail ul{margin:8px 0 0;padding-left:18px;line-height:1.7}.gt-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.gt-results .table-panel{margin-top:2px}
+@media(max-width:700px){.coverage-grid{grid-template-columns:1fr 1fr}.gt-controls{flex-direction:column;align-items:stretch}}
