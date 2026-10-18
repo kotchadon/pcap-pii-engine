@@ -159,7 +159,8 @@ def test_results_ordering_and_provenance_do_not_depend_on_batch_size(tmp_path, b
     r = analyze(path, ml_detector=Stub(), ml_budget=MLWorkBudget(batch_fields=batch_fields))
     assert r['findings'] == reference['findings'] and r['flows'] == reference['flows']
     for key, value in reference['summary'].items():
-        if key not in ('processing_time_seconds', 'ml_processing_time_seconds', 'ml_batches'):
+        # Both the canonical and Astra-compatible batch counters legitimately vary with batch size.
+        if key not in ('processing_time_seconds', 'ml_processing_time_seconds', 'ml_batches', 'ml_inference_batches'):
             assert r['summary'][key] == value, key
 
 
