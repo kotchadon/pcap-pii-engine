@@ -75,9 +75,9 @@ vm.createContext(ctx);vm.runInContext(fs.readFileSync(assets+'/app.js','utf8'),c
  assert(elements['groundtruth-metrics'].classList.contains('hidden'));
  const shaA='a'.repeat(64),shaB='b'.repeat(64);
  ctx.current.metadata.capture_sha256=shaA;
- ctx.labels={status:'verified',manifest_verified:true,schema_version:'ground-truth-v1',capture_sha256:shaA,
+ ctx.verifiedFixture={status:'verified',manifest_verified:true,schema_version:'ground-truth-v1',capture_sha256:shaA,
   manifest_sha256:shaB,model_version:'test-v2',negative_fields_reviewed:true,scope:'evaluated_subset',fields_in_scope:10000,counts:{tp:8,fp:4,fn:1}};
- vm.runInContext('renderGroundTruth(labels,current)',ctx);
+ vm.runInContext('renderGroundTruth(verifiedFixture,current)',ctx);
  assert.strictEqual(elements['groundtruth-precision'].textContent,'66.7%');
  assert.strictEqual(elements['groundtruth-recall'].textContent,'88.9%');
  assert.strictEqual(elements['groundtruth-f1'].textContent,'76.2%');
@@ -85,17 +85,17 @@ vm.createContext(ctx);vm.runInContext(fs.readFileSync(assets+'/app.js','utf8'),c
  assert(elements['groundtruth-explanation'].textContent.includes('NOT full-file accuracy'));
  assert(!elements['groundtruth-metrics'].classList.contains('hidden'));
  // A malicious "complete" label on a partial scan fails closed.
- ctx.labels.scope='all_eligible_fields';ctx.labels.coverage_complete=true;
- vm.runInContext('renderGroundTruth(labels,current)',ctx);
+ ctx.verifiedFixture.scope='all_eligible_fields';ctx.verifiedFixture.coverage_complete=true;
+ vm.runInContext('renderGroundTruth(verifiedFixture,current)',ctx);
  assert.strictEqual(elements['groundtruth-precision'].textContent,'—');
  assert(elements['groundtruth-metrics'].classList.contains('hidden'));
  // Complete processing, validated manifest can legitimately show complete-scope metrics.
  ctx.current.summary.ml_incomplete=false;ctx.current.summary.ml_fields_skipped=0;ctx.current.summary.ml_fields_evaluated=88192;
- vm.runInContext('renderGroundTruth(labels,current)',ctx);
+ vm.runInContext('renderGroundTruth(verifiedFixture,current)',ctx);
  assert.strictEqual(elements['groundtruth-status'].textContent,'VERIFIED COMPLETE');
  // Wrong model must fail closed.
- ctx.labels.model_version='other-checkpoint';
- vm.runInContext('renderGroundTruth(labels,current)',ctx);
+ ctx.verifiedFixture.model_version='other-checkpoint';
+ vm.runInContext('renderGroundTruth(verifiedFixture,current)',ctx);
  assert.strictEqual(elements['groundtruth-precision'].textContent,'—');
  // Pending/failure cannot inherit previous evaluated values.
  vm.runInContext("markLatestScan('failed','A later attempt failed')",ctx);
