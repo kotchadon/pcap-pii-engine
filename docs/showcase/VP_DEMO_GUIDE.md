@@ -1,15 +1,17 @@
 # TRACE VP showcase — reproducible synthetic network investigation
 
 ## What the demo button really does
-**Run 12-conversation showcase** calls `POST /api/showcase`. The local server invokes
+**Run 12-conversation showcase** submits `POST /api/jobs/showcase`. The legacy
+synchronous `POST /api/showcase` remains available for small compatibility tests. The local server invokes
 `examples/generate_showcase.py` to create a reproducible, fictional classic-PCAP
 file in a temporary directory. It then invokes the SAME
-`packet_pii.engine.analyze()` pipeline used for user-uploaded PCAP/PCAPNG files.
+shared engine pipeline used by `analyze()` and bounded `analyze_to_report()`
+for user-uploaded PCAP/PCAPNG files. The dashboard uses the streamed report path.
 No finding, HTTP count, model prediction, rule result, score or flow record is
 hardcoded by the showcase handler. The temporary PCAP is deleted afterwards.
 
 The legacy `POST /api/demo` remains available as an 8-packet regression fixture.
-The current dashboard button uses `/api/showcase`, not the legacy demo.
+The current dashboard uses background jobs with bounded previews and separate export.
 
 ## What you can show
 - Reconstructed conversations across 12 different endpoint pairs.
@@ -27,7 +29,8 @@ The current dashboard button uses `/api/showcase`, not the legacy demo.
 
 ## Model status is not a model result
 - **Model ready** = the trained V2 checkpoint loaded.
-- **AI invoked** = `analyze(..., ml_detector=...) ` was called for that scan.
+- **AI invoked** = nonempty eligible fields were actually submitted to inference.
+  Passing a loaded detector to an empty scan is not invocation.
 - **ML fields evaluated** = real count of eligible extracted fields passed to model.
 - **ML findings** = real count of contextual entity spans returned after filtering.
 - **ML=0** is possible even when inference ran successfully: zero predictions
@@ -66,7 +69,7 @@ of correctness. See `docs/ml/V2_MODEL_CARD.md`.
 cd ~/Downloads/pcap-pii-engine
 source .venv/bin/activate
 git fetch origin
-git switch --track origin/feature/vp-live-evidence-showcase
+git switch --track origin/feature/trace-unified-vp-integration
 python -m pytest -q tests/test_showcase_live_evidence.py tests/test_dashboard.py tests/test_dashboard_scan_modes.py tests/test_hybrid_dashboard.py
 python -m packet_pii.dashboard --port 8765 --ml-checkpoint src/packet_pii/ml/artifacts/bilstm_v2
 ```
@@ -80,9 +83,8 @@ To create the same PCAP manually for an upload (no model or backend required):
 python examples/generate_showcase.py ~/Downloads/trace-vp-showcase.pcap
 ```
 
-Do not merge PR #11's separate rules-only `engine.py` into this
-hybrid-enabled engine without a deliberate integration pass; its
-`analyze_to_report` API currently does not support optional ML inference.
+The unified branch preserves PR #11 and supports optional ML in both report APIs.
+See `docs/integration/UNIFIED_VP.md` for bounds, async jobs and current validation.
 
 ## Known limitations
 This is a local-first research demonstration of supported plaintext HTTP/1.x.

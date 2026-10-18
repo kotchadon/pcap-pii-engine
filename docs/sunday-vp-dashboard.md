@@ -1,3 +1,6 @@
+> Historical source-branch notes. Current integrated commands, limits and status
+> are in [integration/UNIFIED_VP.md](integration/UNIFIED_VP.md).
+
 # TRACE — Sunday VP demonstration dashboard (first tested slice)
 
 ## Purpose
