@@ -51,22 +51,40 @@ class HttpSpan:
 
 
 @dataclass(frozen=True)
-class HttpParseResult:
-    """Parsed messages plus an account of what remained unparsed at the end of the stream."""
-    spans: list[HttpSpan]
-    consumed: int
-    stream_bytes: int
-    unterminated_http: bool  # an HTTP-looking message began at `consumed` but could not be completed
+class HttpParseDiagnostic:
+    """Sanitized terminal parsing observation, relative to a TCP direction.
+
+    ``incomplete`` means observed unfinished HTTP framing, not an inference
+    about missing TCP packets. False denotes an unsupported/uncertain tail.
+    No start line, header, or body content is retained.
+    """
+    reason: str
+    start_offset: int
+    incomplete: bool
 
 
-_HTTP_START = re.compile(rb'(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|TRACE|CONNECT) |HTTP/1\.')
-_HTTP_STARTS = (b'GET ', b'POST ', b'PUT ', b'PATCH ', b'DELETE ', b'HEAD ', b'OPTIONS ', b'TRACE ', b'CONNECT ', b'HTTP/1.')
-
-
-def _looks_like_http_start(tail: bytes) -> bool:
-    if _HTTP_START.match(tail):
+def _incomplete_header_prefix(raw: bytes) -> bool:
+    """Recognize valid HTTP header prefixes without guessing arbitrary text."""
+    lines = raw.split(b'\r\n')
+    first = lines[0].removesuffix(b'\r')
+    if not (_REQUEST.fullmatch(first) or _RESPONSE.fullmatch(first)):
+        # Only recognize a partial start line once its HTTP version is visible.
+        return len(lines) == 1 and bool(re.fullmatch(
+            rb'(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|TRACE|CONNECT) '
+            rb'[^\x00-\x20]+ HTTP/1(?:\.[01]?)?'
+            rb'|HTTP/1\.[01](?: [1-5][0-9]?)?', first))
+    if len(lines) == 1:
         return True
-    return 0 < len(tail) < 8 and any(start.startswith(tail) for start in _HTTP_STARTS)
+    if _parse_headers(b'\r\n'.join(lines[:-1])) is None:
+        return False
+    last = lines[-1].removesuffix(b'\r')
+    if not last:
+        return True
+    if b':' not in last:
+        return bool(_HEADER_NAME.fullmatch(last))
+    key, value = last.split(b':', 1)
+    return bool(_HEADER_NAME.fullmatch(key)) and not any(
+        c < 32 and c != 9 or c == 127 for c in value)
 
 
 def _parse_headers(raw: bytes) -> tuple[str, dict[str, str], bool] | None:
@@ -97,16 +115,26 @@ def _parse_headers(raw: bytes) -> tuple[str, dict[str, str], bool] | None:
     return first.decode('iso-8859-1'), headers, bool(_REQUEST.fullmatch(first))
 
 
-def _chunked(data: bytes, position: int) -> tuple[bytes, int] | None:
+def _chunked(data: bytes, position: int, *, diagnostic=None) -> tuple[bytes, int] | None:
     """Decode one HTTP/1 chunked body; enforce data and trailer size limits."""
+    def fail(incomplete=False, reason=None):
+        if diagnostic is not None:
+            diagnostic(reason or ('http_incomplete_chunked_framing' if incomplete
+                                   else 'http_invalid_chunked_framing'), incomplete)
+        return None
+
     result = bytearray()
     for _ in range(10000):
         end = data.find(b'\r\n', position, min(len(data), position + 130))
         if end < 0 or end - position > 128:
-            return None
+            tail = data[position:position + 130]
+            # A bounded, plausible chunk-size prefix can be cut off at EOF.
+            plausible = tail in (b'', b'\r') or bool(re.fullmatch(
+                rb'[0-9a-fA-F]+(?:[ \t]*;[^\r\n\x00-\x08\x0b-\x1f]*)?\r?', tail))
+            return fail(len(tail) <= 128 and plausible)
         match = _CHUNK_LINE.fullmatch(data[position:end])
         if match is None:
-            return None
+            return fail()
         size = int(match[1], 16)
         position = end + 2
         if size == 0:
@@ -115,55 +143,72 @@ def _chunked(data: bytes, position: int) -> tuple[bytes, int] | None:
             trailer_end = data.find(b'\r\n\r\n', position,
                                     min(len(data), position + MAX_TRAILER_BYTES + 4))
             if trailer_end < 0:
-                return None
+                tail = data[position:position + MAX_TRAILER_BYTES + 4]
+                plausible = _incomplete_header_prefix(b'GET / HTTP/1.1\r\n' + tail)
+                return fail(len(tail) <= MAX_TRAILER_BYTES and plausible)
             # Don't trust malformed trailer lines and don't expose them as fields.
             for line in data[position:trailer_end].split(b'\r\n'):
                 if not line or b':' not in line or not _HEADER_NAME.fullmatch(line.split(b':', 1)[0]):
-                    return None
+                    return fail()
                 name, value = line.split(b':', 1)
                 if name.lower() in (b'content-length', b'transfer-encoding', b'host'):
-                    return None
+                    return fail()
                 if any(c < 32 and c != 9 or c == 127 for c in value):
-                    return None
+                    return fail()
             return bytes(result), trailer_end + 4
-        if size > MAX_HTTP_BODY - len(result) or position + size + 2 > len(data):
-            return None
+        if position + size > len(data):
+            return fail(True)
+        if size > MAX_HTTP_BODY - len(result):
+            return fail(reason='http_body_limit_exceeded')
         result.extend(data[position:position + size])
         position += size
+        if len(data) - position < 2:
+            return fail(data[position:] in (b'', b'\r'))
         if data[position:position+2] != b'\r\n':
-            return None
+            return fail()
         position += 2
-    return None
+    return fail(reason='http_chunk_limit_exceeded')
 
 
-def parse_http_stream_with_spans(data: bytes) -> list[HttpSpan]:
+def parse_http_stream_with_spans(
+        data: bytes, *, diagnostics: list[HttpParseDiagnostic] | None = None,
+) -> list[HttpSpan]:
     """Parse a contiguous TCP stream and preserve each message's byte span.
 
     Offsets allow packet provenance to be associated with the correct message,
     including HTTP pipelining where multiple messages share a TCP segment.
-    """
-    return parse_http_stream_detailed(data).spans
-
-
-def parse_http_stream_detailed(data: bytes) -> HttpParseResult:
-    """Like :func:`parse_http_stream_with_spans` but also reports an unterminated trailing HTTP message.
-
-    A stream whose tail starts like HTTP but cannot be completed (truncated headers or body, ambiguous framing) is
-    evidence that was seen but not analysed, so callers must not publish the capture as complete. A deliberate stop
-    (unframed response body, protocol switch) and non-HTTP payloads (e.g. TLS) are not reported as unterminated.
+    Optional diagnostics report at most one terminal observation per call;
+    existing callers retain identical parsed messages and byte spans.
+    Without paired request-method context, unfinished response body framing is
+    uncertain: HEAD and successful CONNECT responses may legitimately omit it.
+    Such responses remain unparsed; this API does not reconstruct their pairing.
     """
     messages: list[HttpSpan] = []
     offset = 0
-    deliberate_stop = False
+    def diagnostic(reason: str, incomplete: bool = False):
+        if diagnostics is not None:
+            diagnostics.append(HttpParseDiagnostic(reason, offset, incomplete))
+
     while offset < len(data) and len(messages) < MAX_MESSAGES:
         header_end = data.find(b'\r\n\r\n', offset,
                                min(len(data), offset + MAX_HTTP_HEADER + 4))
         if header_end < 0 or header_end - offset > MAX_HTTP_HEADER:
+            tail = data[offset:offset + MAX_HTTP_HEADER + 4]
+            unfinished = len(tail) <= MAX_HTTP_HEADER and _incomplete_header_prefix(tail)
+            diagnostic('http_incomplete_headers' if unfinished else 'http_unparseable_tail',
+                       unfinished)
             break
         parsed = _parse_headers(data[offset:header_end])
         if parsed is None:
+            diagnostic('http_unparseable_tail')
             break
         first, headers, is_request = parsed
+        def body_diagnostic(reason: str, incomplete: bool = False):
+            if incomplete and not is_request:
+                diagnostic('http_response_body_framing_unknown')
+            else:
+                diagnostic(reason, incomplete)
+
         body_at = header_end + 4
         code = int(first[9:12]) if not is_request else None
         no_body = code is not None and (100 <= code < 200 or code in (204, 304))
@@ -173,21 +218,28 @@ def parse_http_stream_detailed(data: bytes) -> HttpParseResult:
         transfer = headers.get('transfer-encoding', '').strip().lower()
         length = headers.get('content-length')
         if 'transfer-encoding' in headers and (not transfer or length is not None):
+            diagnostic('http_ambiguous_framing')
             break  # Ambiguous framing: fail closed, not vulnerable to CL/TE confusion.
         if no_body:
             body, next_at = b'', body_at
         elif transfer:
             if transfer != 'chunked':
+                diagnostic('http_unsupported_transfer_coding')
                 break  # Unsupported transfer codings aren't silently treated as plaintext.
-            result = _chunked(data, body_at)
+            result = _chunked(data, body_at, diagnostic=body_diagnostic)
             if result is None:
                 break
             body, next_at = result
         elif length is not None:
             if not re.fullmatch(r'[0-9]+', length) or len(length) > 12:
+                diagnostic('http_invalid_content_length')
                 break
             size = int(length)
-            if size > MAX_HTTP_BODY or body_at + size > len(data):
+            if body_at + size > len(data):
+                body_diagnostic('http_incomplete_content_length_body', True)
+                break
+            if size > MAX_HTTP_BODY:
+                diagnostic('http_body_limit_exceeded')
                 break
             body, next_at = data[body_at:body_at + size], body_at + size
         else:
@@ -198,13 +250,12 @@ def parse_http_stream_detailed(data: bytes) -> HttpParseResult:
                                  offset, next_at))
         if next_at <= offset:
             break
-        offset = next_at
         if unframed_response or code == 101:
-            deliberate_stop = True
+            if unframed_response:
+                diagnostic('http_close_delimited_body_uninspected')
             break  # Unframed body or protocol switch ends supported HTTP parsing.
-    unterminated = (not deliberate_stop and len(messages) < MAX_MESSAGES and offset < len(data)
-                    and _looks_like_http_start(data[offset:offset + 16]))
-    return HttpParseResult(messages, offset, len(data), unterminated)
+        offset = next_at
+    return messages
 
 
 def parse_http_stream(data: bytes) -> list[HttpMessage]:
@@ -312,18 +363,6 @@ def _multipart_fields(body: bytes, content_type: str) -> list[tuple[str, str]]:
     return results
 
 
-def body_skip_reason(message: HttpMessage) -> str | None:
-    """Why a present body was not inspected (None if it was, or if there is no body)."""
-    if not message.body:
-        return None
-    encoding = message.headers.get('content-encoding', 'identity').strip().lower()
-    if encoding in ('', 'identity') and len(message.body) <= MAX_HTTP_BODY:
-        return None
-    if _decompress_body(message) is not None:
-        return None
-    return 'unsupported_content_encoding' if encoding not in ('', 'identity', 'gzip', 'deflate') else 'undecodable_body'
-
-
 def extract_fields(message: HttpMessage) -> list[tuple[str, str]]:
     """Extract HTTP header, query and supported structured body values."""
     fields: list[tuple[str, str]] = [(f'header.{name}', value)
@@ -361,3 +400,34 @@ def extract_fields(message: HttpMessage) -> list[tuple[str, str]]:
         elif body and (lower_ct.startswith('text/') or not lower_ct):
             fields.append(('body.text', text))
     return fields[:MAX_FIELDS]
+
+
+@dataclass(frozen=True)
+class HttpParseResult:
+    """Compatibility with the detailed-parser API used by the labelled evaluator."""
+    spans: list[HttpSpan]
+    parsed_bytes: int
+    total_bytes: int
+    unterminated_http: bool
+
+
+def parse_http_stream_detailed(data: bytes) -> HttpParseResult:
+    diagnostics: list[HttpParseDiagnostic] = []
+    spans = parse_http_stream_with_spans(data, diagnostics=diagnostics)
+    parsed_bytes = spans[-1].end_offset if spans else 0
+    return HttpParseResult(spans, parsed_bytes, len(data),
+                           any(d.incomplete for d in diagnostics))
+
+
+def body_skip_reason(message: HttpMessage) -> str | None:
+    """Sanitized reason an HTTP body was not inspected."""
+    if not message.body:
+        return None
+    encoding = message.headers.get('content-encoding', 'identity').strip().lower()
+    if encoding in ('', 'identity') and len(message.body) <= MAX_HTTP_BODY:
+        return None
+    if _decompress_body(message) is not None:
+        return None
+    return ('unsupported_content_encoding'
+            if encoding not in ('', 'identity', 'gzip', 'deflate')
+            else 'undecodable_body')
