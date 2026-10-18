@@ -20,7 +20,7 @@ from urllib.parse import urlsplit
 
 from .capture import (CaptureDiagnostics, read_frames, decode_tcp, decode_tcp_with_reason, EVIDENCE_LOSS_REASONS,
                       endpoint_key, reassemble_detailed, sequence_offset, split_tcp_sessions, TcpPacket)
-from .http_extract import (HttpMessage, parse_http_stream_detailed, extract_fields, body_skip_reason,
+from .http_extract import (HttpMessage, parse_http_stream_detailed, parse_http_stream_with_spans, extract_fields, body_skip_reason,
                            MAX_MESSAGES, MAX_FIELDS)
 from .detect import detect_fields, MAX_FIELD_LENGTH
 from .ml_runner import MLBatchRunner, MLWorkBudget
@@ -279,7 +279,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     emit('reconstructing', packets=frames, endpoint_pairs=len(flow_packets), sessions=0)
 
     findings = [] if _rows is None else _rows.findings
-    http_count = http_flows = gaps = unterminated = 0
+    http_count = http_flows = gaps = unterminated = http_uncertain_streams = 0
     bodies_skipped: dict[str, int] = {}
     http2_streams = tls_streams = 0
     evidence_loss_packets = sum(n for r, n in skipped_packets.items() if r in EVIDENCE_LOSS_REASONS)
@@ -347,6 +347,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 directions[(packet.src, packet.sport, packet.dst, packet.dport)].append(packet)
             records: list[_Record] = []
             flow_gaps = flow_unterminated = 0
+            flow_http_diagnostics = []
             for direction, segs in directions.items():
                 tick = time.perf_counter()
                 assembled = reassemble_detailed(segs)
@@ -360,11 +361,19 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     http2_streams += 1
                 elif stream[:2] in (b'\x16\x03', b'\x17\x03', b'\x15\x03'):
                     tls_streams += 1
-                parsed_stream = parse_http_stream_detailed(stream)
-                spans = parsed_stream.spans
-                if parsed_stream.unterminated_http:
+                terminal_diagnostics = []
+                spans = parse_http_stream_with_spans(stream, diagnostics=terminal_diagnostics)
+                if any(d.incomplete for d in terminal_diagnostics):
                     unterminated += 1
                     flow_unterminated += 1
+                if any(not d.incomplete for d in terminal_diagnostics):
+                    http_uncertain_streams += 1
+                for note in terminal_diagnostics:
+                    flow_http_diagnostics.append({
+                        'reason': note.reason, 'start_offset': note.start_offset,
+                        'incomplete': note.incomplete,
+                        'source_ip': direction[0], 'source_port': direction[1],
+                        'destination_ip': direction[2], 'destination_port': direction[3]})
                 if len(spans) == MAX_MESSAGES and spans[-1].end_offset < len(stream):
                     raise AnalysisLimitError('HTTP message limit prevents complete analysis')
                 stages['http_parse'] += time.perf_counter()-tick
@@ -460,6 +469,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 'unpaired_responses': flow_orphan_resp,
                 'stream_gaps': flow_gaps,
                 'unterminated_http_messages': flow_unterminated,
+                'http_diagnostics': flow_http_diagnostics,
             }
             if _rows is None:
                 result_bytes += len(json.dumps(flow_summary,ensure_ascii=False).encode('utf-8'))
@@ -551,6 +561,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'stream_gaps': gaps,
             'unterminated_http_messages': unterminated,
             'http_incomplete_streams': unterminated,
+            'http_uncertain_streams': http_uncertain_streams,
             'http2_streams_not_decoded': http2_streams,
             'tls_streams_not_inspected': tls_streams,
             'http_bodies_not_inspected': sum(bodies_skipped.values()),
