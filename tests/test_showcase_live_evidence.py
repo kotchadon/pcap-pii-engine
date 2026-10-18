@@ -48,7 +48,6 @@ def test_showcase_real_http_and_rule_findings(tmp_path):
 
 
 def test_generator_is_deterministic(tmp_path):
-    first = _capture(tmp_path / "a") if False else None
     # Avoid relying on timestamps or random process state: separate files, same bytes.
     from importlib.util import module_from_spec, spec_from_file_location
     file = Path(__file__).resolve().parents[1] / "examples" / "generate_showcase.py"
