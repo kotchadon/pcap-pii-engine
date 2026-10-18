@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from .engine import AnalysisLimits, analyze_to_report
-from .hybrid import load_experimental_bilstm
+from .hybrid import load_experimental_bilstm, MLWorkBudget
 
 
 def main(argv=None) -> int:
@@ -22,6 +22,13 @@ def main(argv=None) -> int:
                         help='Explicitly replace an existing output report')
     parser.add_argument('--ml-checkpoint', default=None,
                         help='Opt in to experimental BiLSTM using a local checkpoint directory')
+    parser.add_argument('--ml-budget-profile', choices=('standard','extended'), default='standard',
+                        help='Explicit ML work allowance, independent of capture profile')
+    parser.add_argument('--ml-batch-fields', type=int)
+    parser.add_argument('--ml-batch-characters', type=int)
+    parser.add_argument('--ml-max-total-fields', type=int)
+    parser.add_argument('--ml-max-total-characters', type=int)
+    parser.add_argument('--ml-max-field-characters', type=int)
     parser.add_argument('--include-values', action='store_true',
                         help='Include raw detected data (SENSITIVE; local only)')
     parser.add_argument('--profile', choices=('standard','large','stress'), default='standard',
@@ -63,10 +70,17 @@ def main(argv=None) -> int:
             if value is not None:
                 overrides[field]=value*multiplier
         limits = AnalysisLimits.for_profile(args.profile,**overrides)
+        ml_overrides = {field: getattr(args, arg) for arg, field in (
+            ('ml_batch_fields', 'max_fields_per_batch'),
+            ('ml_batch_characters', 'max_characters_per_batch'),
+            ('ml_max_total_fields', 'max_total_fields'),
+            ('ml_max_total_characters', 'max_total_characters'),
+            ('ml_max_field_characters', 'max_field_characters')) if getattr(args, arg) is not None}
+        ml_budget = MLWorkBudget.for_profile(args.ml_budget_profile, **ml_overrides)
         model = load_experimental_bilstm(args.ml_checkpoint) if args.ml_checkpoint else None
         report = analyze_to_report(input_path,output_path,args.threshold,args.include_values,
                                    profile=args.profile,limits=limits,overwrite=args.overwrite,
-                                   ml_detector=model)
+                                   ml_detector=model,ml_work_budget=ml_budget)
         if args.include_values:
             print('WARNING: report contains unmasked PII/credentials; restrict its distribution.',
                   file=sys.stderr)

@@ -1,5 +1,13 @@
 # TRACE - independent technical validation (QA)
 
+**Scalability follow-up (2026-10-18):** F-03 and F-05 are addressed on
+`feature/trace-scalable-ml-engine`. Their former strict xfails are now required
+regressions: overlong paths are skipped with a reason, and incomplete request
+framing sets `analysis_incomplete`. Response body framing without request-method
+context remains explicit uncertainty (HEAD/CONNECT). The original measured
+model results and findings register below are historical QA evidence, not a
+fresh benchmark of this branch. See `../integration/ML_COVERAGE_CONTRACT.md`.
+
 Branch `feature/trace-independent-vp-qa`, based on `origin/feature/vp-live-evidence-showcase` @ `86ad303` (latest UI + hybrid + showcase).
 Added only `tests/test_vp_qa_*.py` and `docs/vp-qa/`; no application code, frontend, model weight, dataset or existing test was changed.
 A finding means potential exposure of personal-looking data in unencrypted HTTP/1.x; it is not proof of exfiltration, theft or misuse.
@@ -95,9 +103,9 @@ From `docs/ml/results/v2_eval_*.json` (exact span + label, micro-F1, 1,000-resam
 ## 5. Findings register (new, from this QA; none fixed here)
 | ID | Finding | Evidence (test) | Severity | Suggested owner |
 |---|---|---|---|---|
-| F-03 | A JSON key longer than 1,024 characters aborts the **entire** hybrid analysis (`MlValidationError` from `FieldInput`); rules-only completes. The dashboard would report "Capture rejected". | `test_overlong_json_key_aborts_the_whole_hybrid_analysis_current_behaviour` + strict xfail | High (input-triggered failure) | hybrid / backend |
+| F-03 | A JSON key longer than 1,024 characters aborts the **entire** hybrid analysis (`MlValidationError` from `FieldInput`); rules-only completes. The dashboard would report "Capture rejected". | `test_overlong_json_key_preserves_analysis_and_valid_following_field` + strict xfail | High (input-triggered failure) | hybrid / backend |
 | F-04 | `SECRET_KEYS` matches `auth` without a word boundary: `author`, `authority`, `authentic` become CREDENTIAL_OR_TOKEN and the field is also excluded from the model - a person's name under `author` is labelled a credential. | `test_author_key_is_classified_as_credential_and_never_reaches_the_model` + strict xfail | Medium | rules |
-| F-05 | Losing the **last** segment of a request drops the whole request while `stream_gaps = 0` and `analysis_incomplete = false`. Head/middle loss is correctly flagged. | `test_missing_tail_segment_is_silent_current_behaviour` + strict xfail | High (silent evidence loss) | network |
+| F-05 | Losing the **last** segment of a request drops the whole request while `stream_gaps = 0` and `analysis_incomplete = false`. Head/middle loss is correctly flagged. | `test_missing_tail_segment_is_observable_http_incompleteness` + strict xfail | High (silent evidence loss) | network |
 | F-06 | Bare `token`, `jwt`, `sid`, `passphrase`, `private_key`, `id_token`, `otp`, `pin` are not credential keys: `?token=...` is neither reported as a credential nor excluded from the model's input (the default report still does not echo it). | `test_bare_token_parameter_is_not_recognised_as_a_credential_current_behaviour` + strict xfail | Medium | rules / hybrid |
 | F-07 | Dashboard tile "OFFLINE STRONG RULES F1 31.7%" does not say it is a research baseline (live rules: 13.4%). | `test_strong_rules_figure_is_a_research_baseline_not_the_live_rules_engine` + strict xfail | Low (labelling) | frontend |
 | F-08 | `potential_leaks` counts findings, not distinct exposed values (31 findings / 27 locations in the showcase). | `test_overlapping_signals_are_counted_twice_in_potential_leaks` | Low | backend / frontend |

@@ -70,12 +70,14 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('capture',type=Path);p.add_argument('download',type=Path)
     p.add_argument('--profile',choices=('standard','large','stress'),default='standard')
+    p.add_argument('--ml-budget-profile',choices=('standard','extended'),default='standard')
     p.add_argument('--ml-checkpoint');a=p.parse_args()
     ctx=mp.get_context('spawn');parent,child=ctx.Pipe()
     process=ctx.Process(target=serve,args=(child,a.ml_checkpoint));process.start();child.close()
     result={'platform':platform.platform(),'machine':platform.machine(),'python':platform.python_version(),
             'capture_name':a.capture.name,'capture_bytes':a.capture.stat().st_size,'profile':a.profile,
-            'inference_requested':bool(a.ml_checkpoint),'transport':'real loopback HTTP upload, job, SQLite page, streamed download'}
+            'inference_requested':bool(a.ml_checkpoint),'ml_budget_profile':a.ml_budget_profile,
+            'transport':'real loopback HTTP upload, job, SQLite page, streamed download'}
     try:
         if not parent.poll(90):raise TimeoutError('Server startup deadline')
         ready=parent.recv()
@@ -83,7 +85,8 @@ def main():
         port=ready['port'];session,_=request(port,'GET','/api/session');token=session['token']
         headers={'X-Dashboard-Token':token,'X-Request-ID':str(uuid.uuid4()),'X-Capture-Name':a.capture.name,
             'Content-Type':'application/octet-stream','Content-Length':str(a.capture.stat().st_size),
-            'X-Detection-Mode':'hybrid' if a.ml_checkpoint else 'rules','X-Analysis-Profile':a.profile}
+            'X-Detection-Mode':'hybrid' if a.ml_checkpoint else 'rules','X-Analysis-Profile':a.profile,
+            'X-ML-Budget-Profile':a.ml_budget_profile}
         started=time.perf_counter()
         with a.capture.open('rb') as body:accepted,_=request(port,'POST','/api/jobs',headers=headers,body=body)
         accepted_time=time.perf_counter()-started;job_id=accepted['job_id'];auth={'X-Dashboard-Token':token}

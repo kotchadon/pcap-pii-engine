@@ -18,13 +18,13 @@
 ## Tasks
 
 - [x] Verify baseline tree, author identity and artifact metadata; run baseline tests.
-- [ ] `hybrid.py`, `engine.py`, `tests/test_ml_scalability.py`: validated `MLWorkBudget`, streamed batches, F-03 prevalidation, original indices, exact counters, callbacks between batches; test full/partial/invalid/mixed fields, cancellation and failure.
-- [ ] `http_extract.py`, `tests/test_http_incomplete_tail.py`: optional sanitized framing diagnostics; test partial headers, fixed-length/chunked bodies and pipelines; preserve intact/close-delimited handling.
-- [ ] Publish focused-test checkpoint with unchanged model tree.
-- [ ] `jobs.py`, `dashboard.py`, `cli.py`, `tests/test_ml_budget_jobs.py`: explicit higher coverage configuration, request identity includes ML budget, real progress/cancel state; preserve atomic reporting and cleanup.
-- [ ] `scripts/validation/benchmark_dashboard.py` and evidence: measure showcase, field-heavy control workload and exact 110 MiB rules regression. Authentic V2 benchmarks only if real weights are available.
-- [ ] `docs/integration/ML_COVERAGE_CONTRACT.md` and scalability guide: define field IDs, offsets, complete/partial/failed semantics, reason codes, measurements and exact Mac commands.
-- [ ] Full regression run, protected-tree check, draft PR; no merge.
+- [x] `hybrid.py`, `engine.py`, `tests/test_ml_scalability.py`: validated `MLWorkBudget`, streamed batches, F-03 prevalidation, original indices, exact counters, callbacks between batches; test full/partial/invalid/mixed fields, cancellation and failure.
+- [x] `http_extract.py`, `tests/test_http_incomplete_tail.py`: optional sanitized framing diagnostics; test partial headers, fixed-length/chunked bodies and pipelines; preserve intact/close-delimited handling.
+- [x] Publish focused-test checkpoint with unchanged model tree.
+- [x] `jobs.py`, `dashboard.py`, `cli.py`, `tests/test_ml_budget_jobs.py`: explicit higher coverage configuration, request identity includes ML budget, real progress/cancel state; preserve atomic reporting and cleanup.
+- [x] `scripts/validation/benchmark_dashboard.py` and evidence: measure showcase, field-heavy control workload and exact 110 MiB rules regression. Authentic V2 benchmarks only if real weights are available.
+- [x] `docs/integration/ML_COVERAGE_CONTRACT.md` and scalability guide: define field IDs, offsets, complete/partial/failed semantics, reason codes, measurements and exact Mac commands.
+- [x] Full regression run, protected-tree check, draft PR; no merge.
 
 ## Review focus
 
@@ -35,3 +35,5 @@
 - Missing FIN alone is not evidence of damaged HTTP framing.
 
 Execution is already authorized by the user's explicit implementation assignment.
+
+All implementation steps executed. Authentic checkpoint validation remains blocked by missing local binaries; see measured evidence and tests.json. No merge performed.
