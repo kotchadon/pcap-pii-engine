@@ -21,6 +21,7 @@ from http.cookies import SimpleCookie
 
 from .engine import AnalysisLimits, analyze
 from .hybrid import load_experimental_bilstm
+from .ml_runner import ML_PROFILES
 from threading import Lock, BoundedSemaphore
 from .jobs import JobManager, JobBusy, JobQuota
 
@@ -317,9 +318,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._reply({'error':'Not found'},404);return
         mode=self.headers.get('X-Detection-Mode','rules')
         profile=self.headers.get('X-Analysis-Profile','standard')
+        ml_profile=self.headers.get('X-ML-Coverage','standard')
         request_id=self.headers.get('X-Request-ID','')
-        if mode not in ('rules','hybrid') or profile not in ('standard','large','stress') or not re.fullmatch(r'[A-Za-z0-9_-]{8,80}',request_id):
-            self._reply({'error':'Valid scan mode, profile and request ID are required'},400);return
+        if mode not in ('rules','hybrid') or profile not in ('standard','large','stress') or ml_profile not in ML_PROFILES or not re.fullmatch(r'[A-Za-z0-9_-]{8,80}',request_id):
+            self._reply({'error':'Valid scan mode, profile, ML coverage profile and request ID are required'},400);return
         if mode=='hybrid' and self.server.ml_detector is None:
             self._reply({'error':'Requested model is unavailable'},422);return
         source=path.rsplit('/',1)[-1]
@@ -342,7 +344,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         job=None
         started=False
         try:
-            job,created=self.server.jobs.reserve(request_id,filename=label,source=source,size=size,mode=mode,profile=profile)
+            job,created=self.server.jobs.reserve(request_id,filename=label,source=source,size=size,mode=mode,profile=profile,ml_profile=ml_profile)
             if not created:
                 self.close_connection=True
                 self._reply({'job_id':job.job_id,'status':job.status},202);return

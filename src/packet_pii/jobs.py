@@ -18,6 +18,7 @@ import threading
 import time
 
 from .engine import AnalysisLimits, AnalysisLimitError, analyze_to_report
+from .ml_runner import ML_PROFILES
 
 MIB = 2**20
 TERMINAL = {'completed','failed','cancelled'}
@@ -54,6 +55,7 @@ class Job:
     released: bool = False
     upload_abort: object = None
     ml_failed: bool = False
+    ml_profile: str | None = None
 
     @property
     def capture(self): return self.directory/'capture.bin'
@@ -87,11 +89,13 @@ class JobManager:
     def _used(self):
         return sum(p.stat().st_size for p in self.root.glob('*/*') if p.is_file())
 
-    def reserve(self, request_id, *, filename, source, size, mode, profile):
+    def reserve(self, request_id, *, filename, source, size, mode, profile, ml_profile='standard'):
         limits = AnalysisLimits.for_profile(profile)
+        if ml_profile not in ML_PROFILES:raise ValueError('Unknown ML coverage profile')
+        ml_profile = ml_profile if mode == 'hybrid' else None
         if size > limits.max_capture_bytes:raise AnalysisLimitError('Capture exceeds selected profile')
         if mode == 'hybrid' and self.detector is None:raise ValueError('Model unavailable')
-        fingerprint=(filename,source,size,mode,profile)
+        fingerprint=(filename,source,size,mode,profile,ml_profile)
         with self.lock:
             if self.closed:raise JobBusy('Server is stopping')
             for job in self.jobs.values():
@@ -108,7 +112,7 @@ class JobManager:
             try:
                 job_id=secrets.token_hex(16);directory=self.root/job_id;directory.mkdir(mode=0o700)
                 job=Job(job_id,request_id,fingerprint,directory,filename,mode,profile,limits,
-                        self.detector is not None,reserved_bytes=reserve)
+                        self.detector is not None,reserved_bytes=reserve,ml_profile=ml_profile)
                 job.thread=threading.current_thread()
                 self.jobs[job_id]=job
                 return job,True
@@ -176,7 +180,7 @@ class JobManager:
                 with self.lock:
                     job.progress=dict(event);job.updated=time.monotonic()
             receipt=analyze_to_report(job.capture,job.report,profile=job.profile,limits=job.limits,
-                ml_detector=self.detector if job.mode=='hybrid' else None,
+                ml_detector=self.detector if job.mode=='hybrid' else None,ml_budget=job.ml_profile or 'standard',
                 progress=progress,row_observer=observe)
             conn.commit();conn.close();conn=None
             with self.lock:
@@ -210,7 +214,7 @@ class JobManager:
         with self.lock:
             result=dict(job_id=job.job_id,status=job.status,filename=job.filename,
                 capture_bytes=job.capture_bytes,model_available=job.model_available,
-                model_enabled=job.mode=='hybrid',scan_mode=job.mode,profile=job.profile,
+                model_enabled=job.mode=='hybrid',scan_mode=job.mode,profile=job.profile,ml_profile=job.ml_profile,
                 progress=dict(job.progress),elapsed_seconds=time.monotonic()-job.created,
                 error=job.error,reason_type=job.reason_type,
                 ml_inference_failed=job.ml_failed)

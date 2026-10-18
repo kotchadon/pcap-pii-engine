@@ -104,11 +104,12 @@ def test_streamed_hybrid_matches_in_memory_with_private_provenance(capture, tmp_
 
 
 def test_scan_wide_ml_bound_marks_partial_analysis(capture, tmp_path, monkeypatch):
-    monkeypatch.setattr(engine, 'MAX_SCAN_ML_FIELDS', 1)
+    from packet_pii.ml_runner import MLWorkBudget
     monkeypatch.setattr(engine, 'extract_fields',
                         lambda message: [('json_body.name', 'Alex'), ('json_body.other', 'Pat')])
     model = Model(False)
-    result = engine.analyze_to_report(capture, tmp_path / 'bounded.json', ml_detector=model)
+    result = engine.analyze_to_report(capture, tmp_path / 'bounded.json', ml_detector=model,
+                                      ml_budget=MLWorkBudget(max_fields=1))
     s = result['summary']
     assert s['ml_fields_evaluated'] == 1
     assert s['ml_fields_skipped'] > 0

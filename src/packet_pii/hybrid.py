@@ -65,81 +65,24 @@ def infer_http_fields(
     max_fields: int = DEFAULT_MAX_FIELDS,
     max_characters: int = MAX_SCAN_ML_CHARACTERS,
 ) -> InferenceResult:
-    """Return stand-alone contextual findings with original Unicode offsets.
+    """Single-message inference with original Unicode offsets (the scan engine batches across messages itself).
 
-    Unsafe oversized fields are skipped, not silently truncated (truncation
-    would produce misleading provenance). The caller publishes skipped counts.
-
-    ``quality`` carries upstream evidence-quality flags for the whole message (see ``ml.input_policy.QUALITY_FLAGS``:
-    ``stream_gap``, ``capture_incomplete``, ``truncated``). They never change the model's input or predictions; they are
-    attached to each ML finding as ``input_quality`` so partial evidence stays visible. Fields that are mostly U+FFFD
-    replacement characters are excluded by policy (the one-character rule of the ML package is deliberately not adopted).
+    Unsafe oversized fields are skipped, not silently truncated (truncation would produce misleading provenance). The
+    caller publishes skipped counts. ``quality`` carries upstream evidence-quality flags for the whole message (see
+    ``ml.input_policy.QUALITY_FLAGS``); they never change the model's input or predictions and are attached to each
+    finding as ``input_quality``. Fields that are mostly U+FFFD replacement characters are excluded by policy.
     """
+    from .ml_runner import MLBatchRunner, MLWorkBudget
     for name, value in (('max_fields', max_fields), ('max_characters', max_characters)):
         if type(value) is not int or value < 0:
             raise ValueError(f'{name} must be a non-negative integer')
-    eligible: list[FieldInput] = []
-    skipped = excluded = empty = characters = 0
-    for index, (location, text) in enumerate(fields):
-        if _excluded(location):
-            excluded += 1
-            continue
-        if not text:
-            empty += 1
-            continue
-        if text.count('\ufffd') / len(text) > MAX_REPLACEMENT_RATIO:
-            excluded += 1
-            continue
-        if (len(eligible) >= min(DEFAULT_MAX_FIELDS, max_fields)
-                or len(location) > MAX_LOCATION_CHARS
-                or len(text) > DEFAULT_MAX_FIELD_CHARS
-                or len(text) > max_characters - characters):
-            skipped += 1
-            continue
-        context = {k: v for k, v in (quality or {}).items() if k in QUALITY_FLAGS}
-        if '\ufffd' in text:
-            context['decode_replaced'] = 'true'
-        eligible.append(FieldInput(index, location, text, context))
-        characters += len(text)
-    if not eligible:
-        return InferenceResult([], 0, skipped, excluded, skipped, empty)
-
-    started = time.perf_counter()
-    try:
-        predictions = run_detector(detector, eligible)
-    except MlValidationError as exc:
-        # Contract errors contain indices/types, never field text.
-        exc.ml_inference_failed = True
-        raise
-    except Exception as exc:
-        raise InferenceError('Contextual model inference failed') from exc
-    elapsed = time.perf_counter() - started
-    lookup = {item.field_index: item for item in eligible}
-    findings: list[dict] = []
-    for span in predictions:
-        field = lookup[span.field_index]
-        if span.model_version != detector.model_version:
-            error = MlValidationError('Detector returned a different model version')
-            error.ml_inference_failed = True
-            raise error
-        if span.score is None:
-            error = MlValidationError('Experimental detector must provide a typed score for report output')
-            error.ml_inference_failed = True
-            raise error
-        original_value = field.text[span.start:span.end]
-        findings.append({
-            'pii_type': span.label.value,
-            'location': field.location,
-            'confidence': span.score,  # raw, uncalibrated; never averaged with rules
-            'confidence_type': span.score_type.value,
-            'value': original_value if include_values else _mask(original_value),
-            'detector': 'bilstm',
-            'model_version': span.model_version,
-            'span_start': span.start,
-            'span_end': span.end,
-            'field_index': span.field_index,
-            **({'input_quality': sorted(k for k in QUALITY_FLAGS if field.context.get(k) == 'true')}
-               if any(field.context.get(k) == 'true' for k in QUALITY_FLAGS) else {}),
-        })
-    return InferenceResult(findings, len(eligible), skipped, excluded,
-                           len(eligible) + skipped, empty, characters, elapsed, True)
+    runner = MLBatchRunner(detector, MLWorkBudget(
+        batch_fields=DEFAULT_MAX_FIELDS, batch_characters=DEFAULT_MAX_FIELDS * DEFAULT_MAX_FIELD_CHARS,
+        name='single_message'), include_values=include_values)
+    # Zero is a legal bound for this compatibility API ("evaluate nothing"); MLWorkBudget itself requires positive limits.
+    runner._field_limit, runner._char_limit = min(DEFAULT_MAX_FIELDS, max_fields), max_characters
+    runner.add(0, fields, quality)
+    runner.flush()
+    (_, findings), = runner.take_ready()
+    return InferenceResult(findings, runner.evaluated, runner.skipped, runner.excluded,
+                           runner.eligible, runner.empty, runner.characters, runner.seconds, runner.invoked)
