@@ -184,7 +184,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 report = analyze(capture, include_values=False,
                                  limits=AnalysisLimits(max_capture_bytes=self.server.max_upload),
                                  ml_detector=self.server.ml_detector if use_ml else None)
-            self._reply({'filename': label, 'report': report,
+            self._reply({'filename': label, 'capture_bytes': capture.stat().st_size,
+                         'report': report,
                          'model_enabled': use_ml,
                          'model_available': self.server.ml_detector is not None,
                          'scan_mode': 'hybrid' if use_ml else 'rules'})
