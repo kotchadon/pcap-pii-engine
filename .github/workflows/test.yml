@@ -9,4 +9,39 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install -e . pytest
+      # This generated capture is intentionally gitignored. Regenerate from
+      # independent, frozen scenario definitions and verify its committed
+      # manifest hash before tests; never weaken or bypass SHA-256 binding.
+      - name: Materialize verified fictional PCAP fixture
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import shutil
+          import sys
+          import tempfile
+          from pathlib import Path
+          root = Path.cwd()
+          sys.path.insert(0, str(root / "examples"))
+          import generate_groundtruth_fixture as generator
+          destination = root / "examples" / "groundtruth"
+          expected_path = destination / "controlled_fixture_v1.manifest.json"
+          expected = json.loads(expected_path.read_text(encoding="utf-8"))
+          with tempfile.TemporaryDirectory() as tmp:
+              capture, manifest = generator.generate(tmp)
+              digest = hashlib.sha256(capture.read_bytes()).hexdigest()
+              frozen = expected["capture"]["sha256"]
+              if digest != frozen:
+                  raise SystemExit(
+                      "Generated ground-truth PCAP changed across Python versions "
+                      f"({digest} != frozen {frozen}); refusing unverified fixture"
+                  )
+              if manifest.read_bytes() != expected_path.read_bytes():
+                  raise SystemExit(
+                      "Generated manifest differs from frozen committed annotations; "
+                      "refusing to silently modify ground truth"
+                  )
+              shutil.copyfile(capture, destination / capture.name)
+              print(f"Verified and generated {capture.name}: SHA-256 {digest}")
+          PY
       - run: python -m pytest -q
