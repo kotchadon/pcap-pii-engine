@@ -131,3 +131,6 @@ main{max-width:1520px;padding-top:43px}.title-section{margin-bottom:26px}.title-
 @media(max-width:790px){.coverage-counts{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-coverage{align-items:flex-start;flex-direction:column}.groundtruth-metrics{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.coverage-heading,.groundtruth-heading{flex-direction:column}.coverage-counts{gap:7px}.coverage-counts b{font-size:16px}.coverage-panel,.groundtruth-panel{padding:18px}.groundtruth-metrics{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.coverage-bar{transition:none}}
+
+/* Explicit hidden state wins over grid/flex presentation rules. */
+.overview-coverage.hidden,.groundtruth-metrics.hidden,.groundtruth-evidence.hidden{display:none!important}
