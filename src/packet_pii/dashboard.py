@@ -57,8 +57,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def _reply(self, payload: dict, status: int = 200) -> None:
         body = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode('utf-8')
-        self._headers(status, 'application/json; charset=utf-8', len(body))
-        self.wfile.write(body)
+        try:
+            self._headers(status, 'application/json; charset=utf-8', len(body))
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            # A browser tab/navigation may disconnect after analysis but before
+            # receiving its result. Sending a second HTTP error is impossible.
+            # Never mislabel this transport failure as an engine-analysis failure.
+            self.close_connection = True
 
     def _allowed_host(self) -> bool:
         host = self.headers.get('Host', '')
