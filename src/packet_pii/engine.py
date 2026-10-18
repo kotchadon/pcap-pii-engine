@@ -22,7 +22,7 @@ from .capture import (CaptureDiagnostics, read_frames, decode_tcp,
 from .http_extract import (HttpMessage, parse_http_stream_with_spans, extract_fields,
                            MAX_MESSAGES, MAX_FIELDS)
 from .detect import detect_fields, MAX_FIELD_LENGTH
-from .hybrid import infer_http_fields, MAX_SCAN_ML_FIELDS, MAX_SCAN_ML_CHARACTERS
+from .hybrid import MLWorkBudget, iter_http_field_batches
 from .ml.detector import ContextualPIIDetector
 
 
@@ -199,7 +199,8 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             include_values: bool = False, *,
             limits: AnalysisLimits | None = None, profile: str = 'standard',
             progress=None, _rows=None, timings=None,
-            ml_detector: ContextualPIIDetector | None = None) -> dict:
+            ml_detector: ContextualPIIDetector | None = None,
+            ml_work_budget: MLWorkBudget | None = None) -> dict:
     if not 0 <= threshold <= 1:
         raise ValueError('Confidence threshold must be in [0,1]')
     selected = AnalysisLimits.for_profile(profile)
@@ -207,6 +208,9 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     if not isinstance(budget, AnalysisLimits):
         raise TypeError('limits must be AnalysisLimits')
     _check_memory(budget)
+    ml_budget = MLWorkBudget() if ml_work_budget is None else ml_work_budget
+    if not isinstance(ml_budget, MLWorkBudget):
+        raise TypeError('ml_work_budget must be MLWorkBudget')
     model_version = None
     if ml_detector is not None:
         model_version = ml_detector.model_version
@@ -254,13 +258,17 @@ def _analyze(path: str | Path, threshold: float = 0.8,
 
     findings = [] if _rows is None else _rows.findings
     http_count = http_flows = gaps = 0
+    http_incomplete_streams = http_uncertain_streams = 0
     transactions = orphan_requests = orphan_responses = 0
     flow_summaries = [] if _rows is None else _rows.flows
+    ml_coverage = [] if _rows is None else _rows.ml_field_coverage
     sessions_processed = 0
     result_bytes = 0
     fields_extracted = rules_findings = ml_findings = 0
     ml_evaluated = ml_skipped = ml_excluded = ml_eligible = ml_empty = ml_characters = 0
     ml_invoked = False
+    ml_batches = 0
+    ml_skip_reasons = {}
     ml_seconds = 0.0
     ml_labels = {'PERSON_NAME': 0, 'USERNAME': 0}
 
@@ -283,6 +291,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 directions[(packet.src, packet.sport, packet.dst, packet.dport)].append(packet)
             records: list[_Record] = []
             flow_gaps = 0
+            flow_http_diagnostics = []
             for direction, segs in directions.items():
                 tick = time.perf_counter()
                 assembled = reassemble_detailed(segs)
@@ -292,7 +301,17 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     gaps += 1
                     flow_gaps += 1
                 tick = time.perf_counter()
-                spans = parse_http_stream_with_spans(stream)
+                terminal_diagnostics = []
+                spans = parse_http_stream_with_spans(stream, diagnostics=terminal_diagnostics)
+                http_incomplete_streams += int(any(d.incomplete for d in terminal_diagnostics))
+                http_uncertain_streams += int(any(not d.incomplete for d in terminal_diagnostics))
+                for diagnostic in terminal_diagnostics:
+                    flow_http_diagnostics.append({
+                        'reason': diagnostic.reason, 'start_offset': diagnostic.start_offset,
+                        'incomplete': diagnostic.incomplete,
+                        'source_ip': direction[0], 'source_port': direction[1],
+                        'destination_ip': direction[2], 'destination_port': direction[3],
+                    })
                 if len(spans) == MAX_MESSAGES and spans[-1].end_offset < len(stream):
                     raise AnalysisLimitError('HTTP message limit prevents complete analysis')
                 stages['http_parse'] += time.perf_counter()-tick
@@ -338,47 +357,82 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     # Never export unsalted PII/credential fingerprints.
                     entry.pop('fingerprint', None)
                     entries.append(entry)
+                def publish_entries(entries):
+                    nonlocal result_bytes
+                    tick = time.perf_counter()
+                    for entry in entries:
+                        if len(findings) >= budget.max_findings:
+                            raise AnalysisLimitError('Analysis exceeded configured findings limit')
+                        entry['location'] = safe_field_location(entry['location'], include_values)
+                        entry.update({
+                            'flow_id': fid,
+                            'http_message_id': record.message_id,
+                            'http_request_id': record.request_id,
+                            'http_message_type': 'request' if record.message.is_request else 'response',
+                            'timestamp': timestamp,
+                            'source_ip': src, 'source_port': sport,
+                            'destination_ip': dst, 'destination_port': dport,
+                            'http_start_line': safe_http_start_line(record.message.start_line, include_path=include_values),
+                        })
+                        if _rows is None:
+                            result_bytes += len(json.dumps(entry,ensure_ascii=False).encode('utf-8'))
+                            if result_bytes > budget.max_report_bytes:
+                                raise AnalysisLimitError('Analysis exceeded configured report budget')
+                        findings.append(entry)
+                        if len(findings) % 1024 == 0:
+                            _check_memory(budget)
+                    stages['result_aggregation'] += time.perf_counter()-tick
+                publish_entries(entries)
                 if ml_detector is not None:
-                    ml_result = infer_http_fields(
-                        fields, ml_detector, include_values=include_values,
-                        max_fields=MAX_SCAN_ML_FIELDS-ml_evaluated,
-                        max_characters=MAX_SCAN_ML_CHARACTERS-ml_characters)
-                    ml_evaluated += ml_result.fields_evaluated
-                    ml_skipped += ml_result.fields_skipped
-                    ml_excluded += ml_result.fields_excluded
-                    ml_eligible += ml_result.fields_eligible
-                    ml_empty += ml_result.fields_empty
-                    ml_characters += ml_result.characters_evaluated
-                    ml_seconds += ml_result.processing_time_seconds
-                    stages['ml_inference'] = ml_seconds
-                    ml_invoked = ml_invoked or ml_result.invoked
-                    ml_findings += len(ml_result.findings)
-                    for entry in ml_result.findings:
-                        ml_labels[entry['pii_type']] += 1
-                    entries.extend(ml_result.findings)
-                tick = time.perf_counter()
-                for entry in entries:
-                    if len(findings) >= budget.max_findings:
-                        raise AnalysisLimitError('Analysis exceeded configured findings limit')
-                    entry['location'] = safe_field_location(entry['location'], include_values)
-                    entry.update({
-                        'flow_id': fid,
-                        'http_message_id': record.message_id,
-                        'http_request_id': record.request_id,
-                        'http_message_type': 'request' if record.message.is_request else 'response',
-                        'timestamp': timestamp,
-                        'source_ip': src, 'source_port': sport,
-                        'destination_ip': dst, 'destination_port': dport,
-                        'http_start_line': safe_http_start_line(record.message.start_line, include_path=include_values),
-                    })
+                    coverage_row = {
+                        'flow_id': fid, 'http_message_id': record.message_id,
+                        'fields_extracted': len(fields),
+                        'index_ranges_by_status': {status: [] for status in
+                            ('evaluated', 'excluded_by_policy', 'empty', 'skipped')},
+                        'skip_reason_index_ranges': {},
+                    }
+                    def append_range(ranges, index):
+                        if ranges and ranges[-1][1] == index:
+                            ranges[-1][1] = index + 1
+                        else:
+                            ranges.append([index, index + 1])
+                    def observe_field(index, status, reason):
+                        append_range(coverage_row['index_ranges_by_status'][status], index)
+                        if reason is not None:
+                            append_range(coverage_row['skip_reason_index_ranges'].setdefault(reason, []), index)
+                    def ml_progress():
+                        emit('ml_inference', packets=frames, endpoint_pairs=len(flow_packets),
+                             sessions=sessions_processed, http_messages=http_count, findings=len(findings),
+                             ml_fields_eligible=ml_eligible, ml_fields_evaluated=ml_evaluated,
+                             ml_fields_skipped=ml_skipped, ml_inference_batches=ml_batches,
+                             ml_characters_evaluated=ml_characters)
+                    for ml_result in iter_http_field_batches(
+                            fields, ml_detector, include_values=include_values,
+                            work_budget=ml_budget, fields_evaluated=ml_evaluated,
+                            characters_evaluated=ml_characters, before_batch=ml_progress,
+                            field_observer=observe_field):
+                        ml_evaluated += ml_result.fields_evaluated
+                        ml_skipped += ml_result.fields_skipped
+                        ml_excluded += ml_result.fields_excluded
+                        ml_eligible += ml_result.fields_eligible
+                        ml_empty += ml_result.fields_empty
+                        ml_characters += ml_result.characters_evaluated
+                        ml_seconds += ml_result.processing_time_seconds
+                        ml_batches += ml_result.completed_batches
+                        stages['ml_inference'] = ml_seconds
+                        ml_invoked = ml_invoked or ml_result.invoked
+                        ml_findings += len(ml_result.findings)
+                        for reason, count in ml_result.skip_reasons.items():
+                            ml_skip_reasons[reason] = ml_skip_reasons.get(reason, 0) + count
+                        for entry in ml_result.findings:
+                            ml_labels[entry['pii_type']] += 1
+                        publish_entries(ml_result.findings)
+                        ml_progress()
                     if _rows is None:
-                        result_bytes += len(json.dumps(entry,ensure_ascii=False).encode('utf-8'))
+                        result_bytes += len(json.dumps(coverage_row).encode('utf-8'))
                         if result_bytes > budget.max_report_bytes:
                             raise AnalysisLimitError('Analysis exceeded configured report budget')
-                    findings.append(entry)
-                    if len(findings) % 1024 == 0:
-                        _check_memory(budget)
-                stages['result_aggregation'] += time.perf_counter()-tick
+                    ml_coverage.append(coverage_row)
             tick = time.perf_counter()
             flow_summary = {
                 'flow_id': fid,
@@ -389,6 +443,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 'unpaired_requests': flow_orphan_req,
                 'unpaired_responses': flow_orphan_resp,
                 'stream_gaps': flow_gaps,
+                'http_diagnostics': flow_http_diagnostics,
             }
             if _rows is None:
                 result_bytes += len(json.dumps(flow_summary,ensure_ascii=False).encode('utf-8'))
@@ -411,8 +466,10 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'ml_requested': ml_detector is not None,
             'ml_model_loaded': ml_detector is not None,
             'ml_model_version': model_version,
-            'ml_work_limits': {'max_fields': MAX_SCAN_ML_FIELDS,
-                               'max_characters': MAX_SCAN_ML_CHARACTERS},
+            'ml_work_limits': {**asdict(ml_budget), 'max_fields': ml_budget.max_total_fields,
+                               'max_characters': ml_budget.max_total_characters},
+            'ml_extraction_policy_version': 'http-contextual-identity-v1',
+            'ml_coverage_schema_version': '1.0.0',
             'threshold': threshold, 'raw_values_included': include_values,
             'scope': 'unencrypted HTTP/1.x over TCP',
             'analysis_limits': {k:v for k,v in asdict(budget).items() if k in
@@ -446,18 +503,29 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'ml_predictions_by_label': ml_labels,
             'ml_processing_time_seconds': ml_seconds,
             'ml_invoked': ml_invoked,
+            'ml_inference_invoked': ml_invoked,
+            'ml_inference_complete': (ml_skipped == 0 if ml_detector is not None else None),
+            'ml_inference_status': ('not_requested' if ml_detector is None else
+                                    'partial' if ml_skipped else
+                                    'completed' if ml_invoked else 'not_invoked'),
+            'ml_characters_evaluated': ml_characters,
+            'ml_inference_batches': ml_batches,
+            'ml_skip_reasons': ml_skip_reasons,
             'ml_inference_failed': False,
             'ml_incomplete': ml_skipped > 0,
             'stream_gaps': gaps,
+            'http_incomplete_streams': http_incomplete_streams,
+            'http_uncertain_streams': http_uncertain_streams,
             'capture_truncated_records': diagnostics.truncated_records,
             'capture_malformed_records': diagnostics.malformed_records,
-            'analysis_incomplete': diagnostics.incomplete or gaps > 0 or ml_skipped > 0,
+            'analysis_incomplete': diagnostics.incomplete or gaps > 0 or ml_skipped > 0 or http_incomplete_streams > 0,
         },
         'flows': flow_summaries, 'findings': findings,
+        'ml_field_coverage': ml_coverage,
         'limitations': [
             'Encrypted HTTPS payloads cannot be inspected without decryption',
             'No IP fragmentation; unobserved TCP lifecycle and delayed packets after tuple reuse remain ambiguous',
-            'HTTP/2 and HTTP/3 not decoded; incomplete streams are ignored',
+            'HTTP/2 and HTTP/3 not decoded; observed incomplete HTTP/1.x framing is reported',
             'HTTP/1.x request-response pairing is best-effort (direction, stream order, packet timing)',
             ('Experimental BiLSTM enabled: model scores are uncalibrated; no real-traffic precision/recall established'
              if ml_detector is not None else 'Rules only; optional contextual ML is not enabled'),
@@ -468,6 +536,9 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'TCP is buffered until EOF under explicit budgets; large results should use analyze_to_report',
             'No SYN/FIN does not prove capture completeness; analysis_incomplete flags observed damage',
             'Findings mean possible PII exposure, not proof of exfiltration',
+            *(['Observed incomplete HTTP framing: analysis is incomplete'] if http_incomplete_streams else []),
+            *(['Some trailing HTTP data has uncertain interpretation; see flow diagnostics']
+              if http_uncertain_streams else []),
             *(['Capture corruption/truncation or missing TCP data: analysis is incomplete']
               if diagnostics.incomplete or gaps > 0 else []),
         ],
@@ -477,12 +548,14 @@ def _analyze(path: str | Path, threshold: float = 0.8,
 def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = False,
             *, limits: AnalysisLimits | None = None, profile: str = 'standard',
             progress=None, timings=None,
-            ml_detector: ContextualPIIDetector | None = None) -> dict:
+            ml_detector: ContextualPIIDetector | None = None,
+            ml_work_budget: MLWorkBudget | None = None) -> dict:
     """Compatible in-memory report API; use analyze_to_report for large outputs."""
     from .reporting import ReportLimitError
     try:
         report = _analyze(path, threshold, include_values, limits=limits, profile=profile,
-                          progress=progress, timings=timings, ml_detector=ml_detector)
+                          progress=progress, timings=timings, ml_detector=ml_detector,
+                          ml_work_budget=ml_work_budget)
         budget = limits if limits is not None else AnalysisLimits.for_profile(profile)
         _check_memory(budget)
         # Include containers, metadata and UTF-8 encoding without a giant string.
@@ -502,11 +575,12 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
                       include_values: bool = False, *, limits: AnalysisLimits | None = None,
                       profile: str = 'standard', overwrite: bool = False,
                       progress=None, timings=None, row_observer=None,
-                      ml_detector: ContextualPIIDetector | None = None) -> dict:
+                      ml_detector: ContextualPIIDetector | None = None,
+                      ml_work_budget: MLWorkBudget | None = None) -> dict:
     """Bounded disk-backed results, atomic JSON publication, small receipt.
 
     Temporary results stay private next to target and are removed on success or
-    failure. The receipt omits findings/flows; the complete arrays are in target.
+    failure. The receipt omits findings, flows and coverage; arrays are in target.
     Progress callbacks are synchronous and contain no payload. Raise to cancel
     before publication; complete is a non-cancellable notification.
     """
@@ -524,8 +598,9 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
     try:
         with ReportSpool(output.parent,budget.max_report_bytes,row_observer=row_observer) as rows:
             report = _analyze(source,threshold,include_values,limits=budget,profile=profile,
-                              progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector)
-            report['flows'], report['findings'] = [], []
+                              progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,
+                              ml_work_budget=ml_work_budget)
+            report['flows'], report['findings'], report['ml_field_coverage'] = [], [], []
             _check_memory(budget)
             if progress is not None:
                 progress(dict(stage='writing_report',elapsed_seconds=time.monotonic()-clock,
@@ -533,10 +608,11 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
             tick=time.perf_counter()
             write_private_report(report,output,overwrite=overwrite,max_bytes=budget.max_report_bytes,
                                  row_sources={'flows':rows.flows.iter_json(),
-                                              'findings':rows.findings.iter_json()})
+                                              'findings':rows.findings.iter_json(),
+                                              'ml_field_coverage':rows.ml_field_coverage.iter_json()})
             if timings is not None:
                 timings['report_write']=time.perf_counter()-tick
-        receipt={k:v for k,v in report.items() if k not in ('flows','findings')}
+        receipt={k:v for k,v in report.items() if k not in ('flows','findings','ml_field_coverage')}
         receipt['output_bytes']=output.stat().st_size
         receipt['output_path']=str(output)
         if progress is not None:

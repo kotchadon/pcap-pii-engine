@@ -1,0 +1,54 @@
+{
+  "baseline_main": "44de57db97d9caf5b1b0946d2db9dbc0d06507e2",
+  "model_version": "bilstm-v2-d1f9e9fb9a2b",
+  "members_manifest_sha256": {
+    "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+    "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+    "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+  },
+  "files": [
+    {
+      "path": "src/packet_pii/ml/artifacts/bilstm_v2/ensemble.json",
+      "git_blob_sha1": "546d435d5ebdf8109434ec23fe1dea9425a76481",
+      "available_locally": true,
+      "sha256": "d1d3ae10de0eb8634eff55199606495980102be8a4614f3f0f48de571a5d55b3"
+    },
+    {
+      "path": "src/packet_pii/ml/artifacts/bilstm_v2/seed11/meta.json",
+      "git_blob_sha1": "6dbc26d06af9a311583bfd3b80493a81dc78d84e",
+      "available_locally": true,
+      "sha256": "c9ec4841cbc2f79c05f4cdf5c6d11f68e4ed3e880917bab048497936c1bc03fa"
+    },
+    {
+      "path": "src/packet_pii/ml/artifacts/bilstm_v2/seed11/model.pt",
+      "git_blob_sha1": "efc33cf8f6d0352394f8b6058aa4d60b2548eae4",
+      "available_locally": false,
+      "sha256": null
+    },
+    {
+      "path": "src/packet_pii/ml/artifacts/bilstm_v2/seed12/meta.json",
+      "git_blob_sha1": "00fcaaf2a0def450a9ce7c2836618783f485a7cb",
+      "available_locally": true,
+      "sha256": "ef81dfa9b8643db089363d42d6748e9661f82d0e1eb2464a92879da65e15ff8d"
+    },
+    {
+      "path": "src/packet_pii/ml/artifacts/bilstm_v2/seed12/model.pt",
+      "git_blob_sha1": "5288bb3c35739c6f4ca5fc0e96fcf8524874aefc",
+      "available_locally": false,
+      "sha256": null
+    },
+    {
+      "path": "src/packet_pii/ml/artifacts/bilstm_v2/seed13/meta.json",
+      "git_blob_sha1": "4206d587d4f7bfe5c8ef38c5779993268413bbf3",
+      "available_locally": true,
+      "sha256": "c8188dc8bec725608725b67a3ceca92916b790ec7318f603ec6c8cd60960d9bd"
+    },
+    {
+      "path": "src/packet_pii/ml/artifacts/bilstm_v2/seed13/model.pt",
+      "git_blob_sha1": "73cd2f947873550e076616242581b1ad14b27158",
+      "available_locally": false,
+      "sha256": null
+    }
+  ],
+  "note": "Absent binary weights remain unchanged Git entries. Manifest hashes are expected values, not a claim of local binary verification."
+}
