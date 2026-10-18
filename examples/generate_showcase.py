@@ -13,6 +13,15 @@ import struct
 import sys
 from urllib.parse import urlencode
 
+# Python 3.11 may let zlib supply the gzip OS header byte; newer versions
+# normalise it to 255. Stable fixture bytes must not depend on Python minor
+# version or operating system. RFC 1952 defines 255 as 'unknown OS'.
+def _portable_gzip(data: bytes) -> bytes:
+    encoded = bytearray(gzip.compress(data, mtime=0))
+    encoded[9] = 255
+    return bytes(encoded)
+
+
 CLIENT = "192.0.2."
 SERVER = "198.51.100."
 BASE_TIME = 1_760_000_000
@@ -102,7 +111,7 @@ def _messages(idx: int, scenario: tuple) -> tuple[bytes, bytes]:
     response_plain = json.dumps(response_fields, separators=(",", ":")).encode()
     extra = b""
     if response_mode == "gzip":
-        response_body = gzip.compress(response_plain, mtime=0)
+        response_body = _portable_gzip(response_plain)
         extra = b"Content-Encoding: gzip\r\n"
     elif response_mode == "chunked":
         response_body = f"{len(response_plain):X}\r\n".encode() + response_plain + b"\r\n0\r\n\r\n"
