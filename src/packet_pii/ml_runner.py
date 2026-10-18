@@ -108,11 +108,13 @@ class MLBatchRunner:
     """
 
     def __init__(self, detector: ContextualPIIDetector, budget: MLWorkBudget, *, include_values: bool = False,
-                 checkpoint: Callable[[dict], None] | None = None, max_pending_messages: int = 4096):
+                 checkpoint: Callable[[dict], None] | None = None, max_pending_messages: int = 4096,
+                 disposition: Callable[[object, int, str], None] | None = None):
         if not isinstance(budget, MLWorkBudget):
             raise TypeError('budget must be an MLWorkBudget')
         self.detector, self.budget, self.include_values = detector, budget, include_values
         self._checkpoint, self._max_pending_messages = checkpoint, max_pending_messages
+        self._disposition = disposition  # optional (ticket key, field index, status) audit hook; carries no text
         self._field_limit, self._char_limit = budget.max_fields, budget.max_characters
         self._pending: list[_Item] = []
         self._pending_chars = 0
@@ -134,12 +136,15 @@ class MLBatchRunner:
         for index, (location, text) in enumerate(fields):
             if _excluded(location):
                 self.excluded += 1
+                self._note(key, index, 'excluded_by_policy')
                 continue
             if not text:
                 self.empty += 1
+                self._note(key, index, 'empty')
                 continue
-            if text.count('�') / len(text) > MAX_REPLACEMENT_RATIO:
+            if text.count('\ufffd') / len(text) > MAX_REPLACEMENT_RATIO:
                 self.excluded += 1
+                self._note(key, index, 'excluded_by_policy')
                 continue
             self.eligible += 1
             reason = None
@@ -158,9 +163,10 @@ class MLBatchRunner:
             if reason is not None:
                 self.skipped += 1
                 self.skip_reasons[reason] += 1
+                self._note(key, index, 'skipped:' + reason)
                 continue
             context = dict(flags)
-            if '�' in text:
+            if '\ufffd' in text:
                 context['decode_replaced'] = 'true'
             self._pending.append(_Item(self._next_slot, ticket, index, FieldInput(self._next_slot, location, text, context)))
             self._next_slot += 1
@@ -168,10 +174,15 @@ class MLBatchRunner:
             self.evaluated += 1
             self.characters += len(text)
             ticket.outstanding += 1
+            self._note(key, index, 'evaluated')
         if len(self._order) >= self._max_pending_messages:
             self.flush()  # bound on queued messages: drain everything
         elif len(self._pending) >= budget.batch_fields or self._pending_chars >= budget.batch_characters:
             self.flush(final=False)
+
+    def _note(self, key, index: int, status: str) -> None:
+        if self._disposition is not None:
+            self._disposition(key, index, status)
 
     # ------------------------------------------------------------------ inference
     def flush(self, *, final: bool = True) -> None:

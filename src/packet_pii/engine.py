@@ -98,6 +98,7 @@ class _Record:
     message_id: str = ''
     request_id: str | None = None
     paired: bool = False
+    ordinal: int = 0  # 1-based position among the same-direction messages of this TCP session
 
 
 def safe_http_start_line(line: str, include_path: bool = False) -> str:
@@ -201,7 +202,8 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             limits: AnalysisLimits | None = None, profile: str = 'standard',
             progress=None, _rows=None, timings=None,
             ml_detector: ContextualPIIDetector | None = None,
-            ml_budget: 'MLWorkBudget | str | None' = None) -> dict:
+            ml_budget: 'MLWorkBudget | str | None' = None,
+            field_observer=None, disposition_observer=None) -> dict:
     if not 0 <= threshold <= 1:
         raise ValueError('Confidence threshold must be in [0,1]')
     selected = AnalysisLimits.for_profile(profile)
@@ -280,7 +282,10 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     if ml_detector is not None:
         def ml_checkpoint(counts):  # progress + cooperative cancellation between detector calls
             emit('ml_inference', findings=len(findings), **counts)
-        runner = MLBatchRunner(ml_detector, ml_budget, include_values=include_values, checkpoint=ml_checkpoint)
+        runner = MLBatchRunner(ml_detector, ml_budget, include_values=include_values, checkpoint=ml_checkpoint,
+                               disposition=(None if disposition_observer is None else
+                                            lambda ticket, index, status: disposition_observer(
+                                                contexts[ticket][0]['http_message_id'], index, status)))
 
     def publish(provenance, entries):
         """Attach provenance and append one message's findings (rules first, then model), enforcing result budgets."""
@@ -360,6 +365,10 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             records.sort(key=lambda r: (r.timestamp, r.direction, r.start_offset))
             for j, r in enumerate(records, 1):
                 r.message_id = f'{fid}_msg_{j:04d}'
+            direction_counts: dict[tuple, int] = {}
+            for r in sorted(records, key=lambda r: (r.direction, r.start_offset)):
+                direction_counts[r.direction] = direction_counts.get(r.direction, 0) + 1
+                r.ordinal = direction_counts[r.direction]
             # Requests/responses are separately sequenced per direction; sorting
             # by packet timestamp could be misleading for out-of-order captures.
             ordered = sorted(records, key=lambda r: (r.direction, r.start_offset))
@@ -389,6 +398,18 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     raise AnalysisLimitError('Per-message detection limit prevents complete analysis')
                 stages['rule_detection'] += time.perf_counter()-tick
                 rules_findings += len(detections)
+                if field_observer is not None:
+                    # In-process only: raw texts are handed to the evaluator, never serialised or retained by the engine.
+                    client, server = ((record.direction[:2], record.direction[2:]) if record.message.is_request
+                                      else (record.direction[2:], record.direction[:2]))
+                    field_observer({
+                        'flow_id': fid, 'http_message_id': record.message_id, 'session': session_index,
+                        'client': client, 'server': server,
+                        'message_type': 'request' if record.message.is_request else 'response',
+                        'ordinal': record.ordinal, 'fields': fields, 'rule_detections': detections,
+                        'quality': {**({'stream_gap': 'true'} if flow_gaps else {}),
+                                    **({'capture_incomplete': 'true'} if diagnostics.incomplete else {}),
+                                    **({'truncated': 'true'} if flow_unterminated else {})}})
                 entries = []
                 for detected in detections:
                     entry = asdict(detected)
@@ -551,12 +572,14 @@ def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = Fal
             *, limits: AnalysisLimits | None = None, profile: str = 'standard',
             progress=None, timings=None,
             ml_detector: ContextualPIIDetector | None = None,
-            ml_budget: 'MLWorkBudget | str | None' = None) -> dict:
+            ml_budget: 'MLWorkBudget | str | None' = None,
+            field_observer=None, disposition_observer=None) -> dict:
     """Compatible in-memory report API; use analyze_to_report for large outputs."""
     from .reporting import ReportLimitError
     try:
         report = _analyze(path, threshold, include_values, limits=limits, profile=profile,
-                          progress=progress, timings=timings, ml_detector=ml_detector, ml_budget=ml_budget)
+                          progress=progress, timings=timings, ml_detector=ml_detector, ml_budget=ml_budget,
+                          field_observer=field_observer, disposition_observer=disposition_observer)
         budget = limits if limits is not None else AnalysisLimits.for_profile(profile)
         _check_memory(budget)
         # Include containers, metadata and UTF-8 encoding without a giant string.
@@ -577,7 +600,8 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
                       profile: str = 'standard', overwrite: bool = False,
                       progress=None, timings=None, row_observer=None,
                       ml_detector: ContextualPIIDetector | None = None,
-                      ml_budget: 'MLWorkBudget | str | None' = None) -> dict:
+                      ml_budget: 'MLWorkBudget | str | None' = None,
+                      field_observer=None, disposition_observer=None) -> dict:
     """Bounded disk-backed results, atomic JSON publication, small receipt.
 
     Temporary results stay private next to target and are removed on success or
@@ -599,7 +623,8 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
     try:
         with ReportSpool(output.parent,budget.max_report_bytes,row_observer=row_observer) as rows:
             report = _analyze(source,threshold,include_values,limits=budget,profile=profile,
-                              progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,ml_budget=ml_budget)
+                              progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,ml_budget=ml_budget,
+                              field_observer=field_observer,disposition_observer=disposition_observer)
             report['flows'], report['findings'] = [], []
             _check_memory(budget)
             if progress is not None:

@@ -343,3 +343,14 @@ def test_jobs_accept_only_known_ml_coverage_profiles_and_report_the_selection():
         code, body, _ = _job(s, 'ml-profile-rules-0001', 'complete', mode='rules')
         rules = finish(s, json.loads(body)['job_id'])
         assert rules['ml_profile'] is None and rules['report']['summary']['ml_coverage_status'] == 'not_requested'
+
+
+def test_every_field_gets_exactly_one_disposition():
+    seen = []
+    runner = MLBatchRunner(Stub(), MLWorkBudget(max_fields=2, max_field_chars=50, batch_characters=50),
+                           disposition=lambda ticket, index, status: seen.append((ticket, index, status)))
+    runner.add('m', [('header.host', 'h'), ('json_body.empty', ''), ('json_body.a', 'NAME-1'), ('json_body.big', 'N' * 80),
+                     ('json_body.b', 'NAME-2'), ('json_body.c', 'NAME-3'), ('json_body.garbage', '��� x')])
+    assert [s for _, _, s in seen] == ['excluded_by_policy', 'empty', 'evaluated', 'skipped:field_too_large', 'evaluated',
+                                      'skipped:field_budget', 'excluded_by_policy']
+    assert [i for _, i, _ in seen] == list(range(7)) and {t for t, _, _ in seen} == {'m'}
