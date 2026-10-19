@@ -1,14 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/pcap-pii-engine/schemas/report-v1.schema.json",
-  "title": "PCAP PII Engine report v1",
+  "title": "PCAP PII Engine report v1.1 with network evidence",
   "type": "object",
   "required": [
     "metadata",
     "summary",
     "flows",
     "findings",
-    "limitations"
+    "limitations",
+    "packet_evidence",
+    "stream_evidence",
+    "http_evidence",
+    "field_evidence",
+    "capture_evidence"
   ],
   "properties": {
     "metadata": {
@@ -21,7 +26,8 @@
         "confidence_type",
         "threshold",
         "raw_values_included",
-        "scope"
+        "scope",
+        "evidence_schema_version"
       ],
       "properties": {
         "engine": {
@@ -31,7 +37,7 @@
           "type": "string"
         },
         "report_schema_version": {
-          "const": "1.0.0"
+          "const": "1.1.0"
         },
         "detection_method": {
           "type": "string"
@@ -67,6 +73,9 @@
             }
           },
           "additionalProperties": false
+        },
+        "evidence_schema_version": {
+          "const": "1.0.0"
         }
       },
       "additionalProperties": true
@@ -153,6 +162,60 @@
       "type": "array",
       "items": {
         "type": "string"
+      }
+    },
+    "capture_evidence": {
+      "type": "object",
+      "required": [
+        "capture_sha256",
+        "capture_bytes",
+        "identity_status",
+        "frame_index_origin",
+        "range_convention"
+      ],
+      "properties": {
+        "capture_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "capture_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "identity_status": {
+          "const": "verified_read"
+        },
+        "frame_index_origin": {
+          "const": 1
+        },
+        "range_convention": {
+          "const": "zero_based_half_open"
+        }
+      },
+      "additionalProperties": true
+    },
+    "packet_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/packetEvidence"
+      }
+    },
+    "stream_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/streamEvidence"
+      }
+    },
+    "http_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/httpEvidence"
+      }
+    },
+    "field_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fieldEvidence"
       }
     }
   },
@@ -241,7 +304,8 @@
         "source_port",
         "destination_ip",
         "destination_port",
-        "http_start_line"
+        "http_start_line",
+        "evidence"
       ],
       "properties": {
         "pii_type": {
@@ -302,6 +366,362 @@
         },
         "http_start_line": {
           "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/$defs/findingEvidence"
+        }
+      },
+      "additionalProperties": true
+    },
+    "evidenceRange": {
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+    "findingEvidence": {
+      "type": "object",
+      "required": [
+        "http_message_id",
+        "scope",
+        "field_ids",
+        "raw_detection_span",
+        "limitations"
+      ],
+      "properties": {
+        "http_message_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "enum": [
+            "field",
+            "candidate_fields",
+            "message"
+          ]
+        },
+        "field_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maxItems": 64
+        },
+        "raw_detection_span": {
+          "const": "unavailable"
+        },
+        "decoded_text_span": {
+          "$ref": "#/$defs/evidenceRange"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "packetEvidence": {
+      "type": "object",
+      "required": [
+        "evidence_id",
+        "frame_index",
+        "disposition",
+        "record_offset",
+        "data_offset",
+        "captured_length",
+        "wire_length"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frame_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "disposition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record_offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "data_offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "captured_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "wire_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timestamp": {
+          "type": "number"
+        },
+        "timestamp_resolution": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "section_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "interface_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "streamEvidence": {
+      "type": "object",
+      "required": [
+        "evidence_id",
+        "stream_id",
+        "flow_id",
+        "row_type"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stream_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "flow_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "row_type": {
+          "enum": [
+            "stream",
+            "source_range"
+          ]
+        },
+        "stream_start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stream_end": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "frame_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frame_start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "frame_end": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "file_start": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "file_end": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "safe_prefix_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "granularity": {
+          "const": "exact_raw_range"
+        }
+      },
+      "additionalProperties": true
+    },
+    "httpEvidence": {
+      "type": "object",
+      "required": [
+        "evidence_id",
+        "http_message_id",
+        "flow_id",
+        "stream_id",
+        "protocol",
+        "pairing_status",
+        "stream_start",
+        "stream_end",
+        "field_count",
+        "contiguous"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "http_message_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "flow_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stream_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "protocol": {
+          "enum": [
+            "http/1",
+            "h2"
+          ]
+        },
+        "pairing_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stream_start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stream_end": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "field_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contiguous": {
+          "type": "boolean"
+        },
+        "stream_ranges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceRange"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "fieldEvidence": {
+      "type": "object",
+      "required": [
+        "evidence_id",
+        "field_id",
+        "field_index",
+        "http_message_id",
+        "stream_id",
+        "location",
+        "source_category",
+        "stream_ranges",
+        "decoded_text_span",
+        "transformations",
+        "granularity",
+        "limitations"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "http_message_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stream_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "location": {
+          "type": "string"
+        },
+        "source_category": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stream_ranges": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/evidenceRange"
+          }
+        },
+        "decoded_text_span": {
+          "$ref": "#/$defs/evidenceRange"
+        },
+        "transformations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "granularity": {
+          "enum": [
+            "exact_raw_range",
+            "exact_stream_range",
+            "transformed_source_range",
+            "message_level_only",
+            "unavailable"
+          ]
+        },
+        "text_encoding": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": true

@@ -122,3 +122,28 @@ def test_unknown_manifest_ids_and_scans_without_a_manifest():
         assert done['evaluation_requested'] is False and done['evaluation_status'] is None
         assert request(s, 'GET', f"/api/jobs/{done['job_id']}/evaluation", headers=headers(s))[0] == 400
         assert request(s, 'GET', f"/api/jobs/{done['job_id']}/evaluation")[0] == 403
+
+
+def test_manifest_evaluation_binds_actual_analysis_bytes(monkeypatch):
+    """A prehash matching the manifest cannot authorize different parsed bytes."""
+    import packet_pii.jobs as jobs
+    original = jobs.analyze_to_report
+    def changed_capture(path, *args, **kwargs):
+        # Mutate only the PCAP global timezone field: parsing still succeeds,
+        # but exact capture identity changes after the evaluator prehash.
+        with path.open('r+b') as stream:
+            stream.seek(8)
+            stream.write(b'\x01\x00\x00\x00')
+        return original(path, *args, **kwargs)
+    monkeypatch.setattr(jobs, 'analyze_to_report', changed_capture)
+    with server() as s:
+        code, body, _ = upload_manifest(s)
+        assert code == 201
+        manifest_id = json.loads(body)['manifest_id']
+        code, body, _ = start(s, 'evidence-hash-race', manifest_id=manifest_id)
+        assert code == 202
+        result = finish(s, json.loads(body)['job_id'])
+        assert result['status'] == 'completed'
+        job = s.jobs.get(result['job_id'])
+        assert job.evaluation['status'] == 'rejected'
+        assert 'identity changed' in job.evaluation['reason']

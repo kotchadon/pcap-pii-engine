@@ -201,6 +201,8 @@ class JobManager:
             conn.execute('PRAGMA temp_store=FILE')
             conn.execute(f'PRAGMA max_page_count={(2*job.limits.max_report_bytes+64*MIB)//4096}')
             conn.execute('CREATE TABLE rows(kind TEXT,n INTEGER,pii_type TEXT,location TEXT,value TEXT,data TEXT,PRIMARY KEY(kind,n))')
+            conn.execute("CREATE INDEX evidence_ids ON rows(kind,json_extract(data,'$.evidence_id'))")
+            conn.execute("CREATE INDEX evidence_streams ON rows(kind,json_extract(data,'$.stream_id'))")
             counts=Counter()
             collector=None;capture_hash=None
             if job.manifest is not None:
@@ -233,7 +235,12 @@ class JobManager:
             conn.commit();conn.close();conn=None
             if collector is not None:
                 try:
-                    job.evaluation=collector.finish(capture_sha256=capture_hash,capture_bytes=job.capture_bytes,
+                    identity=receipt.get('capture_evidence',{})
+                    actual_hash=identity.get('capture_sha256')
+                    capture_hash=actual_hash
+                    if identity.get('identity_status')!='verified_read' or actual_hash!=job.manifest.capture_sha256:
+                        raise EvaluationRejected('Capture identity changed before analysis; evaluation rejected')
+                    job.evaluation=collector.finish(capture_sha256=actual_hash,capture_bytes=identity['capture_bytes'],
                         summary=receipt['summary'],metadata=receipt['metadata'],model_requested=job.mode=='hybrid')
                 except EvaluationRejected as exc:
                     job.evaluation=self._rejected(job,capture_hash,str(exc))
@@ -303,12 +310,16 @@ class JobManager:
                 result['report_bytes']=job.receipt['output_bytes']
             return result
 
-    def page(self, job, kind, *, offset=0,limit=100,q='',pii_type=''):
+    def page(self, job, kind, *, offset=0,limit=100,q='',pii_type='',evidence_id='',stream_id=''):
         if job.status!='completed':raise ValueError('Results are not complete')
-        if kind not in ('findings','flows') or not 0<=offset<=4_000_000 or not 1<=limit<=100:
+        if kind not in ('findings','flows','packet_evidence','stream_evidence','http_evidence','field_evidence') or not 0<=offset<=4_000_000 or not 1<=limit<=100:
             raise ValueError('Invalid page range')
         if len(q)>120 or len(pii_type)>80:raise ValueError('Filter too long')
+        if any(len(value)>160 for value in (evidence_id,stream_id)):
+            raise ValueError('Evidence ID too long')
         clauses=['kind=?'];params=[kind]
+        if evidence_id:clauses.append("json_extract(data,'$.evidence_id')=?");params.append(evidence_id)
+        if stream_id:clauses.append("json_extract(data,'$.stream_id')=?");params.append(stream_id)
         if pii_type:clauses.append('pii_type=?');params.append(pii_type)
         if q:
             clauses.append('(instr(lower(pii_type),lower(?)) OR instr(lower(location),lower(?)) OR instr(lower(value),lower(?)))')

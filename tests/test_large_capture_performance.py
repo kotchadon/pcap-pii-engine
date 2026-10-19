@@ -90,14 +90,18 @@ def test_capture_and_payload_exact_boundaries(tmp_path):
 
 
 def test_large_profile_reads_above_old_file_limit_without_allocating_it(tmp_path,monkeypatch):
-    import packet_pii.capture as module
-    path=capture(tmp_path);real=module.os.fstat
-    class Stat:
-        st_size=129*2**20
-        st_mode=0o100600
-    monkeypatch.setattr(module.os,'fstat',lambda fd:Stat())
+    path=capture(tmp_path)
+    # A real sparse capture tail exercises both file budgets and same-read hashing.
+    # Deliberately invalid oversized record stops parsing after the 8 valid frames.
+    import struct
+    with path.open('ab') as stream:
+        stream.write(struct.pack('<IIII', 1, 0, 129*2**20, 129*2**20))
+        stream.truncate(129*2**20)
     with pytest.raises(ValueError,match='file-size'):analyze(path)
-    assert analyze(path,profile='large')['summary']['packets_captured']==8
+    report=analyze(path,profile='large')
+    assert report['summary']['packets_captured']==8
+    assert report['capture_evidence']['capture_bytes']==129*2**20
+    assert report['summary']['analysis_incomplete'] is True
 
 
 @pytest.mark.parametrize('count,unique,field,expected',[(100001,False,'max_packets',1),(20001,True,'max_flows',20001)])
@@ -105,9 +109,9 @@ def test_large_profiles_cross_old_packet_and_flow_limits(tmp_path,monkeypatch,co
     import packet_pii.engine as engine
     from packet_pii.capture import RawFrame,TcpPacket
     path=tmp_path/'tiny.pcap';path.write_bytes(b'not read by this mock')
-    monkeypatch.setattr(engine,'read_frames',lambda *a,**k:(RawFrame(float(i),101,b'') for i in range(count)))
-    monkeypatch.setattr(engine,'decode_tcp',lambda f:TcpPacket(f.timestamp,'192.0.2.1','198.51.100.1',
-        1024+int(f.timestamp) if unique else 1234,80,100,16,b''))
+    monkeypatch.setattr(engine,'read_frames',lambda *a,**k:(RawFrame(float(i),101,b'',frame_index=i+1) for i in range(count)))
+    monkeypatch.setattr(engine.TcpDecoder,'ingest',lambda self,f:(TcpPacket(f.timestamp,'192.0.2.1','198.51.100.1',
+        1024+int(f.timestamp) if unique else 1234,80,100,16,b''),None))
     with pytest.raises(AnalysisLimitError):analyze(path)
     report=analyze(path,profile='large')
     assert report['summary']['packets_captured']==count

@@ -303,7 +303,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self._reply({'manifest_id':self.server.jobs.add_manifest(manifest),'manifest':manifest.public()},201)
 
     def _job_get(self,path):
-        match=re.fullmatch(r'/api/jobs/([0-9a-f]{32})(?:/(findings|flows|report|evaluation))?',path)
+        match=re.fullmatch(r'/api/jobs/([0-9a-f]{32})(?:/(findings|flows|report|evaluation|packet_evidence|stream_evidence|http_evidence|field_evidence))?',path)
         if not match:
             self._reply({'error':'Job not found'},404);return
         job_id,kind=match.groups()
@@ -334,7 +334,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 query=parse_qs(urlsplit(self.path).query)
                 page=self.server.jobs.page(job,kind,offset=int(query.get('offset',['0'])[0]),
                     limit=int(query.get('limit',['100'])[0]),q=query.get('q',[''])[0],
-                    pii_type=query.get('type',[''])[0])
+                    pii_type=query.get('type',[''])[0],
+                    evidence_id=query.get('evidence_id',[''])[0],stream_id=query.get('stream_id',[''])[0])
                 self._reply(page)
             else:self._reply(self.server.jobs.snapshot(job))
         except KeyError:self._reply({'error':'Job unavailable or expired'},404)

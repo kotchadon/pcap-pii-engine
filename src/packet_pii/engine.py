@@ -7,7 +7,7 @@ missing session context.
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 import re
@@ -19,9 +19,13 @@ import time
 from urllib.parse import urlsplit
 
 from .capture import (CaptureDiagnostics, read_frames, decode_tcp, decode_tcp_with_reason, EVIDENCE_LOSS_REASONS,
-                      endpoint_key, reassemble_detailed, sequence_offset, split_tcp_sessions, TcpPacket)
+                      endpoint_key, reassemble_detailed, sequence_offset, split_tcp_sessions, TcpPacket, TcpDecoder)
 from .http_extract import (HttpMessage, parse_http_stream_detailed, parse_http_stream_with_spans, extract_fields, body_skip_reason,
                            MAX_MESSAGES, MAX_FIELDS)
+from .http_evidence import evidence_for_fields
+from .http2_extract import PREFACE, parse_http2_connection, http2_evidence_for_fields
+from .evidence import (EVIDENCE_VERSION, EVIDENCE_ARRAYS, packet_metadata, stream_rows,
+                       field_metadata, attach_finding_evidence)
 from .detect import detect_fields, MAX_FIELD_LENGTH
 from .ml_runner import MLBatchRunner, MLWorkBudget
 from .hybrid import MLWorkBudget as LegacyMLWorkBudget
@@ -96,6 +100,10 @@ class _Record:
     direction: tuple[str, int, str, int]
     timestamp: float
     start_offset: int
+    span: object = None
+    stream: bytes = b''
+    stream_id: str = ''
+    protocol: str = 'http/1'
     message_id: str = ''
     request_id: str | None = None
     paired: bool = False
@@ -248,7 +256,18 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     emit('reading', packets=0, endpoint_pairs=0)
     read_started = time.perf_counter()
     diagnostics = CaptureDiagnostics()
-    flow_packets: dict[tuple, list[tuple]] = defaultdict(list)
+    flow_packets: dict[tuple, list[TcpPacket]] = defaultdict(list)
+    decoder = TcpDecoder()
+    evidence_rows = {name: [] if _rows is None else getattr(_rows, name) for name in EVIDENCE_ARRAYS}
+    result_bytes = 0
+
+    def append_evidence(kind, row):
+        nonlocal result_bytes
+        if _rows is None:
+            result_bytes += len(json.dumps(row, ensure_ascii=False).encode('utf-8'))
+            if result_bytes > budget.max_report_bytes:
+                raise AnalysisLimitError('Analysis exceeded configured evidence/report budget')
+        evidence_rows[kind].append(row)
     frames = bytes_processed = ignored = buffered_tcp_bytes = 0
     skipped_packets: dict[str, int] = {}
     for frame in read_frames(path, diagnostics=diagnostics,
@@ -257,7 +276,8 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             raise AnalysisLimitError('Capture exceeds configured packet limit')
         frames += 1
         bytes_processed += len(frame.data)
-        packet = decode_tcp(frame)
+        packet, skip_reason = decoder.ingest(frame)
+        append_evidence('packet_evidence', packet_metadata(frame, packet, skip_reason))
         if packet:
             key = endpoint_key(packet)
             if key not in flow_packets and len(flow_packets) >= budget.max_flows:
@@ -265,16 +285,18 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             if len(packet.payload) > budget.max_tcp_payload_bytes - buffered_tcp_bytes:
                 raise AnalysisLimitError('Capture exceeds configured buffered TCP payload limit')
             buffered_tcp_bytes += len(packet.payload)
-            # Retain only direction, time, serial number, flags and payload.
-            # Endpoint strings/ports live once per pair, not in every packet.
+            # Intern endpoint strings at the pair level while retaining source metadata.
             direction = int((packet.src,packet.sport) != key[0])
-            flow_packets[key].append((direction,packet.timestamp,packet.seq,packet.flags,packet.payload))
+            packet = replace(packet, src=key[direction][0], dst=key[1-direction][0])
+            flow_packets[key].append(packet)
         else:
             ignored += 1
-            skip_reason = decode_tcp_with_reason(frame)[1] or 'unclassified'  # classification only for skipped frames
+            skip_reason = skip_reason or 'unclassified'
             skipped_packets[skip_reason] = skipped_packets.get(skip_reason, 0) + 1
         if frames % 4096 == 0:
             emit('reading', packets=frames, endpoint_pairs=len(flow_packets))
+    fragment_counts = decoder.finish()
+    fragment_losses = {k: v for k, v in fragment_counts.items() if k in EVIDENCE_LOSS_REASONS}
     stages['read_decode_group'] = time.perf_counter()-read_started
     emit('reconstructing', packets=frames, endpoint_pairs=len(flow_packets), sessions=0)
 
@@ -282,13 +304,15 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     http_count = http_flows = gaps = unterminated = http_uncertain_streams = 0
     bodies_skipped: dict[str, int] = {}
     http2_streams = tls_streams = 0
+    http2_connections_decoded = http2_messages = 0
     evidence_loss_packets = sum(n for r, n in skipped_packets.items() if r in EVIDENCE_LOSS_REASONS)
+    fragment_loss_count = sum(fragment_losses.values())
     location_signals: dict[int, int] = {}  # digest(flow, message, location) -> bit 1 rules, bit 2 model; no values retained
     transactions = orphan_requests = orphan_responses = 0
     flow_summaries = [] if _rows is None else _rows.flows
     ml_coverage = [] if _rows is None else _rows.ml_field_coverage
     sessions_processed = 0
-    result_bytes = 0
+    invalidated_datagrams = 0
     fields_extracted = rules_findings = ml_findings = 0
     contexts: dict[int, tuple] = {}  # messages whose ML results are still pending: ticket -> (provenance, rule entries)
     ticket_seq = 0
@@ -319,13 +343,14 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                                checkpoint=ml_checkpoint, disposition=observe_disposition,
                                zero_work=bool(ml_work_budget and ml_work_budget.max_total_fields == 0))
 
-    def publish(provenance, entries):
+    def publish(provenance, entries, field_map, field_count):
         """Attach provenance and append one message's findings (rules first, then model), enforcing result budgets."""
         nonlocal result_bytes, ml_findings
         tick = time.perf_counter()
         for entry in entries:
             if len(findings) >= budget.max_findings:
                 raise AnalysisLimitError('Analysis exceeded configured findings limit')
+            attach_finding_evidence(entry, provenance['http_message_id'], field_map, field_count)
             entry['location'] = safe_field_location(entry['location'], include_values)
             entry.update(provenance)
             if _rows is None:
@@ -344,14 +369,13 @@ def _analyze(path: str | Path, threshold: float = 0.8,
 
     def drain():
         for ticket, model_entries in runner.take_ready():
-            provenance, rule_entries, _coverage_row = contexts.pop(ticket)
-            publish(provenance, rule_entries + model_entries)
+            provenance, rule_entries, _coverage_row, field_map, field_count = contexts.pop(ticket)
+            publish(provenance, rule_entries + model_entries, field_map, field_count)
 
     for i, (endpoints, packed) in enumerate(flow_packets.items(), start=1):
         tick = time.perf_counter()
-        packets = [TcpPacket(ts, endpoints[d][0], endpoints[1-d][0],
-                             endpoints[d][1], endpoints[1-d][1], seq, flags, payload)
-                   for d, ts, seq, flags, payload in packed]
+        packets = [p for p in packed if p.fragment_evidence is None or p.fragment_evidence.trusted]
+        invalidated_datagrams += len(packed)-len(packets)
         sessions = split_tcp_sessions(packets)
         # All capture records were retained until EOF. Only now is release safe.
         flow_packets[endpoints] = []
@@ -367,21 +391,87 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             records: list[_Record] = []
             flow_gaps = flow_unterminated = 0
             flow_http_diagnostics = []
+            assemblies = {}
             for direction, segs in directions.items():
                 tick = time.perf_counter()
-                assembled = reassemble_detailed(segs)
+                assemblies[direction] = reassemble_detailed(segs)
+                stages['reassembly'] += time.perf_counter()-tick
+            stream_ids = {d: f'{fid}_direction_{n}' for n, d in enumerate(directions)}
+            h2_client = next((d for d, a in assemblies.items() if a.safe_prefix.startswith(PREFACE)), None)
+            h2_result = None
+            if h2_client is not None:
+                reverse = (h2_client[2], h2_client[3], h2_client[0], h2_client[1])
+                server_bytes = assemblies[reverse].safe_prefix if reverse in assemblies else b''
+                h2_result = parse_http2_connection(assemblies[h2_client].safe_prefix, server_bytes)
+                http2_connections_decoded += bool(h2_result.messages)
+                # Only complete messages are admitted to existing detection APIs.
+                for item in h2_result.messages:
+                    if not item.complete:
+                        continue
+                    direction = h2_client if item.direction == 'client_to_server' else reverse
+                    records.append(_Record(item.message, direction,
+                        _timestamp_for_byte(directions[direction], item.start_offset, assemblies[direction].base_seq),
+                        item.start_offset, span=item, stream=assemblies[direction].safe_prefix,
+                        stream_id=stream_ids[direction], protocol='h2'))
+                    http2_messages += 1
+                http2_streams += bool(h2_result.diagnostics)
+            # Cache request parsing; response framing uses the observed methods.
+            request_cache = {}
+            if h2_result is None:
+                for direction, assembled in assemblies.items():
+                    if assembled.safe_prefix and not assembled.safe_prefix.startswith(b'HTTP/'):
+                        notes = []
+                        request_spans = parse_http_stream_with_spans(assembled.safe_prefix, diagnostics=notes)
+                        request_cache[direction] = (request_spans, notes)
+            for direction_index, (direction, segs) in enumerate(directions.items()):
+                tick = time.perf_counter()
+                assembled = assemblies[direction]
+                stream_id = f'{fid}_direction_{direction_index}'
+                for source_row in stream_rows(stream_id, fid, direction, assembled, segs):
+                    append_evidence('stream_evidence', source_row)
                 stream, missing = assembled.safe_prefix, assembled.unsafe
                 stages['reassembly'] += time.perf_counter()-tick
                 if missing:
                     gaps += 1
                     flow_gaps += 1
                 tick = time.perf_counter()
+                if h2_result is not None:
+                    notes = [d for d in h2_result.diagnostics if d['direction'] ==
+                             ('client_to_server' if direction == h2_client else 'server_to_client')]
+                    flow_http_diagnostics.extend({**d, 'stream_id': stream_id} for d in notes)
+                    if any(d['incomplete'] for d in notes):
+                        unterminated += 1
+                        flow_unterminated += 1
+                    if any(not d['incomplete'] for d in notes):
+                        http_uncertain_streams += 1
+                    stages['http_parse'] += time.perf_counter()-tick
+                    continue
                 if stream[:14] == b'PRI * HTTP/2.0':
                     http2_streams += 1
                 elif stream[:2] in (b'\x16\x03', b'\x17\x03', b'\x15\x03'):
                     tls_streams += 1
                 terminal_diagnostics = []
-                spans = parse_http_stream_with_spans(stream, diagnostics=terminal_diagnostics)
+                reverse = (direction[2], direction[3], direction[0], direction[1])
+                if direction in request_cache:
+                    spans, terminal_diagnostics = request_cache[direction]
+                else:
+                    pending_requests = request_cache.get(reverse, ([], []))[0]
+                    request_position = 0
+                    def response_method(offset, status):
+                        nonlocal request_position
+                        if request_position >= len(pending_requests):
+                            return None
+                        request = pending_requests[request_position]
+                        response_time = _timestamp_for_byte(segs, offset, assembled.base_seq)
+                        request_time = _timestamp_for_byte(directions[reverse], request.start_offset,
+                                                           assemblies[reverse].base_seq)
+                        if response_time < request_time:
+                            return None  # earlier orphan cannot inherit a later HEAD/CONNECT
+                        if not (100 <= status < 200 and status != 101):
+                            request_position += 1
+                        return request.message.start_line.split(' ', 1)[0]
+                    spans = parse_http_stream_with_spans(stream, diagnostics=terminal_diagnostics,
+                                                        request_method_for_response=response_method)
                 if any(d.incomplete for d in terminal_diagnostics):
                     unterminated += 1
                     flow_unterminated += 1
@@ -399,7 +489,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 for span in spans:
                     records.append(_Record(span.message, direction,
                                            _timestamp_for_byte(segs, span.start_offset, assembled.base_seq),
-                                           span.start_offset))
+                                           span.start_offset, span=span, stream=stream, stream_id=stream_id))
 
             # If two messages share a packet timestamp, keep byte order stable.
             # Stable sorting also avoids treating initial SYN times as data times.
@@ -413,7 +503,22 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             # Requests/responses are separately sequenced per direction; sorting
             # by packet timestamp could be misleading for out-of-order captures.
             ordered = sorted(records, key=lambda r: (r.direction, r.start_offset))
-            flow_tx, flow_orphan_req, flow_orphan_resp = _pair_requests(ordered, fid)
+            if h2_result is None:
+                flow_tx, flow_orphan_req, flow_orphan_resp = _pair_requests(ordered, fid)
+            else:
+                requests = {r.span.stream_id: r for r in records if r.message.is_request}
+                flow_tx = 0
+                for sid, r in requests.items():
+                    r.request_id = f'{fid}_h2_req_{sid}'
+                for response in (r for r in records if not r.message.is_request):
+                    request = requests.get(response.span.stream_id)
+                    if request is not None:
+                        response.request_id, response.paired = request.request_id, True
+                        if int(response.message.start_line.split(' ', 2)[1]) >= 200 and not request.paired:
+                            request.paired = True
+                            flow_tx += 1
+                flow_orphan_req = sum(not r.paired for r in requests.values())
+                flow_orphan_resp = sum(not r.paired for r in records if not r.message.is_request)
             transactions += flow_tx
             orphan_requests += flow_orphan_req
             orphan_responses += flow_orphan_resp
@@ -433,6 +538,29 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     raise AnalysisLimitError('HTTP field limits prevent complete detection')
                 stages['field_extraction'] += time.perf_counter()-tick
                 fields_extracted += len(fields)
+                source_fields = (http2_evidence_for_fields(record.span, fields) if record.protocol == 'h2'
+                                 else evidence_for_fields(record.stream, record.span, fields))
+                field_rows, field_map = field_metadata(record.message_id, record.stream_id, fields, source_fields,
+                    lambda location: location if include_values else location.split('.', 1)[0])
+                for field_row in field_rows:
+                    append_evidence('field_evidence', field_row)
+                message_evidence = dict(evidence_id=record.message_id,
+                    http_message_id=record.message_id, flow_id=fid, stream_id=record.stream_id,
+                    http_request_id=record.request_id, protocol=record.protocol,
+                    pairing_status=('paired_by_http2_stream_id' if record.protocol == 'h2' else 'paired_best_effort')
+                                   if record.paired else 'unpaired',
+                    stream_start=record.span.start_offset, stream_end=record.span.end_offset,
+                    field_count=len(fields),
+                    start_line=safe_http_start_line(record.message.start_line, include_path=include_values))
+                if record.protocol == 'h2':
+                    message_evidence.update(http2_stream_id=record.span.stream_id,
+                        stream_ranges=[{'start': a, 'end': b} for a, b in record.span.stream_ranges],
+                        body_framing='http2_data_frames', limitations=list(record.span.limitations),
+                        contiguous=False)
+                else:
+                    message_evidence.update(header_end=record.span.header_end, body_start=record.span.body_start,
+                                            body_framing=record.span.body_framing, contiguous=True)
+                append_evidence('http_evidence', message_evidence)
                 tick = time.perf_counter()
                 detections = detect_fields(fields, threshold, include_values)
                 if len(detections) >= 10000:
@@ -468,7 +596,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     'http_start_line': safe_http_start_line(record.message.start_line, include_path=include_values),
                 }
                 if runner is None:
-                    publish(provenance, entries)
+                    publish(provenance, entries, field_map, len(fields))
                 else:
                     ticket_seq += 1
                     coverage_row = {
@@ -479,7 +607,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                             ('evaluated', 'excluded_by_policy', 'empty', 'skipped')},
                         'skip_reason_index_ranges': {},
                     }
-                    contexts[ticket_seq] = (provenance, entries, coverage_row)
+                    contexts[ticket_seq] = (provenance, entries, coverage_row, field_map, len(fields))
                     quality = {**({'stream_gap': 'true'} if flow_gaps else {}),
                                **({'capture_incomplete': 'true'} if diagnostics.incomplete else {}),
                                **({'truncated': 'true'} if flow_unterminated else {})}
@@ -537,7 +665,8 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     return {
         'metadata': {
             'engine': 'pcap-pii-engine', 'version': '0.1.0',
-            'report_schema_version': '1.0.0',
+            'report_schema_version': '1.1.0',
+            'evidence_schema_version': EVIDENCE_VERSION,
             'detection_method': 'rules_plus_bilstm' if ml_detector is not None else 'rules_only',
             'confidence_type': ('separate_rule_heuristic_and_uncalibrated_model_scores'
                                 if ml_detector is not None else 'heuristic_not_calibrated'),
@@ -546,7 +675,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'ml_model_version': model_version,
             'ml_work_limits': ml_budget.public() if ml_detector is not None else None,
             'threshold': threshold, 'raw_values_included': include_values,
-            'scope': 'unencrypted HTTP/1.x over TCP',
+            'scope': 'unencrypted HTTP/1.x and bounded prior-knowledge HTTP/2 over TCP',
             'analysis_limits': {k:v for k,v in asdict(budget).items() if k in
                                 ('max_capture_bytes','max_packets','max_flows','max_tcp_payload_bytes')},
             'analysis_profile': profile,
@@ -554,11 +683,22 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'resource_budgets': {k:v for k,v in asdict(budget).items() if k in
                                  ('max_report_bytes','max_findings','max_memory_bytes')},
         },
+        'capture_evidence': {'capture_sha256': diagnostics.capture_sha256,
+                             'capture_bytes': diagnostics.capture_bytes,
+                             'identity_status': diagnostics.identity_status,
+                             'frame_index_origin': 1, 'range_convention': 'zero_based_half_open'},
         'summary': {
             'packets_captured': frames,
             'non_tcp_or_unsupported_packets': ignored,
             'unsupported_packets_by_reason': dict(sorted(skipped_packets.items())),
             'unsupported_packets_hiding_tcp': evidence_loss_packets,
+            'packet_dispositions': {'tcp_decoded': frames-ignored, **dict(sorted(skipped_packets.items()))},
+            'fragment_diagnostics': decoder.diagnostics,
+            'fragment_loss_events': fragment_losses,
+            'fragment_datagrams_invalidated_after_emission': invalidated_datagrams,
+            'tcp_observed_damage': bool(gaps or evidence_loss_packets or fragment_loss_count),
+            'tcp_capture_completeness': 'unknown',
+            'http_observed_incomplete': bool(unterminated or bodies_skipped or http2_streams),
             'flows_processed': sessions_processed,
             'endpoint_pairs': len(flow_packets),
             'http_flows': http_flows,
@@ -599,20 +739,24 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'unterminated_http_messages': unterminated,
             'http_incomplete_streams': unterminated,
             'http_uncertain_streams': http_uncertain_streams,
-            'http2_streams_not_decoded': http2_streams,
+            'http2_streams_not_decoded': http2_streams,  # legacy diagnostic count, not a stream-ID census
+            'http2_connections_decoded': http2_connections_decoded,
+            'http2_messages_decoded': http2_messages,
             'tls_streams_not_inspected': tls_streams,
             'http_bodies_not_inspected': sum(bodies_skipped.values()),
             'http_bodies_not_inspected_by_reason': dict(sorted(bodies_skipped.items())),
             'capture_truncated_records': diagnostics.truncated_records,
             'capture_malformed_records': diagnostics.malformed_records,
+            'capture_unsupported_packet_records': diagnostics.unsupported_packet_records,
             'analysis_incomplete': diagnostics.incomplete or gaps > 0 or unterminated > 0 or ml_skipped > 0
-                                   or evidence_loss_packets > 0 or bool(bodies_skipped) or http2_streams > 0,
+                                   or evidence_loss_packets > 0 or fragment_loss_count > 0 or bool(bodies_skipped) or http2_streams > 0,
         },
         'flows': flow_summaries, 'findings': findings, 'ml_field_coverage': ml_coverage,
+        **evidence_rows,
         'limitations': [
             'Encrypted HTTPS payloads cannot be inspected without decryption',
-            'IP fragments are not reassembled (counted and flagged); unobserved TCP lifecycle and delayed packets after tuple reuse remain ambiguous',
-            'HTTP/2 and HTTP/3 not decoded; incomplete streams are ignored',
+            'IP fragments are reassembled under bounded conservative policies; ID reuse and unobserved TCP lifecycle remain ambiguous',
+            'Plaintext HTTP/2 requires a client preface and optional HPACK dependency; unsupported states stop conservatively; HTTP/3 and TLS are not decoded',
             'HTTP/1.x request-response pairing is best-effort (direction, stream order, packet timing)',
             ('Experimental BiLSTM enabled: model scores are uncalibrated; no real-traffic precision/recall established'
              if ml_detector is not None else 'Rules only; optional contextual ML is not enabled'),
@@ -694,19 +838,19 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
             report = _analyze(source,threshold,include_values,limits=budget,profile=profile,
                               progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,ml_budget=ml_budget, ml_work_budget=ml_work_budget,
                               field_observer=field_observer,disposition_observer=disposition_observer)
-            report['flows'], report['findings'], report['ml_field_coverage'] = [], [], []
+            row_names = ('flows', 'findings', 'ml_field_coverage') + EVIDENCE_ARRAYS
+            for name in row_names:
+                report[name] = []
             _check_memory(budget)
             if progress is not None:
                 progress(dict(stage='writing_report',elapsed_seconds=time.monotonic()-clock,
                               **report['summary']))
             tick=time.perf_counter()
             write_private_report(report,output,overwrite=overwrite,max_bytes=budget.max_report_bytes,
-                                 row_sources={'flows':rows.flows.iter_json(),
-                                              'findings':rows.findings.iter_json(),
-                                              'ml_field_coverage':rows.ml_field_coverage.iter_json()})
+                                 row_sources={name: getattr(rows, name).iter_json() for name in row_names})
             if timings is not None:
                 timings['report_write']=time.perf_counter()-tick
-        receipt={k:v for k,v in report.items() if k not in ('flows','findings','ml_field_coverage')}
+        receipt={k:v for k,v in report.items() if k not in row_names}
         receipt['output_bytes']=output.stat().st_size
         receipt['output_path']=str(output)
         if progress is not None:

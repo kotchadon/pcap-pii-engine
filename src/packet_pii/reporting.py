@@ -114,7 +114,8 @@ class ReportSpool:
 
     def __enter__(self):
         try:
-            for name in ('flows','findings','ml_field_coverage'):
+            for name in ('flows','findings','ml_field_coverage',
+                         'packet_evidence','stream_evidence','http_evidence','field_evidence'):
                 stream=self.stack.enter_context(tempfile.TemporaryFile(
                     mode='w+t',encoding='utf-8',prefix='.pcap-pii-',dir=self.directory))
                 os.fchmod(stream.fileno(),0o600)
