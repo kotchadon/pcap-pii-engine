@@ -40,6 +40,7 @@ class Element{
  constructor(){this.textContent='';this.children=[];}
  replaceChildren(){this.children=[];}
  append(...items){this.children.push(...items);}
+ appendChild(item){this.children.push(item);return item;}
 }
 const nodes=Object.fromEntries(['evidence-status','evidence-http','evidence-fields','evidence-frames']
  .map(id=>[id,new Element()]));
