@@ -23,7 +23,11 @@ def test_generator_is_reproducible_and_exact_byte_oracle_passes(tmp_path):
     assert measured['counters']['reassembled_bytes'] == expected['unique_payload_bytes']
     assert measured['counters']['unsafe_directions'] == 0
     assert measured['limit_failure'] is None
-    assert measured['capture_diagnostics'] == {'truncated_records':0,'malformed_records':0}
+    diagnostics = measured['capture_diagnostics']
+    assert all(diagnostics[key] == 0 for key in ('truncated_records','malformed_records','unsupported_packet_records'))
+    assert diagnostics['capture_sha256'] == expected['sha256']
+    assert diagnostics['capture_bytes'] == first.stat().st_size
+    assert diagnostics['identity_status'] == 'verified_read'
 
 
 def test_generator_does_not_overwrite_and_benchmark_honors_run_limits(tmp_path):

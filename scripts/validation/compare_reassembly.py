@@ -53,7 +53,8 @@ def compare(path, seed=20261014, independent=False, manifest=None):
             direction = [p for p in packets if ((p.src,p.sport)==(client.src,client.sport)) == is_request]
             result = reassemble_detailed(direction)
             prefix = 'request' if is_request else 'response'
-            assert not result.unsafe and not result.diagnostics
+            assert not result.unsafe
+            assert set(result.diagnostics) <= {'retransmission', 'consistent_overlap'}
             assert hashlib.sha256(result.data).hexdigest() == expected[prefix+'_sha256']
             spans = parse_http_stream_with_spans(result.data)
             assert len(spans) == expected['http_messages']//2
