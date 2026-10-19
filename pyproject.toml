@@ -10,6 +10,7 @@ requires-python = ">=3.10"
 license = {text = "Proprietary - all rights reserved"}
 
 [project.optional-dependencies]
+http2 = ["hpack>=4.1,<5"]  # maintained HPACK decoder; optional bounded plaintext HTTP/2
 ml = ["torch>=2.2"]  # optional: BiLSTM contextual detector (packet_pii.ml.bilstm)
 
 [project.scripts]
