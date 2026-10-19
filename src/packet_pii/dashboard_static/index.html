@@ -69,6 +69,16 @@
             <div><span>Input quality flags</span><strong id="inspect-quality">—</strong></div>
             <div><span>Scan ML coverage</span><strong id="inspect-coverage">—</strong></div>
           </div>
+          <section id="evidence-provenance" class="evidence-provenance" aria-label="Packet-to-field provenance">
+            <div class="evidence-heading"><strong>Packet → TCP stream → HTTP message → field</strong><span class="evidence-chip">Verified references only</span></div>
+            <p id="evidence-status" role="status">Choose a finding to inspect its available packet-to-field metadata.</p>
+            <div class="evidence-columns">
+              <div class="evidence-column"><h5>HTTP message</h5><div id="evidence-http" class="evidence-facts"></div></div>
+              <div class="evidence-column"><h5>Extracted fields</h5><div id="evidence-fields" class="evidence-facts"></div></div>
+              <div class="evidence-column"><h5>Supporting source frames</h5><div id="evidence-frames" class="evidence-facts"></div></div>
+            </div>
+            <p class="evidence-disclosure">This viewer displays redacted metadata and supporting packet references, not raw request/response content. Decoded model character spans are not PCAP byte offsets; transformed content cannot be highlighted as an exact raw match. A matching, separately authorised capture is required to inspect original bytes.</p>
+          </section>
           <p class="inspector-disclosure">Detection signals may overlap. An individual PII finding is not proof of exfiltration or misuse.</p>
         </article>
       </section>
