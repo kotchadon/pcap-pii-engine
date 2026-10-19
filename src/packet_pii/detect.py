@@ -6,6 +6,9 @@ import ipaddress
 import re
 from dataclasses import dataclass
 
+from .identity_rules import (FULLY_MASKED_CATEGORIES, IDENTIFIER_CATEGORIES, IdentityContext, analyse_location,
+                             analyse_short_location as _identity_key, classify as classify_identity)
+
 EMAIL = re.compile(r'(?<![\w.+-])[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}(?![\w.-])')
 IPV4 = re.compile(r'(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])')
 PHONE = re.compile(r'(?<!\w)(?:\+\d[\d\s().-]{7,16}\d|0[234578][\d\s().-]{7,14}\d)(?!\w)')
@@ -105,8 +108,20 @@ def _mask(value: str) -> str:
     return value[:2]+'***'+value[-2:]
 
 
+REDACTED = '[REDACTED]'
+
+
+def _mask_for(kind: str, value: str) -> str:
+    """Default masking. Small-value-space attributes (AGE/GENDER/SEX) are fully redacted; short identifiers show nothing."""
+    if kind in FULLY_MASKED_CATEGORIES:
+        return REDACTED
+    if kind in IDENTIFIER_CATEGORIES and len(value) <= 8:
+        return '****'
+    return _mask(value)
+
+
 def _finding(kind: str, location: str, confidence: float, value: str, include_values: bool, detector='rule') -> Detection:
-    return Detection(kind,location,confidence,value if include_values else _mask(value),detector,hashlib.sha256(value.encode('utf-8')).hexdigest()[:16])
+    return Detection(kind,location,confidence,value if include_values else _mask_for(kind, value),detector,hashlib.sha256(value.encode('utf-8')).hexdigest()[:16])
 
 
 def detect_fields(fields: list[tuple[str,str]], threshold: float=0.8, include_values: bool=False) -> list[Detection]:
@@ -114,6 +129,7 @@ def detect_fields(fields: list[tuple[str,str]], threshold: float=0.8, include_va
         raise ValueError('threshold must be between 0 and 1')
     detections: list[Detection]=[]
     seen=set()
+    identity = IdentityContext(fields)
     def add(kind,loc,score,value):
         if not value or score<threshold:
             return
@@ -149,6 +165,11 @@ def detect_fields(fields: list[tuple[str,str]], threshold: float=0.8, include_va
             add('USERNAME',location,0.84,value)
         if NAME_KEYS.search(location):
             add('PERSON_NAME_CANDIDATE',location,0.86,value)
+        # Context-validated identity/demographic rules (taxonomy v1): explicit field labels only, never inference.
+        key_info = _identity_key(location) if len(location) <= 256 else analyse_location(location)
+        if key_info is not None and key_info.rule is not None and (
+                identity_hit := classify_identity(key_info, value, identity)):
+            add(identity_hit[0],location,identity_hit[1],value)
     return detections
 
 MAX_FIELD_LENGTH=100_000

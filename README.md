@@ -67,6 +67,7 @@ After installing, the CLI also works with `pcap-pii demo.pcap -o demo-report.jso
 | URL query, JSON, URL-encoded/multipart forms, headers | Implemented for common text payloads |
 | gzip/deflate bodies | Implemented with output size cap |
 | Email/IP/phone/card/credential/username/structured name candidates | Implemented as rules and validators |
+| Advertising IDs (IDFA/GAID), explicit age, explicit gender/sex, device and user/account IDs | Implemented as context-validated rules on explicitly labelled fields only, never inferred; see [`docs/integration/PII_DETECTION_TAXONOMY.md`](docs/integration/PII_DETECTION_TAXONOMY.md) |
 | Confidence threshold + structured JSON report | Implemented; scores are heuristics, not calibrated probabilities |
 | Contextual ML (BiLSTM V2, opt-in via `--ml-checkpoint`) | Implemented, **experimental**; bounded work budgets with explicit coverage accounting (see below) |
 | TLS HTTPS without session keys, HTTP/2, HTTP/3 | **NOT supported** |

@@ -1,0 +1,200 @@
+{
+  "confusion_gold_vs_predicted": [
+    {
+      "count": 1,
+      "gold": "AGE",
+      "predicted": "NONE"
+    },
+    {
+      "count": 1,
+      "gold": "APPLE_ADVERTISING_ID",
+      "predicted": "ADVERTISING_ID"
+    },
+    {
+      "count": 1,
+      "gold": "APPLE_ADVERTISING_ID",
+      "predicted": "NONE"
+    },
+    {
+      "count": 1,
+      "gold": "GENDER",
+      "predicted": "NONE"
+    },
+    {
+      "count": 1,
+      "gold": "NONE",
+      "predicted": "AGE"
+    },
+    {
+      "count": 1,
+      "gold": "NONE",
+      "predicted": "DEVICE_ID"
+    },
+    {
+      "count": 1,
+      "gold": "NONE",
+      "predicted": "GENDER"
+    },
+    {
+      "count": 1,
+      "gold": "USER_ACCOUNT_ID",
+      "predicted": "NONE"
+    }
+  ],
+  "dataset": "trace-identity-rules-synthetic-v1",
+  "errors": [
+    {
+      "category": "ADVERTISING_ID",
+      "error": "fp",
+      "hard_case": true,
+      "location": "json_body.device.ifa",
+      "message": "adid-14"
+    },
+    {
+      "category": "APPLE_ADVERTISING_ID",
+      "error": "fn",
+      "hard_case": true,
+      "location": "json_body.device.ifa",
+      "message": "adid-14"
+    },
+    {
+      "category": "APPLE_ADVERTISING_ID",
+      "error": "fn",
+      "hard_case": true,
+      "location": "json_body.idfa",
+      "message": "adid-15"
+    },
+    {
+      "category": "AGE",
+      "error": "fn",
+      "hard_case": true,
+      "location": "json_body.user.meta.age",
+      "message": "age-10"
+    },
+    {
+      "category": "AGE",
+      "error": "fp",
+      "hard_case": true,
+      "location": "query_parameter.age",
+      "message": "age-11"
+    },
+    {
+      "category": "GENDER",
+      "error": "fn",
+      "hard_case": true,
+      "location": "json_body.user.gender",
+      "message": "gender-06"
+    },
+    {
+      "category": "GENDER",
+      "error": "fp",
+      "hard_case": true,
+      "location": "json_body.voice.profile.gender",
+      "message": "gender-07"
+    },
+    {
+      "category": "USER_ACCOUNT_ID",
+      "error": "fn",
+      "hard_case": true,
+      "location": "json_body.uid",
+      "message": "id-10"
+    },
+    {
+      "category": "DEVICE_ID",
+      "error": "fp",
+      "hard_case": true,
+      "location": "json_body.device_id",
+      "message": "id-11"
+    }
+  ],
+  "evaluation_unit": "field: (message id, field location, category). Value spans are whole-field.",
+  "fields": 145,
+  "hard_case_messages": 8,
+  "label": "Synthetic rule-validation results for newly introduced categories (not real-world accuracy)",
+  "messages": 79,
+  "micro": {
+    "all": {
+      "f1": 0.9126,
+      "fn": 5,
+      "fp": 4,
+      "precision": 0.9216,
+      "recall": 0.9038,
+      "tp": 47
+    },
+    "excluding_hard": {
+      "f1": 1.0,
+      "fn": 0,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "tp": 47
+    }
+  },
+  "per_category": {
+    "ADVERTISING_ID": {
+      "f1": 0.8571,
+      "fn": 0,
+      "fp": 1,
+      "precision": 0.75,
+      "recall": 1.0,
+      "tp": 3
+    },
+    "AGE": {
+      "f1": 0.9091,
+      "fn": 1,
+      "fp": 1,
+      "precision": 0.9091,
+      "recall": 0.9091,
+      "tp": 10
+    },
+    "ANDROID_ADVERTISING_ID": {
+      "f1": 1.0,
+      "fn": 0,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "tp": 6
+    },
+    "APPLE_ADVERTISING_ID": {
+      "f1": 0.8571,
+      "fn": 2,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 0.75,
+      "tp": 6
+    },
+    "DEVICE_ID": {
+      "f1": 0.9091,
+      "fn": 0,
+      "fp": 1,
+      "precision": 0.8333,
+      "recall": 1.0,
+      "tp": 5
+    },
+    "GENDER": {
+      "f1": 0.8571,
+      "fn": 1,
+      "fp": 1,
+      "precision": 0.8571,
+      "recall": 0.8571,
+      "tp": 6
+    },
+    "SEX": {
+      "f1": 1.0,
+      "fn": 0,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "tp": 5
+    },
+    "USER_ACCOUNT_ID": {
+      "f1": 0.9231,
+      "fn": 1,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 0.8571,
+      "tp": 6
+    }
+  },
+  "threshold": 0.8
+}
