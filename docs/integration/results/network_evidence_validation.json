@@ -1,0 +1,171 @@
+{
+  "date": "2026-10-19",
+  "baseline_commit": "11d41e8c583231edd86b621d96cc037fe676108f",
+  "candidate_source": {
+    "commit": "355c669f513db7d4701368040843f74e0d68fd0d",
+    "tree": "f208339e98a57a7d00d1082159b90e20db8069ae",
+    "local_commit": "1cfb752a04c37e86256161e0726e1a3c0ce28afb"
+  },
+  "scope": "network evidence; rules-only performance; no model-quality claim",
+  "baseline_full_suite": {
+    "passed": 552,
+    "failed": 24,
+    "errors": 77,
+    "skipped": 3,
+    "seconds": 79.07
+  },
+  "candidate_full_suite_before_compatibility_fixes": {
+    "passed": 648,
+    "failed": 25,
+    "errors": 77,
+    "skipped": 3,
+    "seconds": 81.2
+  },
+  "executable_suite_after_fixes": {
+    "passed": 652,
+    "failed": 1,
+    "skipped": 4,
+    "deselected": 98,
+    "seconds": 81.71,
+    "remaining_failure": "Capture oracle asserted an exact old diagnostics dictionary; byte-level assertions passed. Updated to verify new capture identity fields explicitly."
+  },
+  "final_targeted_checks": {
+    "passed": 2,
+    "seconds": 0.3,
+    "tests": [
+      "test_generator_is_reproducible_and_exact_byte_oracle_passes",
+      "test_report_evidence_schema_validates_actual_serialized_objects"
+    ]
+  },
+  "qualification": "All observed new failures resolved by explicit schema/diagnostic expectation changes; full all-artifact qualification remains blocked. No claim that the complete suite is green.",
+  "artifact_blocked_test_count": 98,
+  "real_v2_inference": "not validated: saved checkpoint/data binaries unavailable",
+  "tshark": "not installed; no Wireshark differential validation claimed",
+  "fixture_restore": {
+    "sha256": "16591312ec3884b5e94daeeeed153bc636031e07ac84d4a93562382135cccdea",
+    "method": "committed generator; exact frozen manifest hash verified; no manifest update"
+  },
+  "dependencies": {
+    "python": "3.12.14",
+    "pytest": "9.1.1",
+    "torch": "2.6.0+cpu",
+    "hpack": "4.1.0",
+    "h11": "0.16.0",
+    "dpkt": "1.9.8",
+    "scapy": "2.6.1",
+    "ijson": "3.6.0"
+  },
+  "workloads": {
+    "small": {
+      "capture_bytes": 47060,
+      "wall_seconds": 0.10518687199987653,
+      "peak_rss_mib": 16.75,
+      "report_bytes": 697196,
+      "rules_findings": 18,
+      "profile": "standard",
+      "limits": {
+        "max_capture_bytes": 134217728,
+        "max_packets": 100000,
+        "max_flows": 20000,
+        "max_tcp_payload_bytes": 67108864,
+        "max_report_bytes": 536870912,
+        "max_findings": 500000,
+        "max_memory_bytes": 1073741824
+      },
+      "legacy_semantics_equal": true,
+      "capture_sha256": "16591312ec3884b5e94daeeeed153bc636031e07ac84d4a93562382135cccdea",
+      "baseline_seconds": 0.021527113999809444,
+      "baseline_peak_rss_mib": 16.125,
+      "baseline_report_bytes": 29772,
+      "actual_report_exceeds_default_large_cap": false
+    },
+    "showcase": {
+      "capture_bytes": 11312,
+      "wall_seconds": 0.03784610299999258,
+      "peak_rss_mib": 16.375,
+      "report_bytes": 170902,
+      "rules_findings": 19,
+      "profile": "standard",
+      "limits": {
+        "max_capture_bytes": 134217728,
+        "max_packets": 100000,
+        "max_flows": 20000,
+        "max_tcp_payload_bytes": 67108864,
+        "max_report_bytes": 536870912,
+        "max_findings": 500000,
+        "max_memory_bytes": 1073741824
+      },
+      "legacy_semantics_equal": true,
+      "capture_sha256": "66c5890ca98d45cee596f92572b44bde6f1f2f349497713694bea9bb1cd304e1",
+      "baseline_seconds": 0.015204484000150842,
+      "baseline_peak_rss_mib": 16.0,
+      "baseline_report_bytes": 14469,
+      "actual_report_exceeds_default_large_cap": false
+    },
+    "medium": {
+      "capture_bytes": 5414662,
+      "wall_seconds": 3.4299342799999977,
+      "peak_rss_mib": 29.75,
+      "report_bytes": 25520542,
+      "rules_findings": 1986,
+      "profile": "standard",
+      "limits": {
+        "max_capture_bytes": 134217728,
+        "max_packets": 100000,
+        "max_flows": 20000,
+        "max_tcp_payload_bytes": 67108864,
+        "max_report_bytes": 536870912,
+        "max_findings": 500000,
+        "max_memory_bytes": 1073741824
+      },
+      "legacy_semantics_equal": true,
+      "capture_sha256": "5fb4520536b296204b2090aef13c2d3d2b3129ecba1133773eec9b9333c9f882",
+      "baseline_seconds": 1.4702585,
+      "baseline_peak_rss_mib": 22.25,
+      "baseline_report_bytes": 992050,
+      "actual_report_exceeds_default_large_cap": false
+    },
+    "large": {
+      "capture_bytes": 115343298,
+      "wall_seconds": 138.97854748500004,
+      "peak_rss_mib": 414.109375,
+      "report_bytes": 1524402434,
+      "rules_findings": 244046,
+      "profile": "large",
+      "limits": {
+        "max_capture_bytes": 268435456,
+        "max_packets": 500000,
+        "max_flows": 100000,
+        "max_tcp_payload_bytes": 201326592,
+        "max_report_bytes": 2147483648,
+        "max_findings": 2000000,
+        "max_memory_bytes": 3221225472
+      },
+      "legacy_semantics_equal": true,
+      "capture_sha256": "42e52f7ebb470d45e3d883ba6c800a11fce17357cf0edad417fefb8ca059c9ce",
+      "baseline_seconds": 43.993599210999946,
+      "baseline_peak_rss_mib": 189.421875,
+      "baseline_report_bytes": 124633629,
+      "actual_report_exceeds_default_large_cap": true
+    }
+  },
+  "protected_paths_unchanged": [
+    "model weights",
+    "detector thresholds",
+    "ML runner",
+    "frozen data/manifests/results",
+    "frontend"
+  ],
+  "no_paid_training": true,
+  "no_confidential_capture_upload": true,
+  "main_not_modified": true,
+  "pr23_not_modified": true,
+  "initial_report_budget_failure": {
+    "success": false,
+    "seconds": 112.04771087199993,
+    "report_budget_bytes": 1073741824,
+    "peak_rss_mib": 404.6015625,
+    "no_partial_report": true,
+    "scope": "development checkpoint before final key minimization; final measured report also exceeds the unchanged 1 GiB default"
+  }
+}
