@@ -56,6 +56,10 @@ function explainDetection(f){
  if(kind==='CREDENTIAL_OR_TOKEN')return 'The rules detector identified a credential-bearing field or authorisation header ('+loc+'). This relies on the field context; masked output avoids disclosing the underlying value.';
  if(kind==='USERNAME')return 'The rules detector classified '+loc+' as a username field based on its name. The entire field value is a candidate username.';
  if(kind==='PERSON_NAME_CANDIDATE')return 'The rules detector classified '+loc+' using a structured name-related key. This is a PERSON_NAME_CANDIDATE, not a validated identity or an AI prediction.';
+ if(['APPLE_ADVERTISING_ID','ANDROID_ADVERTISING_ID','ADVERTISING_ID'].includes(kind))return 'A deterministic rule matched a UUID-shaped advertising identifier with supporting field context at '+loc+'. Apple/Android attribution requires explicit platform evidence. A valid format does not establish a genuine assigned device identifier.';
+ if(kind==='AGE')return 'A deterministic rule matched an explicitly labelled age field and its permitted value format at '+loc+'. TRACE did not infer a person’s age.';
+ if(kind==='GENDER'||kind==='SEX')return 'A deterministic rule classified an explicitly transmitted '+(kind==='SEX'?'sex':'gender')+' field using documented context and value checks at '+loc+'. TRACE did not infer demographic characteristics.';
+ if(kind==='DEVICE_ID'||kind==='USER_ACCOUNT_ID')return 'A deterministic rule found an identifier-shaped value under a narrowly defined '+(kind==='DEVICE_ID'?'device':'user/account')+' field at '+loc+'. This does not verify a real person or device.';
  return 'The rule detector emitted a candidate '+kind+' finding at '+loc+'. Examine its location and source; rule scores are heuristics, not calibrated probabilities.';
 }
 function inspectFinding(f){
@@ -66,10 +70,115 @@ function inspectFinding(f){
  setText('inspect-endpoints',String(f.source_ip||'—')+':'+String(f.source_port??'—')+' → '+String(f.destination_ip||'—')+':'+String(f.destination_port??'—'));
  setText('inspect-method',f.detector==='bilstm'?'BiLSTM · uncalibrated raw model score':'Rules · heuristic score');
  if(typeof TraceLab!=='undefined')TraceLab.inspect(f);
+ void loadFindingEvidence(f);
 }
+
+/* Evidence v1.0: read-only authenticated joins. Never fetch raw capture bytes. */
+let evidenceEpoch=0;
+function clearFindingEvidence(message){
+ setText('evidence-status',message);
+ for(const id of ['evidence-http','evidence-fields','evidence-frames'])$(id).replaceChildren();
+}
+function evidenceFact(id,title,body){
+ const wrapper=document.createElement('div'),key=document.createElement('strong'),value=document.createElement('span');
+ wrapper.className='evidence-fact';key.textContent=String(title);value.textContent=String(body);
+ wrapper.append(key,value);$(id).appendChild(wrapper);
+}
+async function evidencePage(job,kind,key,value,offset=0){
+ if(typeof value!=='string'||!value||value.length>160)throw Error('Invalid evidence reference');
+ const params=new URLSearchParams({offset:String(offset),limit:'100'});
+ params.set(key,value);
+ const response=await fetch('/api/jobs/'+encodeURIComponent(job)+'/'+kind+'?'+params,
+   {headers:{'X-Dashboard-Token':state.token}});
+ if(!response.ok)throw Error('Evidence reference unavailable ('+response.status+')');
+ const data=await response.json();
+ if(!Array.isArray(data.items)||!Number.isInteger(data.total))throw Error('Invalid evidence response');
+ return data;
+}
+function evidenceIntervalText(start,end){
+ return Number.isInteger(start)&&Number.isInteger(end)&&end>=start?'['+num(start)+', '+num(end)+')':'unavailable';
+}
+async function loadFindingEvidence(finding){
+ const epoch=++evidenceEpoch,job=state.reportJobId,report=state.report||{};
+ clearFindingEvidence('Checking independently verified source references…');
+ const evidence=finding?.evidence;
+ if(!job||!evidence||!evidence.http_message_id){
+  clearFindingEvidence('Packet-level evidence is unavailable for this result. Legacy logical field and network-flow details remain above.');
+  return;
+ }
+ const identity=report.capture_evidence||{};
+ if(identity.identity_status!=='verified_read'||!/^[0-9a-f]{64}$/i.test(identity.capture_sha256||'')){
+  clearFindingEvidence('Original capture identity is not verified; packet-byte references are withheld.');
+  return;
+ }
+ const valid=()=>epoch===evidenceEpoch&&state.reportJobId===job&&state.report?.capture_evidence?.capture_sha256===identity.capture_sha256;
+ const fieldIds=Array.isArray(evidence.field_ids)?evidence.field_ids.filter(x=>typeof x==='string'&&x.length<=160).slice(0,8):[];
+ try{
+  const pages=await Promise.all([evidencePage(job,'http_evidence','evidence_id',evidence.http_message_id),
+   ...fieldIds.map(id=>evidencePage(job,'field_evidence','evidence_id',id))]);
+  if(!valid())return;
+  const http=pages[0].items.find(x=>x.http_message_id===evidence.http_message_id);
+  if(!http)throw Error('HTTP evidence identity not found');
+  const fields=pages.slice(1).flatMap((x,i)=>x.items.filter(y=>y.field_id===fieldIds[i]));
+  evidenceFact('evidence-http','Capture SHA-256',identity.capture_sha256);
+  evidenceFact('evidence-http','HTTP message',http.http_message_id+' · '+String(http.protocol||'unknown').toUpperCase());
+  evidenceFact('evidence-http','Request/response pairing',http.pairing_status||'unavailable');
+  evidenceFact('evidence-http','Start line (redacted)',http.start_line||'unavailable');
+  evidenceFact('evidence-http','TCP stream',http.stream_id||'unavailable');
+  evidenceFact('evidence-http','Observed stream range',evidenceIntervalText(http.stream_start,http.stream_end));
+  if(http.protocol==='h2')evidenceFact('evidence-http','HTTP/2 stream ID',http.http2_stream_id??'unavailable');
+  if(!fields.length)evidenceFact('evidence-fields','Mapping limitation','No uniquely resolvable field reference; HTTP message-level evidence only.');
+  for(const field of fields){
+   evidenceFact('evidence-fields',field.field_id,
+    'Source: '+(field.source_category||'unknown')+
+    ' · granularity: '+(field.granularity||'unavailable')+
+    ' · transforms: '+(field.transformations?.join(', ')||'none')+
+    ' · source intervals: '+(field.stream_ranges?.length||0));
+  }
+  if(evidence.decoded_text_span)evidenceFact('evidence-fields','BiLSTM decoded character span',
+   evidenceIntervalText(evidence.decoded_text_span.start,evidence.decoded_text_span.end)+' (not a PCAP byte offset)');
+  evidenceFact('evidence-fields','Raw detection span','Unavailable — TRACE does not claim exact raw match offsets.');
+  const sourcePages=new Map();
+  for(const streamId of [...new Set(fields.map(x=>x.stream_id).filter(Boolean))].slice(0,2)){
+   sourcePages.set(streamId,await evidencePage(job,'stream_evidence','stream_id',streamId));
+   if(!valid())return;
+  }
+  const sources=new Map();let partial=fieldIds.length<(evidence.field_ids?.length||0);
+  for(const field of fields){
+   const pg=sourcePages.get(field.stream_id);
+   if(!pg)continue;
+   if(pg.total>pg.items.length)partial=true;
+   for(const needed of field.stream_ranges||[]){
+    if(!Number.isInteger(needed.start)||!Number.isInteger(needed.end))continue;
+    for(const src of pg.items){
+     if(src.row_type!=='source_range'||!src.frame_id)continue;
+     const start=Math.max(needed.start,src.stream_start),end=Math.min(needed.end,src.stream_end);
+     if(!(start<end))continue;
+     const exact=field.granularity==='exact_stream_range'&&Array.isArray(field.transformations)&&field.transformations.length===0;
+     let reference=src.frame_id+' · stream '+evidenceIntervalText(start,end);
+     if(Number.isInteger(src.file_start))reference+=' · supporting file bytes '+
+      evidenceIntervalText(src.file_start+start-src.stream_start,src.file_start+end-src.stream_start);
+     reference+=' · '+(exact?'source field bytes':'transformed source only');
+     sources.set(reference,true);
+    }
+   }
+  }
+  const refs=[...sources.keys()];
+  for(const item of refs.slice(0,12))evidenceFact('evidence-frames','Observed source interval',item);
+  if(!refs.length)evidenceFact('evidence-frames','No resolved frame ranges',
+   'Source ranges may be unavailable, transformed, or beyond the bounded lookup page. Do not infer packet numbers.');
+  if(refs.length>12)partial=true;
+  if(valid())setText('evidence-status',partial?
+   'Capture identity verified. Showing a bounded subset of field/source references; evidence is partial.':
+   'Capture identity verified. Showing metadata and supporting source references (no raw data).');
+ }catch(e){if(valid()){
+  clearFindingEvidence('Evidence lookup failed or is unsupported by this scan: '+(e instanceof Error?e.message:'unavailable'));
+ }}
+}
+
 function renderSummary(){const r=state.report;const s=r.summary||{},f=r.findings||[];setText('metric-findings',num(s.potential_leaks));setText('metric-rules',num(s.rules_findings));setText('metric-ml',num(s.ml_findings));setText('analysis-mode',r.metadata?.detection_method==='rules_plus_bilstm'?'Rules + contextual AI':'Rules-only analysis');setText('model-stamp',r.metadata?.ml_model_version?'Model: '+r.metadata.ml_model_version:'Model not used');setText('metric-flows',num(s.flows_processed));setText('metric-messages',num(s.http_messages));setText('metric-packets',num(s.packets_captured));setText('metric-gaps',num(s.stream_gaps));setText('metric-transactions',num(s.http_transactions));setText('metric-time',`${Number(s.processing_time_seconds||0).toFixed(3)} s`);setText('analysis-meta',`${num(s.total_data_bytes)} frame bytes analysed · Rules: ${num(s.rules_findings)} · BiLSTM: ${num(s.ml_findings)}`);setText('capture-name',state.file||'CAPTURE LOADED');setText('breakdown-scope',r.finding_type_counts?'All findings in this capture':state.reportJobId?'First report page only · full totals above':'Current capture');const bad=!!s.analysis_incomplete;setText('verdict-icon',bad?'!':'✓');$('verdict-icon').classList.toggle('warning',bad);setText('verdict-title',bad?'Incomplete analysis':'No reported integrity gaps');setText('verdict-text',bad?'Capture, reconstruction, processing limits or incomplete ML inference affected this analysis. Review the exported limitations; absence of findings is incomplete evidence.':'The parser did not report capture corruption or TCP gaps. This does not prove all protocols or sensitive values were decoded.');const root=$('breakdown');root.replaceChildren();const items=r.finding_type_counts?Object.entries(r.finding_type_counts).sort((a,b)=>b[1]-a[1]):types(f);if(!items.length){const p=document.createElement('p');p.className='empty-inline';p.textContent='No PII findings reported at the selected thresholds.';root.appendChild(p)}else{const max=items[0][1];for(const [label,count] of items.slice(0,7)){const line=document.createElement('div');line.className='bar-row';const name=document.createElement('span');name.className='bar-label';name.textContent=label.replaceAll('_',' ');const track=document.createElement('div');track.className='bar-track';const fill=document.createElement('span');fill.className='bar-fill';fill.style.width=`${Math.max(3,(count/max)*100)}%`;track.appendChild(fill);const n=document.createElement('b');n.className='bar-count';n.textContent=count;line.append(name,track,n);root.appendChild(line)}}}
 function updatePagination(kind,total,offset,count){setText(kind+'-page',count?num(offset+1)+'–'+num(offset+count)+' of '+num(total):'0 of '+num(total));$(kind+'-prev').disabled=offset===0;$(kind+'-next').disabled=offset+count>=total;}
-function renderFindings(){const rows=state.report?.findings||[];const names=state.reportJobId?['EMAIL','PHONE','IP_ADDRESS','CREDIT_CARD','CREDENTIAL_OR_TOKEN','USERNAME','PERSON_NAME','PERSON_NAME_CANDIDATE']:types(rows).map(a=>a[0]);const select=$('filter-type'),selected=select.value;select.replaceChildren();for(const label of ['',...names]){const opt=document.createElement('option');opt.value=label;opt.textContent=label?label.replaceAll('_',' '):'All PII types';select.appendChild(opt)}select.value=names.includes(selected)?selected:'';paintFindings(rows.slice(0,state.pageSize),state.reportJobId?state.findingsTotal:rows.length,state.findingsOffset);}
+function renderFindings(){const rows=state.report?.findings||[];const names=Object.keys(state.report?.finding_type_counts||{}).filter(k=>Number(state.report.finding_type_counts[k])>0);if(!names.length)names.push(...types(rows).map(a=>a[0]));names.sort();const select=$('filter-type'),selected=select.value;select.replaceChildren();for(const label of ['',...names]){const opt=document.createElement('option');opt.value=label;opt.textContent=label?label.replaceAll('_',' '):'All PII types';select.appendChild(opt)}select.value=names.includes(selected)?selected:'';paintFindings(rows.slice(0,state.pageSize),state.reportJobId?state.findingsTotal:rows.length,state.findingsOffset);}
 function paintFindings(rows,total,offset){const root=$('findings-body');root.replaceChildren();if(!rows.length){const tr=document.createElement('tr');cell(tr,'No matching findings.','table-empty').colSpan=7;root.appendChild(tr)}else for(const f of rows){const tr=document.createElement('tr');cell(tr,String(f.pii_type||'UNKNOWN').replaceAll('_',' '),'type-pill');cell(tr,f.value||'[masked]','val-redacted');cell(tr,f.location||'—');cell(tr,f.flow_id||'—');cell(tr,typeof f.confidence==='number'?f.confidence.toFixed(2):'—');cell(tr,f.detector==='bilstm'?'BiLSTM · raw':'Rules · heuristic');const action=cell(tr,'');const btn=document.createElement('button');btn.type='button';btn.className='inspect-btn';btn.textContent='Inspect →';btn.setAttribute('aria-label','Inspect '+String(f.pii_type||'finding')+' at '+String(f.location||'field'));btn.addEventListener('click',()=>inspectFinding(f));action.appendChild(btn);root.appendChild(tr)}setText('findings-total',num(total)+' findings'+(($('search').value||$('filter-type').value)?' matching filter':''));setText('findings-shown','Showing '+num(rows.length)+' rows on this page');updatePagination('findings',total,offset,rows.length);}
 async function filterFindings(){state.findingsOffset=0;await loadPage('findings',0);}
 function paintFlows(flows,total,offset){const root=$('flows-body');root.replaceChildren();setText('flows-total',num(total)+' flows');if(!flows.length){const tr=document.createElement('tr');cell(tr,'No TCP flows found.','table-empty').colSpan=7;root.appendChild(tr)}for(const f of flows){const tr=document.createElement('tr'),ends=f.endpoints||[];cell(tr,f.flow_id||'—');for(let i=0;i<2;i++){const ep=ends[i]||{};cell(tr,ep.ip?ep.ip+':'+ep.port:'—')}cell(tr,num(f.packets));cell(tr,num(f.http_messages));cell(tr,num(f.http_transactions));cell(tr,num(f.stream_gaps));root.appendChild(tr)}updatePagination('flows',total,offset,flows.length);}
@@ -77,6 +186,7 @@ function renderFlows(){const rows=state.report?.flows||[];paintFlows(rows.slice(
 async function loadPage(kind,offset){if(!state.report)return;const request=++state[kind+'Request'];const needle=$('search').value.trim(),category=$('filter-type').value;try{let rows,total;if(state.reportJobId){const params=new URLSearchParams({offset:String(offset),limit:String(state.pageSize)});if(kind==='findings'){if(needle)params.set('q',needle);if(category)params.set('type',category)}const response=await fetch('/api/jobs/'+encodeURIComponent(state.reportJobId)+'/'+kind+'?'+params,{headers:{'X-Dashboard-Token':state.token}});if(!response.ok)throw Error('Could not load '+kind+' page');const data=await response.json();rows=data.items;total=data.total;}else{let all=state.report[kind]||[];if(kind==='findings')all=all.filter(x=>(!category||x.pii_type===category)&&(!needle||[x.pii_type,x.location,x.value].some(v=>String(v||'').toLowerCase().includes(needle.toLowerCase()))));total=all.length;rows=all.slice(offset,offset+state.pageSize)}if(request!==state[kind+'Request'])return;state[kind+'Offset']=offset;state[kind+'Total']=total;(kind==='findings'?paintFindings:paintFlows)(rows,total,offset);}catch(e){if(request===state[kind+'Request'])error(e.message)}}
 function setModel(invoked,version){setText('mode',invoked?'CONTEXTUAL INFERENCE INVOKED':'CONTEXTUAL INFERENCE NOT INVOKED');setText('model-active',invoked?'RESEARCH · INFERENCE INVOKED':'RESEARCH · NOT INVOKED');setText('live-model-loaded',state.modelAvailable?'LOADED':'NOT LOADED');setText('live-model-version',state.modelVersion||'—');setText('model-live-text',invoked?'Model '+(version||'version unreported')+' was invoked in this scan. Predictions, inference completeness and offline benchmark results are separate.':state.modelAvailable?'The BiLSTM model is loaded and available. Select AI-assisted hybrid to request inference on a new scan.':'The contextual model is unavailable. Start the dashboard with --ml-checkpoint to load it.')}
 function render(payload){
+ evidenceEpoch++;
  state.report=payload.report;state.file=payload.filename;state.reportFilename=payload.filename;$('previous-results').classList.add('hidden');state.reportJobId=payload.job_id||null;state.findingsOffset=state.flowsOffset=0;state.findingsTotal=(payload.pagination||payload.report.pagination)?.findings_total??payload.report.findings?.length??0;state.flowsTotal=(payload.pagination||payload.report.pagination)?.flows_total??payload.report.flows?.length??0;state.pageSize=(payload.pagination||payload.report.pagination)?.page_size||100;state.findingsRequest++;state.flowsRequest++;$('search').value='';$('filter-type').value='';
  setText('selected-name',payload.filename||'capture.pcap');
  setText('selected-meta',((Number(payload.capture_bytes)||0)/1048576).toFixed(3)+' MiB · analysed PCAP');
@@ -85,7 +195,7 @@ function render(payload){
  setLiveEvidence(payload.report,!!payload.model_enabled);
  renderSummary();renderFindings();renderFlows();
  const first=(payload.report.findings||[]).find(f=>f.detector==='bilstm')||(payload.report.findings||[])[0];
- if(first)inspectFinding(first);else{setText('inspect-title','No findings to inspect');setText('inspect-reason','No finding has been selected for this capture.');for(const id of ['inspect-location','inspect-message','inspect-endpoints','inspect-method'])setText(id,'—')}
+ if(first)inspectFinding(first);else{setText('inspect-title','No findings to inspect');setText('inspect-reason','No finding has been selected for this capture.');for(const id of ['inspect-location','inspect-message','inspect-endpoints','inspect-method'])setText(id,'—');clearFindingEvidence('No findings to inspect.');}
  const limits=$('report-limitations');limits.replaceChildren();const limitations=payload.report.limitations||[];for(const item of (Array.isArray(limitations)?limitations:[limitations]).slice(0,20)){const li=document.createElement('li');li.textContent=typeof item==='string'?item:JSON.stringify(item);limits.appendChild(li)}$('limitations-panel').classList.toggle('hidden',!limits.children.length);
  $('export').disabled=false;switchTab('overview');
  if(typeof TraceLab!=='undefined')TraceLab.onResult(payload);
