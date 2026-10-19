@@ -56,7 +56,7 @@ const data={
    stream_ranges:[{start:10,end:14}]}],total:1},
  stream_evidence:{items:[{row_type:'source_range',stream_id:'flow_1_direction_0',
    frame_id:'frame_4',stream_start:0,stream_end:99,file_start:200,file_end:299}],total:1}};
-const ctx={state,URLSearchParams,console,Error,Number,
+const ctx={state,URL,URLSearchParams,console,Error,Number,
  document:{getElementById:id=>{assert(nodes[id]);return nodes[id]},createElement:()=>new Element()},
  num:x=>Number(x).toLocaleString('en-AU'),
  setText:(id,v)=>{nodes[id].textContent=String(v)},
