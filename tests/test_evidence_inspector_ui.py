@@ -70,7 +70,7 @@ ctx.finding={pii_type:'PERSON_NAME',evidence:{http_message_id:'flow_1_msg_1',
  field_ids:['flow_1_msg_1_field_2'],decoded_text_span:{start:0,end:4}}};
 (async()=>{
  await vm.runInContext('loadFindingEvidence(finding)',ctx);
- assert.equal(calls.length,3);
+ assert.equal(calls.length,3,JSON.stringify({calls,status:nodes['evidence-status'].textContent}));
  assert(nodes['evidence-status'].textContent.includes('Capture identity verified'));
  const rendered=JSON.stringify(nodes);
  assert(rendered.includes('frame_4'));
