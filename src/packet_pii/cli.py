@@ -17,7 +17,7 @@ def main(argv=None) -> int:
     parser.add_argument('--threshold', type=float, default=0.8,
                         help='Minimum heuristic confidence (0..1)')
     parser.add_argument('--output', '-o', default='report.json',
-                        help='Private JSON report path (refuses overwrite by default)')
+                        help='Private report path; .json.gz opts into lossless gzip (refuses overwrite by default)')
     parser.add_argument('--overwrite', action='store_true',
                         help='Explicitly replace an existing output report')
     parser.add_argument('--ml-checkpoint', default=None,
