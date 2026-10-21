@@ -166,6 +166,67 @@ def _rss_mib() -> float | None:
     return None
 
 
+class _MallInfo2:
+    """glibc ``mallinfo2`` (all arenas). ``uordblks`` = bytes in live allocations, ``fordblks`` = free bytes the allocator
+    still holds (fragmentation / not yet returned), ``hblkhd`` = live mmapped blocks. Unavailable (None) off glibc."""
+    _fn = None
+
+    @classmethod
+    def read(cls) -> dict | None:
+        import ctypes
+        if cls._fn is None:
+            try:
+                class MI2(ctypes.Structure):
+                    _fields_ = [(n, ctypes.c_size_t) for n in ('arena', 'ordblks', 'smblks', 'hblks', 'hblkhd', 'usmblks',
+                                                               'fsmblks', 'uordblks', 'fordblks', 'keepcost')]
+                fn = ctypes.CDLL(None).mallinfo2
+                fn.restype = MI2
+                cls._fn = fn
+            except (AttributeError, OSError):
+                cls._fn = False
+        if not cls._fn:
+            return None
+        m = cls._fn()
+        mib = lambda v: round(v / 2 ** 20, 1)  # noqa: E731
+        return {'live_heap_mib': mib(m.uordblks), 'live_mmap_mib': mib(m.hblkhd), 'free_held_mib': mib(m.fordblks),
+                'arena_mib': mib(m.arena)}
+
+
+class _Sampler:
+    """Samples RSS every ``interval`` s and keeps the allocator/Python-object state observed at the RSS peak."""
+
+    def __init__(self, interval: float = 0.5):
+        import threading
+        self.interval, self.peak = interval, {'rss_mib': 0.0}
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+
+    def _loop(self):
+        while not self._stop.wait(self.interval):
+            rss = _rss_mib() or 0.0
+            if rss > self.peak['rss_mib']:
+                self.peak = {'rss_mib': rss, 'malloc': _MallInfo2.read(), 'python_blocks': sys.getallocatedblocks()}
+
+    def __enter__(self):
+        self._thread.start()
+        return self
+
+    def __exit__(self, *exc):
+        self._stop.set()
+        self._thread.join()
+
+
+def _cache_bytes(cache) -> int:
+    if not cache:
+        return 0
+    total = sys.getsizeof(cache)
+    for key, spans in cache.items():
+        total += sys.getsizeof(key) + sys.getsizeof(spans)
+        for span in spans:
+            total += sys.getsizeof(span) + sys.getsizeof(span[3])  # tuple + score float; strings are shared constants
+    return total
+
+
 def worker(spec: dict) -> dict:
     sys.path.insert(0, spec['src'])
     import torch
@@ -185,9 +246,22 @@ def worker(spec: dict) -> dict:
         return {'seconds_best': round(min(times), 3), 'seconds_all': [round(t, 3) for t in times],
                 'fields_per_second': round(len(pairs) / min(times), 1), 'peak_rss_mib': _peak_rss_mib(),
                 'rss_after_load_mib': rss_loaded, 'min_score': meta['min_score']}
+    import gc
+    from packet_pii import ml_runner
     from packet_pii.engine import analyze
     from packet_pii.ml.infer import BiLSTMDetector
     from packet_pii.ml_runner import MLWorkBudget
+    if spec.get('cache_entries') is not None:  # candidate only: pin the cache configuration for this process
+        ml_runner.PREDICTION_CACHE_ENABLED = spec['cache_entries'] > 0
+        ml_runner.PREDICTION_CACHE_MAX_ENTRIES = max(1, spec['cache_entries'])
+    runners = []
+    if hasattr(ml_runner.MLBatchRunner, 'prediction_cache_enabled'):
+        original_init = ml_runner.MLBatchRunner.__init__
+
+        def spy(self, *a, **k):
+            original_init(self, *a, **k)
+            runners.append(self)
+        ml_runner.MLBatchRunner.__init__ = spy
     detector = BiLSTMDetector(str(V2_DIR), **({'batch_size': spec['batch_size']} if spec.get('batch_size') else {}))
     if spec['mode'] == 'candidate_no_cache':
         inner = detector
@@ -199,23 +273,46 @@ def worker(spec: dict) -> dict:
                 return inner.predict_fields(fields)
         detector = NoCache()
     started = time.perf_counter()
-    report = analyze(spec['pcap'], ml_detector=detector, ml_budget=MLWorkBudget(**spec['budget']),
-                     profile=spec.get('profile', 'standard'))
+    with _Sampler() as sampler:
+        report = analyze(spec['pcap'], ml_detector=detector, ml_budget=MLWorkBudget(**spec['budget']),
+                         profile=spec.get('profile', 'standard'))
     wall = time.perf_counter() - started
+    report_summary = report['summary']
     peak = _peak_rss_mib()  # scan peak, read before the benchmark's own findings serialisation inflates it
-    Path(spec['out']).write_text(json.dumps(report['findings']), encoding='utf-8')
+    runner = runners[-1] if runners else None
+    cache = {} if runner is None else {
+        'enabled': runner.prediction_cache_enabled, 'limit': runner._cache_limit, 'entries_at_end': len(runner._cache or ()),
+        'hits': runner.cache_hits, 'model_inferred': runner.model_evaluations, 'evictions': runner.cache_evictions,
+        'hit_rate': round(runner.cache_hits / max(1, runner.cache_hits + runner.model_evaluations), 4),
+        'measured_cache_object_mib': round(_cache_bytes(runner._cache) / 2 ** 20, 2)}
+    memory = {'peak_rss_mib_getrusage': peak, 'at_sampled_peak': sampler.peak,
+              'after_scan_report_alive': {'rss_mib': _rss_mib(), 'malloc': _MallInfo2.read(), 'python_blocks': sys.getallocatedblocks()}}
+    findings_json = json.dumps(report['findings'])
+    runners.clear()
+    runner = None
+    del report
+    gc.collect()
+    memory['after_release_and_gc'] = {'rss_mib': _rss_mib(), 'malloc': _MallInfo2.read(), 'python_blocks': sys.getallocatedblocks()}
+    try:
+        import ctypes
+        ctypes.CDLL(None).malloc_trim(0)
+        memory['after_malloc_trim'] = {'rss_mib': _rss_mib(), 'malloc': _MallInfo2.read()}
+    except (AttributeError, OSError):
+        pass
+    Path(spec['out']).write_text(findings_json, encoding='utf-8')
     keys = ('fields_extracted', 'http_messages', 'rules_findings', 'ml_findings', 'ml_fields_eligible', 'ml_fields_evaluated',
             'ml_fields_skipped', 'ml_fields_skipped_by_reason', 'ml_fields_excluded_by_policy', 'ml_fields_empty',
             'ml_coverage_status', 'ml_coverage_ratio', 'ml_inference_batches', 'ml_processing_time_seconds',
             'ml_fields_model_inferred', 'ml_prediction_cache_hits', 'ml_prediction_cache_enabled', 'ml_predictions_by_label')
-    summary = {k: report['summary'].get(k) for k in keys}
-    return {'wall_seconds': round(wall, 2), 'model_seconds': round(report['summary']['ml_processing_time_seconds'], 2),
-            'non_model_seconds': round(wall - report['summary']['ml_processing_time_seconds'], 2),
-            'peak_rss_mib': peak, 'summary': summary}
+    summary = {k: report_summary.get(k) for k in keys}
+    model = report_summary['ml_processing_time_seconds']
+    return {'wall_seconds': round(wall, 2), 'model_seconds': round(model, 2), 'non_model_seconds': round(wall - model, 2),
+            'peak_rss_mib': peak, 'memory': memory, 'cache': cache, 'env': spec.get('env') or {}, 'summary': summary}
 
 
 def run_worker(spec: dict) -> dict:
-    proc = subprocess.run([sys.executable, __file__, '--worker', json.dumps(spec)], capture_output=True, text=True)
+    env = {**os.environ, **(spec.get('env') or {})}
+    proc = subprocess.run([sys.executable, __file__, '--worker', json.dumps(spec)], capture_output=True, text=True, env=env)
     if proc.returncode:
         raise SystemExit(f'worker failed ({spec.get("kind")}/{spec.get("mode", spec.get("batch_size"))}):\n{proc.stderr[-2000:]}')
     return json.loads(proc.stdout.strip().splitlines()[-1])
@@ -318,11 +415,18 @@ def main(argv=None) -> int:
             budget['batch_fields'] = args.scan_batch_fields
         scans, findings = {'capture': capture, 'ml_budget': budget, 'analysis_profile': args.scan_profile, 'runs': {}}, {}
         for mode in args.scan_modes.split(','):
+            # 'baseline' | 'candidate_no_cache' | 'candidate_cache' | 'cache=<entries>[@arena2]' (0 = cache disabled)
             src = baseline_src if mode == 'baseline' else ROOT / 'src'
-            out = work / f'scan.{mode}.json'
+            out = work / f'scan.{mode.replace("=", "_").replace("@", "_")}.json'
+            entries, env = None, {}
+            if mode.startswith('cache='):
+                entries_text, _, variant = mode[6:].partition('@')
+                entries = int(entries_text)
+                if variant == 'arena2':
+                    env = {'MALLOC_ARENA_MAX': '2'}
             res = run_worker({'kind': 'scan', 'mode': mode, 'src': str(src), 'threads': args.threads, 'pcap': str(pcap),
-                              'budget': budget, 'out': str(out), 'profile': args.scan_profile,
-                              'batch_size': None if mode == 'baseline' else args.scan_batch_size})
+                              'budget': budget, 'out': str(out), 'profile': args.scan_profile, 'cache_entries': entries,
+                              'env': env, 'batch_size': None if mode == 'baseline' else args.scan_batch_size})
             findings[mode] = json.loads(out.read_text())
             scans['runs'][mode] = res
             print(f'[scan] {capture["mib"]} MiB {mode}: wall {res["wall_seconds"]}s model {res["model_seconds"]}s '

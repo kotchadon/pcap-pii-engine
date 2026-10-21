@@ -26,6 +26,7 @@ from .ml.schema import DEFAULT_MAX_FIELD_CHARS, DEFAULT_MAX_FIELDS, MAX_LOCATION
 
 # Scan-local prediction cache bounds (see ``MLBatchRunner``): entries, and the longest field text that is cached at all
 # (long free-text values rarely repeat, so they are not worth hashing or holding).
+PREDICTION_CACHE_ENABLED = True
 PREDICTION_CACHE_MAX_ENTRIES = 65_536
 PREDICTION_CACHE_MAX_FIELD_CHARS = 4_096
 
@@ -135,7 +136,7 @@ class MLBatchRunner:
     def __init__(self, detector: ContextualPIIDetector, budget: MLWorkBudget, *, include_values: bool = False,
                  checkpoint: Callable[[dict], None] | None = None, max_pending_messages: int = 4096,
                  disposition: Callable[[object, int, str], None] | None = None,
-                 zero_work: bool = False, prediction_cache: bool = True):
+                 zero_work: bool = False, prediction_cache: bool | None = None, prediction_cache_entries: int | None = None):
         if not isinstance(budget, MLWorkBudget):
             raise TypeError('budget must be an MLWorkBudget')
         self.detector, self.budget, self.include_values = detector, budget, include_values
@@ -151,8 +152,13 @@ class MLBatchRunner:
         self.seconds = 0.0
         self.skip_reasons: Counter = Counter()
         self.labels: Counter = Counter()
-        self.model_evaluations = self.cache_hits = 0
-        self._cache: OrderedDict | None = (OrderedDict() if prediction_cache
+        self.model_evaluations = self.cache_hits = self.cache_evictions = 0
+        enabled = PREDICTION_CACHE_ENABLED if prediction_cache is None else prediction_cache
+        entries = PREDICTION_CACHE_MAX_ENTRIES if prediction_cache_entries is None else prediction_cache_entries
+        if type(entries) is not int or entries < 0:
+            raise ValueError('prediction_cache_entries must be a non-negative int')
+        self._cache_limit = entries
+        self._cache: OrderedDict | None = (OrderedDict() if enabled and entries > 0
                                            and getattr(detector, 'prediction_cache_safe', False) is True else None)
 
     @property
@@ -333,8 +339,9 @@ class MLBatchRunner:
         if key in cache:
             return
         cache[key] = spans or ()  # shared empty tuple for the common no-prediction case
-        while len(cache) > PREDICTION_CACHE_MAX_ENTRIES:
+        while len(cache) > self._cache_limit:
             cache.popitem(last=False)
+            self.cache_evictions += 1
 
     # ------------------------------------------------------------------ release
     def take_ready(self) -> list[tuple[object, list[dict]]]:
