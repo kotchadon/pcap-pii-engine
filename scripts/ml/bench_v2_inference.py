@@ -199,7 +199,8 @@ def worker(spec: dict) -> dict:
                 return inner.predict_fields(fields)
         detector = NoCache()
     started = time.perf_counter()
-    report = analyze(spec['pcap'], ml_detector=detector, ml_budget=MLWorkBudget(**spec['budget']))
+    report = analyze(spec['pcap'], ml_detector=detector, ml_budget=MLWorkBudget(**spec['budget']),
+                     profile=spec.get('profile', 'standard'))
     wall = time.perf_counter() - started
     Path(spec['out']).write_text(json.dumps(report['findings']), encoding='utf-8')
     keys = ('fields_extracted', 'http_messages', 'rules_findings', 'ml_findings', 'ml_fields_eligible', 'ml_fields_evaluated',
@@ -269,6 +270,7 @@ def main(argv=None) -> int:
     ap.add_argument('--skip-model', action='store_true')
     ap.add_argument('--skip-scan', action='store_true')
     ap.add_argument('--scan-modes', default='baseline,candidate_no_cache,candidate_cache')
+    ap.add_argument('--scan-profile', default='standard', help="analysis profile; use 'large' for ~52 MiB captures")
     ap.add_argument('--scan-batch-size', type=int, default=None, help='candidate predictor batch size (default: library default)')
     ap.add_argument('--scan-batch-fields', type=int, default=None, help='MLWorkBudget.batch_fields for every scan (existing knob)')
     args = ap.parse_args(argv)
@@ -313,12 +315,12 @@ def main(argv=None) -> int:
         budget = {'max_fields': 1_000_000, 'max_characters': 200_000_000, 'max_seconds': args.scan_max_seconds}
         if args.scan_batch_fields:
             budget['batch_fields'] = args.scan_batch_fields
-        scans, findings = {'capture': capture, 'ml_budget': budget, 'runs': {}}, {}
+        scans, findings = {'capture': capture, 'ml_budget': budget, 'analysis_profile': args.scan_profile, 'runs': {}}, {}
         for mode in args.scan_modes.split(','):
             src = baseline_src if mode == 'baseline' else ROOT / 'src'
             out = work / f'scan.{mode}.json'
             res = run_worker({'kind': 'scan', 'mode': mode, 'src': str(src), 'threads': args.threads, 'pcap': str(pcap),
-                              'budget': budget, 'out': str(out),
+                              'budget': budget, 'out': str(out), 'profile': args.scan_profile,
                               'batch_size': None if mode == 'baseline' else args.scan_batch_size})
             findings[mode] = json.loads(out.read_text())
             scans['runs'][mode] = res
