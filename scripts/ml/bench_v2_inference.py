@@ -248,7 +248,7 @@ def worker(spec: dict) -> dict:
                 'rss_after_load_mib': rss_loaded, 'min_score': meta['min_score']}
     import gc
     from packet_pii import ml_runner
-    from packet_pii.engine import analyze
+    from packet_pii.engine import analyze, analyze_to_report
     from packet_pii.ml.infer import BiLSTMDetector
     from packet_pii.ml_runner import MLWorkBudget
     if spec.get('cache_entries') is not None:  # candidate only: pin the cache configuration for this process
@@ -272,10 +272,17 @@ def worker(spec: dict) -> dict:
             def predict_fields(self, fields):
                 return inner.predict_fields(fields)
         detector = NoCache()
+    if spec.get('shared_detector') and hasattr(ml_runner, 'shared'):
+        detector = ml_runner.shared(detector)  # the dashboard/job wrapper (PR #28 architecture)
     started = time.perf_counter()
+    target = Path(spec['out']).with_suffix('.report.json')
     with _Sampler() as sampler:
-        report = analyze(spec['pcap'], ml_detector=detector, ml_budget=MLWorkBudget(**spec['budget']),
-                         profile=spec.get('profile', 'standard'))
+        if spec.get('report_to_disk'):  # full product path: disk-backed rows, evidence arrays, atomic JSON publication
+            report = analyze_to_report(spec['pcap'], target, ml_detector=detector, ml_budget=MLWorkBudget(**spec['budget']),
+                                       profile=spec.get('profile', 'standard'))
+        else:
+            report = analyze(spec['pcap'], ml_detector=detector, ml_budget=MLWorkBudget(**spec['budget']),
+                             profile=spec.get('profile', 'standard'))
     wall = time.perf_counter() - started
     report_summary = report['summary']
     peak = _peak_rss_mib()  # scan peak, read before the benchmark's own findings serialisation inflates it
@@ -287,7 +294,12 @@ def worker(spec: dict) -> dict:
         'measured_cache_object_mib': round(_cache_bytes(runner._cache) / 2 ** 20, 2)}
     memory = {'peak_rss_mib_getrusage': peak, 'at_sampled_peak': sampler.peak,
               'after_scan_report_alive': {'rss_mib': _rss_mib(), 'malloc': _MallInfo2.read(), 'python_blocks': sys.getallocatedblocks()}}
-    findings_json = json.dumps(report['findings'])
+    if spec.get('report_to_disk'):
+        memory['report_bytes'] = target.stat().st_size
+        findings_json = json.dumps(json.loads(target.read_text(encoding='utf-8'))['findings'])
+        target.unlink()
+    else:
+        findings_json = json.dumps(report['findings'])
     runners.clear()
     runner = None
     del report
@@ -369,6 +381,8 @@ def main(argv=None) -> int:
     ap.add_argument('--skip-scan', action='store_true')
     ap.add_argument('--scan-modes', default='baseline,candidate_no_cache,candidate_cache')
     ap.add_argument('--scan-profile', default='standard', help="analysis profile; use 'large' for ~52 MiB captures")
+    ap.add_argument('--scan-report-to-disk', action='store_true', help='use analyze_to_report (disk-backed report)')
+    ap.add_argument('--scan-shared-detector', action='store_true', help='wrap the detector with ml_runner.shared() if present')
     ap.add_argument('--scan-batch-size', type=int, default=None, help='candidate predictor batch size (default: library default)')
     ap.add_argument('--scan-batch-fields', type=int, default=None, help='MLWorkBudget.batch_fields for every scan (existing knob)')
     args = ap.parse_args(argv)
@@ -413,7 +427,8 @@ def main(argv=None) -> int:
         budget = {'max_fields': 1_000_000, 'max_characters': 200_000_000, 'max_seconds': args.scan_max_seconds}
         if args.scan_batch_fields:
             budget['batch_fields'] = args.scan_batch_fields
-        scans, findings = {'capture': capture, 'ml_budget': budget, 'analysis_profile': args.scan_profile, 'runs': {}}, {}
+        scans, findings = {'capture': capture, 'ml_budget': budget, 'analysis_profile': args.scan_profile,
+                           'report_to_disk': args.scan_report_to_disk, 'shared_detector': args.scan_shared_detector, 'runs': {}}, {}
         for mode in args.scan_modes.split(','):
             # 'baseline' | 'candidate_no_cache' | 'candidate_cache' | 'cache=<entries>[@arena2]' (0 = cache disabled)
             src = baseline_src if mode == 'baseline' else ROOT / 'src'
@@ -426,7 +441,8 @@ def main(argv=None) -> int:
                     env = {'MALLOC_ARENA_MAX': '2'}
             res = run_worker({'kind': 'scan', 'mode': mode, 'src': str(src), 'threads': args.threads, 'pcap': str(pcap),
                               'budget': budget, 'out': str(out), 'profile': args.scan_profile, 'cache_entries': entries,
-                              'env': env, 'batch_size': None if mode == 'baseline' else args.scan_batch_size})
+                              'env': env, 'batch_size': None if mode == 'baseline' else args.scan_batch_size,
+                              'report_to_disk': args.scan_report_to_disk, 'shared_detector': args.scan_shared_detector})
             findings[mode] = json.loads(out.read_text())
             scans['runs'][mode] = res
             print(f'[scan] {capture["mib"]} MiB {mode}: wall {res["wall_seconds"]}s model {res["model_seconds"]}s '
