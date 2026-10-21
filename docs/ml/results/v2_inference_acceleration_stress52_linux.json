@@ -14,12 +14,12 @@
     "commit": "11d41e8c583231edd86b621d96cc037fe676108f"
   },
   "candidate": {
-    "commit": "5b8307c51963a8c4546d3d605e1be6445795cc39",
+    "commit": "d866667d9d140444889bc3296792be6c4fe57aa8",
     "dirty": false
   },
   "full_scan": {
     "capture": {
-      "path": "/tmp/trace-bench-f9641xnm/synthetic_scan.pcap",
+      "path": "/tmp/trace-bench-fg04ad7_/synthetic_scan.pcap",
       "bytes": 54526536,
       "mib": 52.0,
       "packets": 344241,
@@ -35,10 +35,10 @@
     "analysis_profile": "large",
     "runs": {
       "baseline": {
-        "wall_seconds": 1185.77,
-        "model_seconds": 1119.2,
-        "non_model_seconds": 66.57,
-        "peak_rss_mib": 1571.7,
+        "wall_seconds": 1108.33,
+        "model_seconds": 1047.14,
+        "non_model_seconds": 61.19,
+        "peak_rss_mib": 1138.3,
         "summary": {
           "fields_extracted": 740926,
           "http_messages": 113668,
@@ -53,7 +53,7 @@
           "ml_coverage_status": "complete",
           "ml_coverage_ratio": 1.0,
           "ml_inference_batches": 2229,
-          "ml_processing_time_seconds": 1119.1970923130036,
+          "ml_processing_time_seconds": 1047.1442738899887,
           "ml_fields_model_inferred": null,
           "ml_prediction_cache_hits": null,
           "ml_prediction_cache_enabled": null,
@@ -64,10 +64,10 @@
         }
       },
       "candidate_no_cache": {
-        "wall_seconds": 707.17,
-        "model_seconds": 643.11,
-        "non_model_seconds": 64.07,
-        "peak_rss_mib": 1551.0,
+        "wall_seconds": 676.7,
+        "model_seconds": 616.11,
+        "non_model_seconds": 60.58,
+        "peak_rss_mib": 1325.6,
         "summary": {
           "fields_extracted": 740926,
           "http_messages": 113668,
@@ -82,7 +82,7 @@
           "ml_coverage_status": "complete",
           "ml_coverage_ratio": 1.0,
           "ml_inference_batches": 2229,
-          "ml_processing_time_seconds": 643.1088614420014,
+          "ml_processing_time_seconds": 616.1141009399789,
           "ml_fields_model_inferred": 570424,
           "ml_prediction_cache_hits": 0,
           "ml_prediction_cache_enabled": false,
@@ -100,14 +100,14 @@
           "rule_findings_identical": true,
           "max_abs_model_confidence_difference": 1.0000000000287557e-06
         },
-        "wall_speedup": 1.68,
-        "model_speedup": 1.74
+        "wall_speedup": 1.64,
+        "model_speedup": 1.7
       },
       "candidate_cache": {
-        "wall_seconds": 609.6,
-        "model_seconds": 544.71,
-        "non_model_seconds": 64.9,
-        "peak_rss_mib": 1918.4,
+        "wall_seconds": 603.07,
+        "model_seconds": 538.77,
+        "non_model_seconds": 64.3,
+        "peak_rss_mib": 1920.5,
         "summary": {
           "fields_extracted": 740926,
           "http_messages": 113668,
@@ -122,7 +122,7 @@
           "ml_coverage_status": "complete",
           "ml_coverage_ratio": 1.0,
           "ml_inference_batches": 2229,
-          "ml_processing_time_seconds": 544.7081361749524,
+          "ml_processing_time_seconds": 538.7699180020081,
           "ml_fields_model_inferred": 117184,
           "ml_prediction_cache_hits": 453240,
           "ml_prediction_cache_enabled": true,
@@ -140,8 +140,8 @@
           "rule_findings_identical": true,
           "max_abs_model_confidence_difference": 1.0000000000287557e-06
         },
-        "wall_speedup": 1.95,
-        "model_speedup": 2.05
+        "wall_speedup": 1.84,
+        "model_speedup": 1.94
       }
     }
   }
