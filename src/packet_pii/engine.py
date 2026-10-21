@@ -745,11 +745,13 @@ def _analyze(path: str | Path, threshold: float = 0.8,
         ml_status, ml_ratio = runner.status, runner.coverage_ratio
         ml_skip_reasons, ml_batches = dict(sorted(runner.skip_reasons.items())), runner.batches
         ml_model_inferred, ml_cache_hits, ml_cache_enabled = runner.model_evaluations, runner.cache_hits, runner.prediction_cache_enabled
+        ml_overshoot = runner.time_budget_overshoot_seconds
     else:
         ml_eligible = ml_evaluated = ml_skipped = ml_excluded = ml_empty = ml_batches = 0
         ml_labels, ml_seconds, ml_invoked = {'PERSON_NAME': 0, 'USERNAME': 0}, 0.0, False
         ml_status, ml_ratio, ml_skip_reasons = 'not_requested', None, {}
         ml_model_inferred = ml_cache_hits = 0
+        ml_overshoot = 0.0
         ml_cache_enabled = False
 
     return {
@@ -826,6 +828,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'ml_fields_empty': ml_empty,
             'ml_predictions_by_label': ml_labels,
             'ml_processing_time_seconds': ml_seconds,
+            'ml_time_budget_overshoot_seconds': ml_overshoot,
             'ml_invoked': ml_invoked,
             'ml_inference_failed': False,
             'ml_incomplete': ml_skipped > 0,

@@ -406,3 +406,26 @@ def test_oversized_prediction_is_not_cached(monkeypatch):
     _, ref = _run(CacheableStub(), MESSAGES, prediction_cache=False)
     assert out == ref and len(runner._cache) == 1 and runner.cache_bytes == MLBatchRunner._entry_bytes(())
     assert ml_runner._cache_key('json_body.note', 'plain') in runner._cache
+
+
+def test_time_budget_overshoot_is_reported_and_bounded_by_one_batch(tmp_path):
+    import time as _time
+
+    class Slow(CacheableStub):
+        prediction_cache_safe = False
+
+        def predict_fields(self, fields):
+            _time.sleep(0.03)
+            return super().predict_fields(fields)
+    runner = MLBatchRunner(Slow(), MLWorkBudget(max_seconds=0.005, batch_fields=2))
+    runner.add(0, [('json_body.a', 'NAME 1'), ('json_body.b', 'NAME 2')])   # admitted within budget, runs as one batch
+    runner.add(1, [('json_body.c', 'NAME 3')])                              # budget now spent: skipped, never run
+    runner.flush()
+    assert runner.skip_reasons == {'time_budget': 1} and runner.batches == 1
+    assert 0.02 <= runner.time_budget_overshoot_seconds <= runner.seconds - 0.005 + 1e-6
+    fresh = MLBatchRunner(Slow(), MLWorkBudget(max_seconds=10))
+    fresh.add(0, [('json_body.a', 'NAME 1')])
+    fresh.flush()
+    assert fresh.time_budget_overshoot_seconds == 0.0
+    path = build_pcap(tmp_path / 'one.pcap', [conversation(0, post_json({'full_name': 'Priya Patel'}), ok_response())])
+    assert analyze(path)['summary']['ml_time_budget_overshoot_seconds'] == 0.0     # rules-only reports carry 0.0

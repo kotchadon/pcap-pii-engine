@@ -377,6 +377,12 @@ class MLBatchRunner:
         return 'partial' if self.skipped else 'complete'
 
     @property
+    def time_budget_overshoot_seconds(self) -> float:
+        """Model time spent beyond ``max_seconds``: fields are admitted while the budget remains, and an admitted batch
+        always completes, so the overshoot is at most one batch. Reported, never hidden."""
+        return round(max(0.0, self.seconds - self.budget.max_seconds), 6)
+
+    @property
     def coverage_ratio(self) -> float | None:
         return None if self.eligible == 0 else round(self.evaluated / self.eligible, 6)
 
