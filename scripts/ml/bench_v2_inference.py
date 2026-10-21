@@ -188,7 +188,7 @@ def worker(spec: dict) -> dict:
     from packet_pii.engine import analyze
     from packet_pii.ml.infer import BiLSTMDetector
     from packet_pii.ml_runner import MLWorkBudget
-    detector = BiLSTMDetector(str(V2_DIR))
+    detector = BiLSTMDetector(str(V2_DIR), **({'batch_size': spec['batch_size']} if spec.get('batch_size') else {}))
     if spec['mode'] == 'candidate_no_cache':
         inner = detector
 
@@ -269,6 +269,8 @@ def main(argv=None) -> int:
     ap.add_argument('--skip-model', action='store_true')
     ap.add_argument('--skip-scan', action='store_true')
     ap.add_argument('--scan-modes', default='baseline,candidate_no_cache,candidate_cache')
+    ap.add_argument('--scan-batch-size', type=int, default=None, help='candidate predictor batch size (default: library default)')
+    ap.add_argument('--scan-batch-fields', type=int, default=None, help='MLWorkBudget.batch_fields for every scan (existing knob)')
     args = ap.parse_args(argv)
     if args.worker:
         print(json.dumps(worker(json.loads(args.worker))))
@@ -309,12 +311,15 @@ def main(argv=None) -> int:
         pcap = work / 'synthetic_scan.pcap'
         capture = generate_capture(pcap, args.scan_mib)
         budget = {'max_fields': 1_000_000, 'max_characters': 200_000_000, 'max_seconds': args.scan_max_seconds}
+        if args.scan_batch_fields:
+            budget['batch_fields'] = args.scan_batch_fields
         scans, findings = {'capture': capture, 'ml_budget': budget, 'runs': {}}, {}
         for mode in args.scan_modes.split(','):
             src = baseline_src if mode == 'baseline' else ROOT / 'src'
             out = work / f'scan.{mode}.json'
             res = run_worker({'kind': 'scan', 'mode': mode, 'src': str(src), 'threads': args.threads, 'pcap': str(pcap),
-                              'budget': budget, 'out': str(out)})
+                              'budget': budget, 'out': str(out),
+                              'batch_size': None if mode == 'baseline' else args.scan_batch_size})
             findings[mode] = json.loads(out.read_text())
             scans['runs'][mode] = res
             print(f'[scan] {capture["mib"]} MiB {mode}: wall {res["wall_seconds"]}s model {res["model_seconds"]}s '
