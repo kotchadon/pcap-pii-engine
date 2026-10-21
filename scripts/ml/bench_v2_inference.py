@@ -250,6 +250,8 @@ def worker(spec: dict) -> dict:
     sys.path.insert(0, spec['src'])
     import torch
     torch.set_num_threads(spec['threads'])
+    if os.environ.get('TRACE_BENCH_DISABLE_MKLDNN') == '1':  # emulate builds without oneDNN (generic conv path)
+        torch.backends.mkldnn.enabled = False
     if spec['kind'] == 'model':
         from packet_pii.ml.bilstm import load_predictor
         options = {} if spec['legacy_api'] else {'length_bucketing': spec['bucketing']}
@@ -296,12 +298,13 @@ def worker(spec: dict) -> dict:
     started = time.perf_counter()
     target = Path(spec['out']).with_suffix('.report.json')
     with _Sampler() as sampler:
+        stage_times = {}
         if spec.get('report_to_disk'):  # full product path: disk-backed rows, evidence arrays, atomic JSON publication
             report = analyze_to_report(spec['pcap'], target, ml_detector=detector, ml_budget=MLWorkBudget(**spec['budget']),
-                                       profile=spec.get('profile', 'standard'))
+                                       profile=spec.get('profile', 'standard'), timings=stage_times)
         else:
             report = analyze(spec['pcap'], ml_detector=detector, ml_budget=MLWorkBudget(**spec['budget']),
-                             profile=spec.get('profile', 'standard'))
+                             profile=spec.get('profile', 'standard'), timings=stage_times)
     wall = time.perf_counter() - started
     report_summary = report['summary']
     peak = _peak_rss_mib()  # scan peak, read before the benchmark's own findings serialisation inflates it
@@ -339,7 +342,8 @@ def worker(spec: dict) -> dict:
     summary = {k: report_summary.get(k) for k in keys}
     model = report_summary['ml_processing_time_seconds']
     return {'wall_seconds': round(wall, 2), 'model_seconds': round(model, 2), 'non_model_seconds': round(wall - model, 2),
-            'peak_rss_mib': peak, 'memory': memory, 'cache': cache, 'env': spec.get('env') or {}, 'summary': summary}
+            'peak_rss_mib': peak, 'memory': memory, 'cache': cache, 'env': spec.get('env') or {},
+            'stage_seconds': {k: round(v, 3) for k, v in stage_times.items()}, 'summary': summary}
 
 
 def run_worker(spec: dict) -> dict:
@@ -373,10 +377,18 @@ def compare_predictions(old: list, new: list, threshold: float) -> dict:
 
 
 def compare_findings(old: list, new: list) -> dict:
-    strip = lambda rows: [{k: v for k, v in f.items() if k != 'confidence'} for f in rows]  # noqa: E731
+    """Compare findings in order. Keys the baseline does not emit at all (additive report schema, e.g. ``evidence``
+    added after the baseline commit) are reported in ``candidate_only_keys`` and excluded from the identity check;
+    every key the baseline does emit must match exactly, except model ``confidence`` (reported separately)."""
+    old_keys = set().union(*(f.keys() for f in old)) if old else set()
+    new_keys = set().union(*(f.keys() for f in new)) if new else set()
+    extra = sorted(new_keys - old_keys)
+    project = lambda rows: [{k: v for k, v in f.items() if k != 'confidence' and k in old_keys} for f in rows]  # noqa: E731
     diffs = [abs(a['confidence'] - b['confidence']) for a, b in zip(old, new) if a.get('detector') == 'bilstm']
-    return {'findings': [len(old), len(new)], 'identical_except_confidence': strip(old) == strip(new),
-            'rule_findings_identical': [f for f in old if f.get('detector') != 'bilstm'] == [f for f in new if f.get('detector') != 'bilstm'],
+    return {'findings': [len(old), len(new)], 'identical_except_confidence': project(old) == project(new),
+            'candidate_only_keys': extra, 'baseline_only_keys': sorted(old_keys - new_keys),
+            'rule_findings_identical': project([f for f in old if f.get('detector') != 'bilstm'])
+                                       == project([f for f in new if f.get('detector') != 'bilstm']),
             'max_abs_model_confidence_difference': max(diffs, default=0.0)}
 
 
@@ -402,6 +414,14 @@ def main(argv=None) -> int:
     ap.add_argument('--skip-model', action='store_true')
     ap.add_argument('--skip-scan', action='store_true')
     ap.add_argument('--scan-modes', default='baseline,candidate_no_cache,candidate_cache')
+    ap.add_argument('--disable-mkldnn', action='store_true',
+                    help='run every worker with torch.backends.mkldnn disabled (generic convolution path; label results)')
+    ap.add_argument('--gate', action='store_true', help='evaluate the regression gate for every candidate scan run; '
+                    'exit 1 if any criterion fails')
+    ap.add_argument('--gate-rss-ratio', type=float, default=1.10)
+    ap.add_argument('--gate-rss-slack-mib', type=float, default=32.0)
+    ap.add_argument('--gate-wall-ratio', type=float, default=1.05)
+    ap.add_argument('--summary-md', type=Path, help='also write a human-readable Markdown summary')
     ap.add_argument('--scan-profile', default='standard', help="analysis profile; use 'large' for ~52 MiB captures")
     ap.add_argument('--scan-report-to-disk', action='store_true', help='use analyze_to_report (disk-backed report)')
     ap.add_argument('--scan-shared-detector', action='store_true', help='wrap the detector with ml_runner.shared() if present')
@@ -411,6 +431,8 @@ def main(argv=None) -> int:
     if args.worker:
         print(json.dumps(worker(json.loads(args.worker))))
         return 0
+    if args.disable_mkldnn:
+        os.environ['TRACE_BENCH_DISABLE_MKLDNN'] = '1'  # inherited by every worker
     if not args.out:
         ap.error('--out is required')
     from importlib.metadata import PackageNotFoundError, version  # never import torch here: children inherit our RSS
@@ -486,10 +508,93 @@ def main(argv=None) -> int:
                     run['wall_speedup'] = round(base['wall_seconds'] / run['wall_seconds'], 2)
                     run['model_speedup'] = round(base['model_seconds'] / max(run['model_seconds'], 1e-9), 2)
         results['full_scan'] = scans
+    results['convolution_path'] = 'generic (mkldnn disabled)' if args.disable_mkldnn else 'default'
+    gate_ok = True
+    if args.gate and 'full_scan' in results:
+        results['gate'] = evaluate_gate(results['full_scan'], args)
+        gate_ok = results['gate']['pass']
+        print(f"[gate] {'PASS' if gate_ok else 'FAIL'}", json.dumps(results['gate']['runs']), flush=True)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+    if args.summary_md:
+        args.summary_md.write_text(markdown_summary(results), encoding='utf-8')
     print(f'wrote {args.out}')
-    return 0
+    return 0 if gate_ok else 1
+
+
+def evaluate_gate(scans: dict, args) -> dict:
+    """Regression gate. Platform-dependent thresholds are explicit and recorded with the result.
+
+    A candidate passes only if: the baseline and the candidate completed; findings are identical except model
+    confidence (max |delta| <= 1e-5); eligible/evaluated/skipped ML coverage is identical; peak RSS (own process) <=
+    baseline * rss_ratio + rss_slack; wall time <= baseline * wall_ratio. A failed run is never reported as a speed-up.
+    """
+    criteria = {'rss_ratio': args.gate_rss_ratio, 'rss_slack_mib': args.gate_rss_slack_mib, 'wall_ratio': args.gate_wall_ratio,
+                'max_confidence_delta': 1e-5}
+    runs, base = {}, scans['runs'].get('baseline')
+    for mode, run in scans['runs'].items():
+        if mode == 'baseline':
+            continue
+        checks = {}
+        if not base or base.get('failed'):
+            checks['baseline_completed'] = False
+        elif run.get('failed'):
+            checks['candidate_completed'] = False
+        else:
+            cmp, bs, cs = run.get('comparison_vs_baseline') or {}, base['summary'], run['summary']
+            checks['candidate_completed'] = True
+            checks['findings_identical_except_confidence'] = bool(cmp.get('identical_except_confidence'))
+            checks['no_baseline_fields_missing'] = not cmp.get('baseline_only_keys')
+            checks['confidence_delta_within_tolerance'] = cmp.get('max_abs_model_confidence_difference', 1) <= 1e-5
+            checks['coverage_identical'] = all(bs.get(k) == cs.get(k) for k in ('ml_fields_eligible', 'ml_fields_evaluated',
+                                                                                 'ml_fields_skipped', 'ml_coverage_status'))
+            checks['peak_rss_within_bound'] = run['peak_rss_mib'] <= base['peak_rss_mib'] * args.gate_rss_ratio + args.gate_rss_slack_mib
+            checks['wall_time_within_bound'] = run['wall_seconds'] <= base['wall_seconds'] * args.gate_wall_ratio
+        runs[mode] = {'pass': all(checks.values()), 'checks': checks}
+    return {'criteria': criteria, 'runs': runs, 'pass': bool(runs) and all(r['pass'] for r in runs.values())}
+
+
+def markdown_summary(results: dict) -> str:
+    m = results['machine']
+    lines = [f"# {results['label']}", '',
+             f"- Machine: {m['platform']} ({m['machine']}), {m['cpu_count']} CPUs, Python {m['python']}, torch {m['torch']}, "
+             f"{m['threads']} threads; convolution path: {results.get('convolution_path')}",
+             f"- Baseline: `{results['baseline']['ref']}` {results['baseline']['commit'][:12]}; candidate "
+             f"{results['candidate']['commit'][:12]}{' (uncommitted changes)' if results['candidate']['dirty'] else ''}", '']
+    for name, section in (results.get('model_only') or {}).items():
+        b = section['baseline_batch_64']
+        lines += [f"## Model only: {name} ({section['inputs']} inputs)", '',
+                  '| Config | Seconds | Speed-up | Peak RSS MiB | Span diffs | Inclusion diffs | Max abs score delta |',
+                  '|---|---|---|---|---|---|---|', f"| baseline batch 64 | {b['seconds_best']} | 1.00 | {b['peak_rss_mib']} | - | - | - |"]
+        for cfg, r in section['candidate'].items():
+            c = r['comparison']
+            lines.append(f"| {cfg} | {r['seconds_best']} | {r['speedup_vs_baseline']} | {r['peak_rss_mib']} | "
+                         f"{c['fields_with_span_or_label_difference']} | {c['fields_with_threshold_inclusion_difference']} | "
+                         f"{c['max_abs_score_difference']:.2g} |")
+        lines.append('')
+    scans = results.get('full_scan')
+    if scans:
+        cap = scans['capture']
+        lines += [f"## Full scan: {cap['mib']} MiB synthetic capture (sha256 {cap['sha256'][:16]}, seed {cap['seed']}), "
+                  f"profile {scans['analysis_profile']}", '',
+                  '| Run | Status | Wall s | Model s | Peak RSS MiB | Evaluated | Model-inferred | Cache hits | Findings identical | Wall x | Model x |',
+                  '|---|---|---|---|---|---|---|---|---|---|---|']
+        for mode, r in scans['runs'].items():
+            if r.get('failed'):
+                lines.append(f"| {mode} | FAILED: {r['error_tail']} | - | - | - | - | - | - | - | - | - |")
+                continue
+            s, cmp = r['summary'], r.get('comparison_vs_baseline') or {}
+            lines.append(f"| {mode} | completed | {r['wall_seconds']} | {r['model_seconds']} | {r['peak_rss_mib']} | "
+                         f"{s['ml_fields_evaluated']} | {s.get('ml_fields_model_inferred', '-')} | {s.get('ml_prediction_cache_hits', '-')} | "
+                         f"{cmp.get('identical_except_confidence', '-')} | {r.get('wall_speedup', '-')} | {r.get('model_speedup', '-')} |")
+        lines.append('')
+    if 'gate' in results:
+        g = results['gate']
+        lines += [f"## Regression gate: {'PASS' if g['pass'] else 'FAIL'}", '', f"Criteria: `{json.dumps(g['criteria'])}`", '']
+        for mode, r in g['runs'].items():
+            failed = [k for k, v in r['checks'].items() if not v]
+            lines.append(f"- {mode}: {'pass' if r['pass'] else 'FAIL (' + ', '.join(failed) + ')'}")
+    return '\n'.join(lines) + '\n'
 
 
 if __name__ == '__main__':
