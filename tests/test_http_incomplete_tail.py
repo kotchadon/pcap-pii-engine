@@ -192,7 +192,7 @@ def test_retransmission_does_not_create_spurious_http_tail(tmp_path):
 
 @pytest.mark.parametrize('method', [b'HEAD', b'CONNECT', b'GET'])
 @pytest.mark.parametrize('framing', [b'Content-Length: 1234', b'Transfer-Encoding: chunked'])
-def test_response_without_body_does_not_prove_damage_without_parser_context(tmp_path, method, framing):
+def test_response_body_framing_uses_observed_request_context(tmp_path, method, framing):
     target = b'example.invalid:443' if method == b'CONNECT' else b'/'
     request = method + b' ' + target + b' HTTP/1.1\r\nHost: example.invalid\r\n\r\n'
     response = b'HTTP/1.1 200 OK\r\n' + framing + b'\r\n\r\n'
@@ -202,7 +202,12 @@ def test_response_without_body_does_not_prove_damage_without_parser_context(tmp_
         (900 + len(response), b'', 0x11, True),
     ]))
     assert report['summary']['stream_gaps'] == 0
-    assert report['summary']['http_incomplete_streams'] == 0
-    assert report['summary']['http_uncertain_streams'] == 1
-    assert report['summary']['analysis_incomplete'] is False
-    assert report['flows'][0]['http_diagnostics'][0]['reason'] == 'http_response_body_framing_unknown'
+    if method == b'GET':
+        assert report['summary']['http_incomplete_streams'] == 1
+        assert report['summary']['analysis_incomplete'] is True
+        assert report['summary']['http_messages'] == 1
+    else:  # HEAD and successful CONNECT end at the header boundary (RFC 9112 §6.3).
+        assert report['summary']['http_incomplete_streams'] == 0
+        assert report['summary']['analysis_incomplete'] is False
+        assert report['summary']['http_messages'] == 2
+    assert report['summary']['http_uncertain_streams'] == 0

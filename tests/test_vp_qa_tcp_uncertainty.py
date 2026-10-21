@@ -137,7 +137,7 @@ def test_ip_fragment_is_counted_by_reason_and_flagged_incomplete(tmp_path):
     r = analyze(build_pcap(tmp_path / "frag.pcap", [frames]))
     s = r["summary"]
     assert s["non_tcp_or_unsupported_packets"] == 1 and s["rules_findings"] == 0
-    assert s["unsupported_packets_by_reason"] == {"ip_fragment": 1} and s["unsupported_packets_hiding_tcp"] == 1
+    assert s["unsupported_packets_by_reason"] == {"fragment_malformed": 1} and s["unsupported_packets_hiding_tcp"] == 1
     assert s["analysis_incomplete"] is True
     assert any("IP fragments" in lim for lim in r["limitations"])
 

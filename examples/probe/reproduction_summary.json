@@ -1,0 +1,263 @@
+{
+ "fields_eligible": 12,
+ "fields_empty": 0,
+ "fields_excluded_by_policy": 0,
+ "fields_total": 12,
+ "messages": 5,
+ "schema_version": "trace-context-summary/1",
+ "strata": [
+  {
+   "category": "form",
+   "count": 1,
+   "depth": 1,
+   "digit": 1,
+   "direction": "request",
+   "encoding": "form",
+   "leaf": {
+    "value": 1
+   },
+   "length": {
+    "<=8": 1
+   },
+   "method": "POST",
+   "name_class": "other",
+   "non_ascii": 0,
+   "separator": 0,
+   "shape": {
+    "single_token": 1
+   }
+  },
+  {
+   "category": "form",
+   "count": 1,
+   "depth": 1,
+   "digit": 1,
+   "direction": "request",
+   "encoding": "form",
+   "leaf": {
+    "username": 1
+   },
+   "length": {
+    "<=16": 1
+   },
+   "method": "POST",
+   "name_class": "username_like",
+   "non_ascii": 0,
+   "separator": 1,
+   "shape": {
+    "single_token": 1
+   }
+  },
+  {
+   "category": "json",
+   "count": 1,
+   "depth": 1,
+   "digit": 0,
+   "direction": "request",
+   "encoding": "json",
+   "leaf": {
+    "author": 1
+   },
+   "length": {
+    "<=8": 1
+   },
+   "method": "POST",
+   "name_class": "actor_like",
+   "non_ascii": 0,
+   "separator": 0,
+   "shape": {
+    "two_tokens": 1
+   }
+  },
+  {
+   "category": "json",
+   "count": 1,
+   "depth": 1,
+   "digit": 0,
+   "direction": "request",
+   "encoding": "json",
+   "leaf": {
+    "body": 1
+   },
+   "length": {
+    "<=16": 1
+   },
+   "method": "POST",
+   "name_class": "free_text",
+   "non_ascii": 0,
+   "separator": 0,
+   "shape": {
+    "sentence_like": 1
+   }
+  },
+  {
+   "category": "json",
+   "count": 1,
+   "depth": 2,
+   "digit": 0,
+   "direction": "request",
+   "encoding": "json",
+   "leaf": {
+    "bio": 1
+   },
+   "length": {
+    "<=16": 1
+   },
+   "method": "POST",
+   "name_class": "free_text",
+   "non_ascii": 0,
+   "separator": 0,
+   "shape": {
+    "sentence_like": 1
+   }
+  },
+  {
+   "category": "json",
+   "count": 1,
+   "depth": 3,
+   "digit": 0,
+   "direction": "response",
+   "encoding": "json",
+   "leaf": {
+    "message": 1
+   },
+   "length": {
+    "<=16": 1
+   },
+   "method": "none",
+   "name_class": "free_text",
+   "non_ascii": 0,
+   "separator": 0,
+   "shape": {
+    "few_tokens": 1
+   }
+  },
+  {
+   "category": "json",
+   "count": 1,
+   "depth": 1,
+   "digit": 1,
+   "direction": "request",
+   "encoding": "json",
+   "leaf": {
+    "id": 1
+   },
+   "length": {
+    "<=16": 1
+   },
+   "method": "POST",
+   "name_class": "identifier_like",
+   "non_ascii": 0,
+   "separator": 1,
+   "shape": {
+    "single_token": 1
+   }
+  },
+  {
+   "category": "json",
+   "count": 1,
+   "depth": 1,
+   "digit": 0,
+   "direction": "response",
+   "encoding": "json",
+   "leaf": {
+    "status": 1
+   },
+   "length": {
+    "<=8": 1
+   },
+   "method": "none",
+   "name_class": "label_like",
+   "non_ascii": 0,
+   "separator": 0,
+   "shape": {
+    "single_token": 1
+   }
+  },
+  {
+   "category": "json",
+   "count": 1,
+   "depth": 1,
+   "digit": 0,
+   "direction": "request",
+   "encoding": "json",
+   "leaf": {
+    "value": 1
+   },
+   "length": {
+    "<=8": 1
+   },
+   "method": "POST",
+   "name_class": "other",
+   "non_ascii": 0,
+   "separator": 0,
+   "shape": {
+    "single_token": 1
+   }
+  },
+  {
+   "category": "json",
+   "count": 1,
+   "depth": 2,
+   "digit": 0,
+   "direction": "request",
+   "encoding": "json",
+   "leaf": {
+    "name": 1
+   },
+   "length": {
+    "<=8": 1
+   },
+   "method": "POST",
+   "name_class": "person_like",
+   "non_ascii": 0,
+   "separator": 0,
+   "shape": {
+    "two_tokens": 1
+   }
+  },
+  {
+   "category": "query",
+   "count": 1,
+   "depth": 1,
+   "digit": 0,
+   "direction": "request",
+   "encoding": "none",
+   "leaf": {
+    "value": 1
+   },
+   "length": {
+    "<=8": 1
+   },
+   "method": "GET",
+   "name_class": "other",
+   "non_ascii": 0,
+   "separator": 0,
+   "shape": {
+    "two_tokens": 1
+   }
+  },
+  {
+   "category": "query",
+   "count": 1,
+   "depth": 1,
+   "digit": 1,
+   "direction": "request",
+   "encoding": "none",
+   "leaf": {
+    "user": 1
+   },
+   "length": {
+    "<=16": 1
+   },
+   "method": "GET",
+   "name_class": "username_like",
+   "non_ascii": 0,
+   "separator": 1,
+   "shape": {
+    "single_token": 1
+   }
+  }
+ ],
+ "summary_hash": "2729fce3bd9244253ce1ab0f699a93e2cee4a782c7f80127ca5897078449bfd4"
+}

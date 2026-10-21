@@ -1,0 +1,269 @@
+{
+ "schema_version": "trace-context-probe-assessment/1",
+ "metric_name": "Context-matched synthetic probe F1",
+ "disclosure": "These metrics are measured on automatically generated, labelled synthetic probes matched to aspects of this capture's structure. They are not precision, recall or F1 measured on the original uploaded traffic.",
+ "limitations": [
+  "The scanned capture itself is unlabelled; no accuracy of the original traffic is measured or estimated here.",
+  "Probe values are fictional and template-generated; real traffic is both easier and harder in ways this does not capture.",
+  "The V2 model sees only a field location and its text, so HTTP method, direction and encoding only change which contexts are sampled, not the model input.",
+  "Probes within a context share templates and name pools, so they are strongly dependent; intervals use a cluster bootstrap over contexts and still understate uncertainty.",
+  "Exact-span scoring: a boundary near-miss is one false positive and one false negative and gets no true-positive credit.",
+  "Rule/model disagreement and stability are diagnostics, not accuracy; agreement between detectors is not proof of correctness."
+ ],
+ "generated_at": "2026-10-18T14:56:13+00:00",
+ "model_version": "bilstm-v2-d1f9e9fb9a2b",
+ "budget": {
+  "max_probes": 480,
+  "max_characters": 60000,
+  "max_seconds": 20.0,
+  "batch_fields": 128,
+  "max_strata": 24,
+  "stability_probes": 90,
+  "max_output_bytes": 200000,
+  "bootstrap_rounds": 400
+ },
+ "status": "complete",
+ "headline": {
+  "name": "Context-matched synthetic probe F1",
+  "value": 0.5389,
+  "precision": 0.5149,
+  "recall": 0.5652,
+  "ci95_cluster_bootstrap": {
+   "precision": [
+    0.4561,
+    0.5926
+   ],
+   "recall": [
+    0.5,
+    0.6222
+   ],
+   "f1": [
+    0.5,
+    0.5761
+   ]
+  }
+ },
+ "suite": {
+  "generator_version": "probe-gen/1",
+  "template_version": "probe-templates/1",
+  "seed": 20250602,
+  "summary_hash": "2729fce3bd9244253ce1ab0f699a93e2cee4a782c7f80127ca5897078449bfd4",
+  "strata_selected": 12,
+  "strata_available": 12,
+  "probes": 188,
+  "positive_probes": 92,
+  "negative_probes": 96,
+  "characters": 3572,
+  "truncated_by_budget": false,
+  "probe_set_hash": "404b056e972e6ebf581bc1e99b3f01bafec014d760f03838f5b4c1cd25c02481"
+ },
+ "summary_hash": "2729fce3bd9244253ce1ab0f699a93e2cee4a782c7f80127ca5897078449bfd4",
+ "probes": {
+  "generated": 188,
+  "evaluated": 188,
+  "unscored": 0,
+  "unscored_reasons": {},
+  "positive_evaluated": 92,
+  "negative_evaluated": 96,
+  "excluded_by_policy": 0,
+  "skipped": 0
+ },
+ "micro": {
+  "tp": 52,
+  "fp": 49,
+  "fn": 40,
+  "precision": 0.5149,
+  "recall": 0.5652,
+  "f1": 0.5389,
+  "precision_ci95": [
+   0.4186,
+   0.61
+  ],
+  "recall_ci95": [
+   0.4633,
+   0.6619
+  ],
+  "undefined": []
+ },
+ "per_label": {
+  "PERSON_NAME": {
+   "tp": 33,
+   "fp": 38,
+   "fn": 23,
+   "precision": 0.4648,
+   "recall": 0.5893,
+   "f1": 0.5197,
+   "precision_ci95": [
+    0.3536,
+    0.5796
+   ],
+   "recall_ci95": [
+    0.4588,
+    0.7083
+   ],
+   "undefined": [],
+   "support": 56
+  },
+  "USERNAME": {
+   "tp": 19,
+   "fp": 11,
+   "fn": 17,
+   "precision": 0.6333,
+   "recall": 0.5278,
+   "f1": 0.5758,
+   "precision_ci95": [
+    0.4551,
+    0.7813
+   ],
+   "recall_ci95": [
+    0.3701,
+    0.6801
+   ],
+   "undefined": [],
+   "support": 36
+  }
+ },
+ "boundary": {
+  "near_miss_false_negatives": 7,
+  "near_miss_false_positives": 7,
+  "by_tag": {
+   "alnum_underscore": {
+    "exact": 7,
+    "probes": 12,
+    "missed": 5
+   },
+   "bare": {
+    "exact": 28,
+    "probes": 68,
+    "near_miss": 7,
+    "missed": 33
+   },
+   "embedded": {
+    "exact": 24,
+    "probes": 24
+   },
+   "full_name": {
+    "exact": 11,
+    "probes": 12,
+    "missed": 1
+   },
+   "hyphenated": {
+    "extra_prediction": 7,
+    "near_miss": 6,
+    "probes": 12,
+    "missed": 6
+   },
+   "mention": {
+    "exact": 12,
+    "extra_prediction": 4,
+    "probes": 12
+   },
+   "period_hyphen": {
+    "missed": 12,
+    "probes": 12
+   },
+   "sentence": {
+    "exact": 12,
+    "probes": 12
+   },
+   "single_token": {
+    "missed": 7,
+    "probes": 8,
+    "exact": 1
+   },
+   "unicode": {
+    "exact": 9,
+    "probes": 12,
+    "extra_prediction": 1,
+    "near_miss": 1,
+    "missed": 2
+   }
+  },
+  "note": "Near-misses are shown separately and receive no true-positive credit."
+ },
+ "negatives": {
+  "evaluated": 96,
+  "with_false_positive": 37,
+  "false_positive_rate": 0.3854,
+  "false_positive_rate_ci95": [
+   0.2943,
+   0.4854
+  ]
+ },
+ "errors": {
+  "false_positive": {
+   "boundary_mismatch": 7,
+   "negative_field": 37,
+   "overlaps_other_label": 1,
+   "spurious_in_positive_field": 4
+  },
+  "false_negative": {
+   "boundary_mismatch": 7,
+   "missed": 32,
+   "overlaps_other_label": 1
+  }
+ },
+ "stability": {
+  "label_prefix": {
+   "probes": 90,
+   "identical_to_base": 73,
+   "exact_on_variant": 56,
+   "exact_on_base": 47,
+   "identical_rate": 0.8111
+  },
+  "quoted": {
+   "probes": 90,
+   "identical_to_base": 82,
+   "exact_on_variant": 53,
+   "exact_on_base": 47,
+   "identical_rate": 0.9111
+  },
+  "trailing_period": {
+   "probes": 90,
+   "identical_to_base": 68,
+   "exact_on_variant": 37,
+   "exact_on_base": 47,
+   "identical_rate": 0.7556
+  }
+ },
+ "independent_detector": {
+  "available": true,
+  "detector": "deterministic rules (detect.py): key/pattern based, mechanistically distinct from the BiLSTM",
+  "counts": {
+   "negative:both_agree": 1,
+   "negative:conflicting": 3,
+   "negative:neither": 55,
+   "negative:rules_only": 4,
+   "negative:v2_only": 33,
+   "positive:both_agree": 1,
+   "positive:conflicting": 5,
+   "positive:neither": 31,
+   "positive:rules_only": 1,
+   "positive:v2_only": 54
+  },
+  "note": "Counts of agreement and disagreement on probes only; neither detector is treated as ground truth."
+ },
+ "applicability": {
+  "status": "ok",
+  "reasons": [],
+  "coverage_of_eligible_fields": 1.0,
+  "strata_selected": 12,
+  "strata_available": 12,
+  "eligible_fields": 12,
+  "excluded_by_policy_share": 0.0
+ },
+ "workload": {
+  "elapsed_seconds": 0.3,
+  "model_seconds": 0.121,
+  "batches": 2,
+  "probe_characters": 3572
+ },
+ "reproducibility": {
+  "model_version": "bilstm-v2-d1f9e9fb9a2b",
+  "generator_version": "probe-gen/1",
+  "template_version": "probe-templates/1",
+  "seed": 20250602,
+  "probe_set_hash": "404b056e972e6ebf581bc1e99b3f01bafec014d760f03838f5b4c1cd25c02481",
+  "context_summary_hash": "2729fce3bd9244253ce1ab0f699a93e2cee4a782c7f80127ca5897078449bfd4"
+ }
+}

@@ -12,6 +12,7 @@ from email.parser import BytesParser
 import json
 import re
 from urllib.parse import parse_qsl, urlsplit
+from typing import Callable
 import zlib
 
 MAX_HTTP_BODY = 2 * 1024 * 1024
@@ -48,6 +49,12 @@ class HttpSpan:
     message: HttpMessage
     start_offset: int
     end_offset: int
+    # Half-open offsets, including the terminating empty header line. Body
+    # ranges contain only captured entity octets (chunk metadata excluded).
+    header_end: int | None = None
+    body_start: int | None = None
+    body_stream_ranges: tuple[tuple[int, int], ...] = ()
+    body_framing: str = 'unknown'
 
 
 @dataclass(frozen=True)
@@ -115,7 +122,8 @@ def _parse_headers(raw: bytes) -> tuple[str, dict[str, str], bool] | None:
     return first.decode('iso-8859-1'), headers, bool(_REQUEST.fullmatch(first))
 
 
-def _chunked(data: bytes, position: int, *, diagnostic=None) -> tuple[bytes, int] | None:
+def _chunked(data: bytes, position: int, *, diagnostic=None,
+             source_ranges=None) -> tuple[bytes, int] | None:
     """Decode one HTTP/1 chunked body; enforce data and trailer size limits."""
     def fail(incomplete=False, reason=None):
         if diagnostic is not None:
@@ -161,6 +169,8 @@ def _chunked(data: bytes, position: int, *, diagnostic=None) -> tuple[bytes, int
         if size > MAX_HTTP_BODY - len(result):
             return fail(reason='http_body_limit_exceeded')
         result.extend(data[position:position + size])
+        if source_ranges is not None:
+            source_ranges.append((position, position + size))
         position += size
         if len(data) - position < 2:
             return fail(data[position:] in (b'', b'\r'))
@@ -172,6 +182,8 @@ def _chunked(data: bytes, position: int, *, diagnostic=None) -> tuple[bytes, int
 
 def parse_http_stream_with_spans(
         data: bytes, *, diagnostics: list[HttpParseDiagnostic] | None = None,
+        request_methods: list[str] | None = None,
+        request_method_for_response: Callable[[int, int], str | None] | None = None,
 ) -> list[HttpSpan]:
     """Parse a contiguous TCP stream and preserve each message's byte span.
 
@@ -181,10 +193,15 @@ def parse_http_stream_with_spans(
     existing callers retain identical parsed messages and byte spans.
     Without paired request-method context, unfinished response body framing is
     uncertain: HEAD and successful CONNECT responses may legitimately omit it.
-    Such responses remain unparsed; this API does not reconstruct their pairing.
+    Such responses remain unparsed. Optional ordered request methods apply to
+    final responses; interim responses do not consume a method. Callers must
+    establish ordering from observed session evidence, never timestamps alone.
+    A method callback receives the response stream offset and status, and takes
+    precedence over the list, including when it returns unknown (None).
     """
     messages: list[HttpSpan] = []
     offset = 0
+    response_index = 0
     def diagnostic(reason: str, incomplete: bool = False):
         if diagnostics is not None:
             diagnostics.append(HttpParseDiagnostic(reason, offset, incomplete))
@@ -203,33 +220,46 @@ def parse_http_stream_with_spans(
             diagnostic('http_unparseable_tail')
             break
         first, headers, is_request = parsed
+        code = int(first[9:12]) if not is_request else None
+        if code is not None and request_method_for_response is not None:
+            method = request_method_for_response(offset, code)
+            method = method.upper() if method is not None else None
+        else:
+            method = (request_methods[response_index].upper()
+                      if not is_request and request_methods is not None
+                      and response_index < len(request_methods) else None)
         def body_diagnostic(reason: str, incomplete: bool = False):
-            if incomplete and not is_request:
+            if incomplete and not is_request and method is None:
                 diagnostic('http_response_body_framing_unknown')
             else:
                 diagnostic(reason, incomplete)
 
         body_at = header_end + 4
-        code = int(first[9:12]) if not is_request else None
-        no_body = code is not None and (100 <= code < 200 or code in (204, 304))
+        tunnel = code is not None and method == 'CONNECT' and 200 <= code < 300
+        no_body = code is not None and (method == 'HEAD' or tunnel or
+                                       100 <= code < 200 or code in (204, 304))
         unframed_response = not is_request and not no_body and (
             'content-length' not in headers and 'transfer-encoding' not in headers
         )
         transfer = headers.get('transfer-encoding', '').strip().lower()
         length = headers.get('content-length')
-        if 'transfer-encoding' in headers and (not transfer or length is not None):
+        if not no_body and 'transfer-encoding' in headers and (not transfer or length is not None):
             diagnostic('http_ambiguous_framing')
             break  # Ambiguous framing: fail closed, not vulnerable to CL/TE confusion.
+        source_ranges: list[tuple[int, int]] = []
         if no_body:
             body, next_at = b'', body_at
+            framing = 'tunnel' if tunnel else 'no_body'
         elif transfer:
             if transfer != 'chunked':
                 diagnostic('http_unsupported_transfer_coding')
                 break  # Unsupported transfer codings aren't silently treated as plaintext.
-            result = _chunked(data, body_at, diagnostic=body_diagnostic)
+            result = _chunked(data, body_at, diagnostic=body_diagnostic,
+                              source_ranges=source_ranges)
             if result is None:
                 break
             body, next_at = result
+            framing = 'chunked'
         elif length is not None:
             if not re.fullmatch(r'[0-9]+', length) or len(length) > 12:
                 diagnostic('http_invalid_content_length')
@@ -242,15 +272,22 @@ def parse_http_stream_with_spans(
                 diagnostic('http_body_limit_exceeded')
                 break
             body, next_at = data[body_at:body_at + size], body_at + size
+            framing = 'content_length'
+            if size:
+                source_ranges.append((body_at, next_at))
         else:
             # No close-delimited response reconstruction without connection state.
             # HTTP/1.0 close-delimited bodies are deliberately not inferred.
             body, next_at = b'', body_at
+            framing = 'close_delimited_uninspected' if unframed_response else 'no_body'
         messages.append(HttpSpan(HttpMessage(first, headers, body, is_request),
-                                 offset, next_at))
+                                 offset, next_at, body_at, body_at,
+                                 tuple(source_ranges), framing))
+        if code is not None and (code >= 200 or code == 101):
+            response_index += 1
         if next_at <= offset:
             break
-        if unframed_response or code == 101:
+        if unframed_response or code == 101 or tunnel:
             if unframed_response:
                 diagnostic('http_close_delimited_body_uninspected')
             break  # Unframed body or protocol switch ends supported HTTP parsing.

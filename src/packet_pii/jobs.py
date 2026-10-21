@@ -19,7 +19,8 @@ import time
 
 from .engine import AnalysisLimits, AnalysisLimitError, analyze_to_report
 from .groundtruth import EvaluationCollector, EvaluationRejected, Manifest, RESULT_SCHEMA_VERSION, sha256_file
-from .ml_runner import ML_PROFILES
+from .ml_runner import ML_PROFILES, shared
+from .quality import AssessmentBudget, AssessmentCancelled, ContextSampler, assess_summary, unavailable
 from .hybrid import MLWorkBudget as LegacyMLWorkBudget
 from dataclasses import asdict
 
@@ -63,6 +64,9 @@ class Job:
     use_legacy_budget: bool = False
     manifest: Manifest | None = None
     evaluation: dict | None = None
+    assessment: dict | None = None
+    assessment_cancel: threading.Event = field(default_factory=threading.Event)
+    assessment_thread: threading.Thread | None = None
 
     @property
     def capture(self): return self.directory/'capture.bin'
@@ -74,10 +78,15 @@ class Job:
 
 class JobManager:
     def __init__(self, analysis_lock, detector=None, *, disk_quota_bytes=12*2**30,
-                 max_retained=3, ttl_seconds=3600, ml_work_budget=None):
+                 max_retained=3, ttl_seconds=3600, ml_work_budget=None, assessment_budget='default'):
         if type(disk_quota_bytes) is not int or disk_quota_bytes < 32*MIB:
             raise ValueError('Job disk quota must be at least 32 MiB')
-        self.analysis_lock, self.detector = analysis_lock, detector
+        self.analysis_lock, self.detector = analysis_lock, shared(detector)
+        # Independent post-scan assessment budget; None disables the stage entirely.
+        self.assessment_budget = (AssessmentBudget() if assessment_budget == 'default' and detector is not None
+                                  else None if assessment_budget == 'default' else assessment_budget)
+        if self.assessment_budget is not None and not isinstance(self.assessment_budget, AssessmentBudget):
+            raise TypeError('assessment_budget must be an AssessmentBudget or None')
         self.ml_work_budget = LegacyMLWorkBudget() if ml_work_budget is None else ml_work_budget
         if not isinstance(self.ml_work_budget, LegacyMLWorkBudget):
             raise TypeError('ml_work_budget must be hybrid.MLWorkBudget')
@@ -136,6 +145,9 @@ class JobManager:
                 if job.request_id == request_id:
                     if job.fingerprint != fingerprint:raise JobBusy('Request ID already used for a different scan')
                     return job,False
+            for other in self.jobs.values():
+                if other.assessment is not None and other.assessment['status'] in ('pending','running'):
+                    other.assessment_cancel.set()   # a new scan takes priority over a previous scan's assessment
             self._prune()
             # Peak disk: capture + spool + final JSON + derived SQLite index.
             reserve=limits.max_capture_bytes+4*limits.max_report_bytes+64*MIB
@@ -201,6 +213,8 @@ class JobManager:
             conn.execute('PRAGMA temp_store=FILE')
             conn.execute(f'PRAGMA max_page_count={(2*job.limits.max_report_bytes+64*MIB)//4096}')
             conn.execute('CREATE TABLE rows(kind TEXT,n INTEGER,pii_type TEXT,location TEXT,value TEXT,data TEXT,PRIMARY KEY(kind,n))')
+            conn.execute("CREATE INDEX evidence_ids ON rows(kind,json_extract(data,'$.evidence_id'))")
+            conn.execute("CREATE INDEX evidence_streams ON rows(kind,json_extract(data,'$.stream_id'))")
             counts=Counter()
             collector=None;capture_hash=None
             if job.manifest is not None:
@@ -208,6 +222,10 @@ class JobManager:
                 capture_hash=sha256_file(job.capture)
                 if capture_hash==job.manifest.capture_sha256:collector=EvaluationCollector(job.manifest)
                 else:job.evaluation=self._rejected(job,capture_hash,'capture SHA-256 does not match the manifest: the annotations describe a different file')
+            sampler=ContextSampler() if job.mode=='hybrid' and self.assessment_budget is not None else None
+            observers=[o for o in (None if collector is None else collector.observe_message,None if sampler is None else sampler.observe_message) if o]
+            def observe_fields(info):
+                for o in observers:o(info)
             def observe(kind,row):
                 if job.cancel.is_set():raise JobCancelled()
                 if collector is not None:collector.observe_finding(kind,row)
@@ -228,18 +246,24 @@ class JobManager:
                 ml_budget=None if job.use_legacy_budget else job.ml_profile or 'standard',
                 ml_work_budget=job.ml_work_budget if job.use_legacy_budget else None,
                 progress=progress,row_observer=observe,
-                field_observer=None if collector is None else collector.observe_message,
+                field_observer=observe_fields if observers else None,
                 disposition_observer=None if collector is None else collector.observe_disposition)
             conn.commit();conn.close();conn=None
             if collector is not None:
                 try:
-                    job.evaluation=collector.finish(capture_sha256=capture_hash,capture_bytes=job.capture_bytes,
+                    identity=receipt.get('capture_evidence',{})
+                    actual_hash=identity.get('capture_sha256')
+                    capture_hash=actual_hash
+                    if identity.get('identity_status')!='verified_read' or actual_hash!=job.manifest.capture_sha256:
+                        raise EvaluationRejected('Capture identity changed before analysis; evaluation rejected')
+                    job.evaluation=collector.finish(capture_sha256=actual_hash,capture_bytes=identity['capture_bytes'],
                         summary=receipt['summary'],metadata=receipt['metadata'],model_requested=job.mode=='hybrid')
                 except EvaluationRejected as exc:
                     job.evaluation=self._rejected(job,capture_hash,str(exc))
             with self.lock:
                 if job.cancel.is_set():raise JobCancelled()
                 job.receipt={k:v for k,v in receipt.items() if k!='output_path'}
+                job.assessment=self._initial_assessment(job,receipt,sampler)
                 job.status='completed';job.updated=time.monotonic()
         except Exception as exc:
             # Never advertise a terminal failure while its partial private
@@ -263,7 +287,57 @@ class JobManager:
         finally:
             job.capture.unlink(missing_ok=True)
             self._release(job)
+            if job.status=='completed' and job.assessment is not None and job.assessment['status']=='pending':
+                self._start_assessment(job)
             if self.closed:shutil.rmtree(self.root,ignore_errors=True)
+
+    def _initial_assessment(self, job, receipt, sampler):
+        if job.mode!='hybrid':
+            return {'status':'unavailable','result':unavailable('Rules-only scan: the contextual model did not run, so there is nothing to assess.')}
+        if self.assessment_budget is None or sampler is None:
+            return {'status':'unavailable','result':unavailable('Automated assessment is disabled on this server.',self.detector.model_version)}
+        summary=receipt['summary']
+        if summary.get('ml_coverage_status')=='no_eligible_fields' or not summary.get('ml_invoked'):
+            return {'status':'unavailable','result':unavailable('The model had no eligible fields in this scan; no contexts to probe.',self.detector.model_version)}
+        return {'status':'pending','sampler':sampler,'result':None,'elapsed_seconds':0.0}
+
+    def _start_assessment(self, job):
+        thread=threading.Thread(target=self._assess,args=(job,),daemon=True,name='trace-assessment')
+        with self.lock:job.assessment_thread=thread
+        thread.start()
+
+    def _assess(self, job):
+        """Post-scan stage: separate thread, no analysis lock, own budget/counters; a failure never touches the scan report."""
+        started=time.monotonic()
+        with self.lock:
+            if job.assessment_cancel.is_set() or self.closed:
+                job.assessment={'status':'cancelled','result':unavailable('Assessment cancelled before it started.',self.detector.model_version),'elapsed_seconds':0.0}
+                return
+            sampler=job.assessment.pop('sampler');job.assessment['status']='running'
+        def checkpoint(_counts):
+            if job.assessment_cancel.is_set() or self.closed:raise AssessmentCancelled()
+            with self.lock:job.assessment['elapsed_seconds']=time.monotonic()-started
+        try:
+            result=assess_summary(self.detector,sampler.summary(),self.assessment_budget,checkpoint=checkpoint)
+            state=result['status']
+        except AssessmentCancelled:
+            result,state=unavailable('Assessment cancelled; no metrics are reported.',self.detector.model_version),'cancelled'
+        except Exception:
+            result,state=unavailable('Assessment failed; no metrics are reported. The capture analysis is unaffected.',self.detector.model_version),'failed'
+        with self.lock:
+            job.assessment={'status':state,'result':result,'elapsed_seconds':time.monotonic()-started}
+
+    def assessment_snapshot(self, job):
+        with self.lock:
+            a=job.assessment
+            if a is None:return {'status':'unavailable','result':None,'elapsed_seconds':0.0}
+            return {'status':a['status'],'result':a['result'],'elapsed_seconds':a.get('elapsed_seconds',0.0)}
+
+    def cancel_assessment(self, job):
+        with self.lock:
+            if job.assessment is not None and job.assessment['status'] in ('pending','running'):
+                job.assessment_cancel.set()
+        return self.assessment_snapshot(job)
 
     @staticmethod
     def _rejected(job, capture_hash, reason):
@@ -291,7 +365,8 @@ class JobManager:
                 cancellation_completed=job.status=='cancelled',
                 reason_code='ml_cancelled' if job.status=='cancelled' else None,
                 evaluation_requested=job.manifest is not None,
-                evaluation_status=None if job.evaluation is None else job.evaluation['status'])
+                evaluation_status=None if job.evaluation is None else job.evaluation['status'],
+                assessment_status=None if job.assessment is None else job.assessment['status'])
             if job.status=='completed':
                 report={k:v for k,v in job.receipt.items() if k not in ('output_path','output_bytes')}
                 report['findings']=self.page(job,'findings')['items']
@@ -303,12 +378,16 @@ class JobManager:
                 result['report_bytes']=job.receipt['output_bytes']
             return result
 
-    def page(self, job, kind, *, offset=0,limit=100,q='',pii_type=''):
+    def page(self, job, kind, *, offset=0,limit=100,q='',pii_type='',evidence_id='',stream_id=''):
         if job.status!='completed':raise ValueError('Results are not complete')
-        if kind not in ('findings','flows') or not 0<=offset<=4_000_000 or not 1<=limit<=100:
+        if kind not in ('findings','flows','packet_evidence','stream_evidence','http_evidence','field_evidence') or not 0<=offset<=4_000_000 or not 1<=limit<=100:
             raise ValueError('Invalid page range')
         if len(q)>120 or len(pii_type)>80:raise ValueError('Filter too long')
+        if any(len(value)>160 for value in (evidence_id,stream_id)):
+            raise ValueError('Evidence ID too long')
         clauses=['kind=?'];params=[kind]
+        if evidence_id:clauses.append("json_extract(data,'$.evidence_id')=?");params.append(evidence_id)
+        if stream_id:clauses.append("json_extract(data,'$.stream_id')=?");params.append(stream_id)
         if pii_type:clauses.append('pii_type=?');params.append(pii_type)
         if q:
             clauses.append('(instr(lower(pii_type),lower(?)) OR instr(lower(location),lower(?)) OR instr(lower(value),lower(?)))')
@@ -344,6 +423,7 @@ class JobManager:
                 if job.upload_abort is not None:
                     try:job.upload_abort()
                     except OSError:pass
+            for job in self.jobs.values():job.assessment_cancel.set()
         for job in active:
             if job.thread is not None and job.thread is not threading.current_thread():job.thread.join(timeout=5)
         if all(j.thread is None or not j.thread.is_alive() for j in active):

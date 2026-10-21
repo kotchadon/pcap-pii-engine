@@ -1,0 +1,24 @@
+{
+ "budget": {
+  "batch_fields": 128,
+  "bootstrap_rounds": 400,
+  "max_characters": 60000,
+  "max_output_bytes": 200000,
+  "max_probes": 480,
+  "max_seconds": 20.0,
+  "max_strata": 24,
+  "stability_probes": 90
+ },
+ "characters": 3572,
+ "generator_version": "probe-gen/1",
+ "negative_probes": 96,
+ "positive_probes": 92,
+ "probe_set_hash": "404b056e972e6ebf581bc1e99b3f01bafec014d760f03838f5b4c1cd25c02481",
+ "probes": 188,
+ "seed": 20250602,
+ "strata_available": 12,
+ "strata_selected": 12,
+ "summary_hash": "2729fce3bd9244253ce1ab0f699a93e2cee4a782c7f80127ca5897078449bfd4",
+ "template_version": "probe-templates/1",
+ "truncated_by_budget": false
+}

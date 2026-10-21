@@ -27,7 +27,7 @@ def capture(tmp_path):
 
 def test_default_report_no_unkeyed_identifying_fingerprints(tmp_path):
     report = analyze(capture(tmp_path))
-    assert report['metadata']['report_schema_version'] == '1.0.0'
+    assert report['metadata']['report_schema_version'] == '1.1.0'
     assert report['metadata']['raw_values_included'] is False
     assert report['findings']
     assert all('fingerprint' not in finding for finding in report['findings'])

@@ -6,6 +6,8 @@ The caller must provide a JSON-serializable report.
 from __future__ import annotations
 
 import json
+import gzip
+import io
 import os
 from pathlib import Path
 import tempfile
@@ -22,6 +24,10 @@ def write_private_report(report: dict[str, Any], target: str | Path,
     is left untouched, including under concurrent writers. For explicit
     overwrites, atomic replacement ensures no partially-written report.
     Directory ownership/permissions are controlled by the user/OS.
+    A target ending in ``.json.gz`` opts into lossless gzip (level 1). The
+    decompressed JSON is identical to plain output. ``max_bytes`` continues to
+    bound UTF-8 JSON bytes before compression; compression never expands the
+    allowed analysis or evidence budget. Gzip headers contain no filename/time.
     """
     if max_bytes is not None and (type(max_bytes) is not int or max_bytes <= 0):
         raise ValueError('max_bytes must be a positive integer')
@@ -30,7 +36,12 @@ def write_private_report(report: dict[str, Any], target: str | Path,
                                      suffix='.tmp', dir=path.parent)
     try:
         os.fchmod(fd, 0o600)
-        with os.fdopen(fd, 'w', encoding='utf-8') as stream:
+        with os.fdopen(fd, 'wb') as raw, ExitStack() as encoders:
+            sink = raw
+            if path.name.endswith('.json.gz'):
+                sink = encoders.enter_context(gzip.GzipFile(
+                    filename='', mode='wb', fileobj=raw, compresslevel=1, mtime=0))
+            stream = encoders.enter_context(io.TextIOWrapper(sink, encoding='utf-8', newline='\n'))
             output = _BudgetWriter(stream,max_bytes)
             if row_sources is None:
                 json.dump(report, output, ensure_ascii=False, indent=2, allow_nan=False)
@@ -50,7 +61,14 @@ def write_private_report(report: dict[str, Any], target: str | Path,
                 output.write('}')
             output.write('\n')
             stream.flush()
-            os.fsync(stream.fileno())
+            # Detach text buffering before closing gzip: the trailer must reach
+            # disk before fsync/publication, while the raw descriptor stays open.
+            stream.detach()
+            encoders.pop_all()  # detached TextIOWrapper cannot be closed again
+            if sink is not raw:
+                sink.close()
+            raw.flush()
+            os.fsync(raw.fileno())
         if overwrite:
             os.replace(temp_name, path)
         else:
@@ -114,7 +132,8 @@ class ReportSpool:
 
     def __enter__(self):
         try:
-            for name in ('flows','findings','ml_field_coverage'):
+            for name in ('flows','findings','ml_field_coverage',
+                         'packet_evidence','stream_evidence','http_evidence','field_evidence'):
                 stream=self.stack.enter_context(tempfile.TemporaryFile(
                     mode='w+t',encoding='utf-8',prefix='.pcap-pii-',dir=self.directory))
                 os.fchmod(stream.fileno(),0o600)
