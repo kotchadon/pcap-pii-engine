@@ -1,0 +1,148 @@
+{
+  "label": "V2 inference acceleration benchmark (synthetic and frozen fictional inputs)",
+  "machine": {
+    "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "cpu_count": 4,
+    "python": "3.13.16",
+    "torch": "2.14.1+cu130",
+    "threads": 4
+  },
+  "baseline": {
+    "ref": "origin/main",
+    "commit": "11d41e8c583231edd86b621d96cc037fe676108f"
+  },
+  "candidate": {
+    "commit": "193cfed9c34d23432f2ecc9455709c34712dde10",
+    "dirty": false
+  },
+  "full_scan": {
+    "capture": {
+      "path": "/tmp/trace-bench-_irkmfqr/synthetic_scan.pcap",
+      "bytes": 54526536,
+      "mib": 52.0,
+      "packets": 344241,
+      "http_requests": 56834,
+      "sha256": "a93092b1d8606ae45acb03e384b640547fb1e261c010c32d446dca4591f4ff33",
+      "seed": 52
+    },
+    "ml_budget": {
+      "max_fields": 1000000,
+      "max_characters": 200000000,
+      "max_seconds": 7200.0
+    },
+    "analysis_profile": "large",
+    "runs": {
+      "baseline": {
+        "wall_seconds": 1116.21,
+        "model_seconds": 1052.57,
+        "non_model_seconds": 63.64,
+        "peak_rss_mib": 1140.5,
+        "summary": {
+          "fields_extracted": 740926,
+          "http_messages": 113668,
+          "rules_findings": 113668,
+          "ml_findings": 318808,
+          "ml_fields_eligible": 570424,
+          "ml_fields_evaluated": 570424,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 170502,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 2229,
+          "ml_processing_time_seconds": 1052.56957681295,
+          "ml_fields_model_inferred": null,
+          "ml_prediction_cache_hits": null,
+          "ml_prediction_cache_enabled": null,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 246180,
+            "USERNAME": 72628
+          }
+        }
+      },
+      "candidate_no_cache": {
+        "wall_seconds": 674.29,
+        "model_seconds": 612.48,
+        "non_model_seconds": 61.8,
+        "peak_rss_mib": 1325.9,
+        "summary": {
+          "fields_extracted": 740926,
+          "http_messages": 113668,
+          "rules_findings": 113668,
+          "ml_findings": 318808,
+          "ml_fields_eligible": 570424,
+          "ml_fields_evaluated": 570424,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 170502,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 2229,
+          "ml_processing_time_seconds": 612.4830205409653,
+          "ml_fields_model_inferred": 570424,
+          "ml_prediction_cache_hits": 0,
+          "ml_prediction_cache_enabled": false,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 246180,
+            "USERNAME": 72628
+          }
+        },
+        "comparison_vs_baseline": {
+          "findings": [
+            432476,
+            432476
+          ],
+          "identical_except_confidence": true,
+          "rule_findings_identical": true,
+          "max_abs_model_confidence_difference": 1.0000000000287557e-06
+        },
+        "wall_speedup": 1.66,
+        "model_speedup": 1.72
+      },
+      "candidate_cache": {
+        "wall_seconds": 584.14,
+        "model_seconds": 522.85,
+        "non_model_seconds": 61.29,
+        "peak_rss_mib": 1918.5,
+        "summary": {
+          "fields_extracted": 740926,
+          "http_messages": 113668,
+          "rules_findings": 113668,
+          "ml_findings": 318808,
+          "ml_fields_eligible": 570424,
+          "ml_fields_evaluated": 570424,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 170502,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 2229,
+          "ml_processing_time_seconds": 522.8542385290184,
+          "ml_fields_model_inferred": 117184,
+          "ml_prediction_cache_hits": 453240,
+          "ml_prediction_cache_enabled": true,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 246180,
+            "USERNAME": 72628
+          }
+        },
+        "comparison_vs_baseline": {
+          "findings": [
+            432476,
+            432476
+          ],
+          "identical_except_confidence": true,
+          "rule_findings_identical": true,
+          "max_abs_model_confidence_difference": 1.0000000000287557e-06
+        },
+        "wall_speedup": 1.91,
+        "model_speedup": 2.01
+      }
+    }
+  }
+}
