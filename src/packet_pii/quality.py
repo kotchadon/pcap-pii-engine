@@ -522,10 +522,16 @@ def assess_summary(detector, summary: dict, budget: AssessmentBudget | None = No
     ci = _bootstrap(clusters, budget.bootstrap_rounds, seed)
     # stability under meaning-preserving variants (bounded, separate counters)
     stability = None
+    stability_runner = None
+    stability_characters = 0
     if budget.stability_probes:
         variants = [v for v in stability_variants(suite.items, budget.stability_probes) if v[1].probe_id in base_predictions]
-        if variants:
-            v_pred, v_status, _ = _predict(detector, [(b.location, text) for _, b, text, _ in variants], budget, checkpoint=checkpoint)
+        if variants and runner.seconds < budget.max_seconds:
+            stability_characters = sum(len(text) for _, _, text, _ in variants)
+            remaining_model_seconds = budget.max_seconds - runner.seconds
+            v_pred, v_status, stability_runner = _predict(
+                detector, [(b.location, text) for _, b, text, _ in variants], budget,
+                checkpoint=checkpoint, max_seconds=remaining_model_seconds)
             groups = defaultdict(Counter)
             for n, (name, b, text, spans) in enumerate(variants):
                 if v_status.get(n) != 'evaluated':
@@ -539,6 +545,8 @@ def assess_summary(detector, summary: dict, budget: AssessmentBudget | None = No
                 groups[name]['exact_on_base'] += base_predictions[b.probe_id] == set(b.spans)
             stability = {name: {**dict(c), 'identical_rate': round(c['identical_to_base'] / c['probes'], 4) if c['probes'] else None}
                          for name, c in sorted(groups.items())}
+        elif variants:
+            stability = {'status': 'unavailable', 'reason': 'model_time_budget_exhausted'}
     # capture-context applicability
     selected_mass = sum(r['count'] for r in select_strata(summary, budget.max_strata))
     eligible = summary['fields_eligible']
@@ -574,8 +582,13 @@ def assess_summary(detector, summary: dict, budget: AssessmentBudget | None = No
         'applicability': {'status': 'ok' if not limited else 'limited', 'reasons': limited, 'coverage_of_eligible_fields': coverage,
                           'strata_selected': suite.meta['strata_selected'], 'strata_available': suite.meta['strata_available'],
                           'eligible_fields': eligible, 'excluded_by_policy_share': excluded_share},
-        'workload': {'elapsed_seconds': round(time.monotonic() - started, 3), 'model_seconds': round(runner.seconds, 3),
-                     'batches': runner.batches, 'probe_characters': suite.meta['characters']},
+        'workload': {'elapsed_seconds': round(time.monotonic() - started, 3),
+                     'model_seconds': round(runner.seconds + (stability_runner.seconds if stability_runner else 0), 3),
+                     'batches': runner.batches + (stability_runner.batches if stability_runner else 0),
+                     'probe_characters': suite.meta['characters'],
+                     'stability_model_seconds': round(stability_runner.seconds, 3) if stability_runner else 0.0,
+                     'stability_batches': stability_runner.batches if stability_runner else 0,
+                     'stability_probe_characters': stability_characters},
     }
     result['reproducibility'] = {'model_version': base['model_version'], 'generator_version': GENERATOR_VERSION,
                                  'template_version': TEMPLATE_VERSION, 'seed': seed, 'probe_set_hash': frozen,
