@@ -150,20 +150,39 @@ def generate_capture(path: Path, target_mib: float, seed: int = 52) -> dict:
 
 
 # ------------------------------------------------------------------ worker (one configuration per process)
-def _peak_rss_mib() -> float:
+def _getrusage_maxrss_mib() -> float:
+    """``ru_maxrss`` - NOTE: on Linux it is inherited across fork+exec, so a child reports at least its parent's RSS at
+    spawn time. The engine's own memory guard reads this value. Reported for transparency, not used as the peak."""
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return round(peak / (2 ** 20 if sys.platform == 'darwin' else 1024), 1)  # macOS reports bytes, Linux KiB
 
 
-def _rss_mib() -> float | None:
+def _proc_status_mib(field: str) -> float | None:
     try:
         with open('/proc/self/status') as fh:
             for line in fh:
-                if line.startswith('VmRSS:'):
+                if line.startswith(field + ':'):
                     return round(int(line.split()[1]) / 1024, 1)
     except OSError:
         return None
     return None
+
+
+def _rss_mib() -> float | None:
+    value = _proc_status_mib('VmRSS')
+    if value is None and sys.platform == 'darwin':  # no /proc on macOS
+        try:
+            out = subprocess.run(['ps', '-o', 'rss=', '-p', str(os.getpid())], capture_output=True, text=True).stdout
+            value = round(int(out.strip()) / 1024, 1)
+        except (OSError, ValueError):
+            return None
+    return value
+
+
+def _peak_rss_mib() -> float:
+    """This process's own peak: Linux ``VmHWM`` (reset by exec, exact); elsewhere ``ru_maxrss``."""
+    hwm = _proc_status_mib('VmHWM')
+    return hwm if hwm is not None else _getrusage_maxrss_mib()
 
 
 class _MallInfo2:
@@ -292,7 +311,8 @@ def worker(spec: dict) -> dict:
         'hits': runner.cache_hits, 'model_inferred': runner.model_evaluations, 'evictions': runner.cache_evictions,
         'hit_rate': round(runner.cache_hits / max(1, runner.cache_hits + runner.model_evaluations), 4),
         'measured_cache_object_mib': round(_cache_bytes(runner._cache) / 2 ** 20, 2)}
-    memory = {'peak_rss_mib_getrusage': peak, 'at_sampled_peak': sampler.peak,
+    memory = {'peak_rss_mib_process_hwm': peak, 'getrusage_maxrss_mib_inherited': _getrusage_maxrss_mib(),
+              'at_sampled_peak': sampler.peak,
               'after_scan_report_alive': {'rss_mib': _rss_mib(), 'malloc': _MallInfo2.read(), 'python_blocks': sys.getallocatedblocks()}}
     if spec.get('report_to_disk'):
         memory['report_bytes'] = target.stat().st_size
@@ -325,6 +345,8 @@ def worker(spec: dict) -> dict:
 def run_worker(spec: dict) -> dict:
     env = {**os.environ, **(spec.get('env') or {})}
     proc = subprocess.run([sys.executable, __file__, '--worker', json.dumps(spec)], capture_output=True, text=True, env=env)
+    if proc.returncode and spec.get('kind') == 'scan':
+        return {'failed': True, 'error_tail': proc.stderr.strip().splitlines()[-1][:300] if proc.stderr.strip() else ''}
     if proc.returncode:
         raise SystemExit(f'worker failed ({spec.get("kind")}/{spec.get("mode", spec.get("batch_size"))}):\n{proc.stderr[-2000:]}')
     return json.loads(proc.stdout.strip().splitlines()[-1])
@@ -391,13 +413,17 @@ def main(argv=None) -> int:
         return 0
     if not args.out:
         ap.error('--out is required')
-    import torch
+    from importlib.metadata import PackageNotFoundError, version  # never import torch here: children inherit our RSS
+    try:
+        torch_version = version('torch')
+    except PackageNotFoundError:
+        torch_version = None
     work = Path(tempfile.mkdtemp(prefix='trace-bench-'))
     baseline_src = export_baseline(args.baseline_ref, work)
     commit = lambda ref: subprocess.run(['git', 'rev-parse', ref], cwd=ROOT, capture_output=True, text=True).stdout.strip()  # noqa: E731
     results = {'label': 'V2 inference acceleration benchmark (synthetic and frozen fictional inputs)',
                'machine': {'platform': platform.platform(), 'machine': platform.machine(), 'processor': platform.processor(),
-                           'cpu_count': os.cpu_count(), 'python': platform.python_version(), 'torch': torch.__version__,
+                           'cpu_count': os.cpu_count(), 'python': platform.python_version(), 'torch': torch_version,
                            'threads': args.threads},
                'baseline': {'ref': args.baseline_ref, 'commit': commit(args.baseline_ref)},
                'candidate': {'commit': commit('HEAD'), 'dirty': bool(subprocess.run(['git', 'status', '--porcelain', 'src'], cwd=ROOT,
@@ -443,16 +469,20 @@ def main(argv=None) -> int:
                               'budget': budget, 'out': str(out), 'profile': args.scan_profile, 'cache_entries': entries,
                               'env': env, 'batch_size': None if mode == 'baseline' else args.scan_batch_size,
                               'report_to_disk': args.scan_report_to_disk, 'shared_detector': args.scan_shared_detector})
-            findings[mode] = json.loads(out.read_text())
             scans['runs'][mode] = res
+            if res.get('failed'):
+                print(f'[scan] {capture["mib"]} MiB {mode}: FAILED {res["error_tail"]}', flush=True)
+                continue
+            findings[mode] = out  # compared from disk afterwards: the parent never holds findings (children inherit RSS)
             print(f'[scan] {capture["mib"]} MiB {mode}: wall {res["wall_seconds"]}s model {res["model_seconds"]}s '
-                  f'rss {res["peak_rss_mib"]} MiB', flush=True)
+                  f'peak {res["peak_rss_mib"]} MiB', flush=True)
         if 'baseline' in findings:
             base = scans['runs']['baseline']
             for mode in findings:
                 if mode != 'baseline':
                     run = scans['runs'][mode]
-                    run['comparison_vs_baseline'] = compare_findings(findings['baseline'], findings[mode])
+                    run['comparison_vs_baseline'] = compare_findings(json.loads(findings['baseline'].read_text()),
+                                                                     json.loads(findings[mode].read_text()))
                     run['wall_speedup'] = round(base['wall_seconds'] / run['wall_seconds'], 2)
                     run['model_speedup'] = round(base['model_seconds'] / max(run['model_seconds'], 1e-9), 2)
         results['full_scan'] = scans
