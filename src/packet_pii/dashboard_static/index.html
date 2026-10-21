@@ -102,8 +102,23 @@
           </div>
           <div class="detector-strip" aria-live="polite"><span>Checkpoint <strong id="live-model-loaded">NOT LOADED</strong></span><span>Version <strong id="live-model-version">—</strong></span><span>Inference status <strong id="live-inference-status">No scan yet</strong></span></div><dl class="telemetry-grid" id="live-telemetry"></dl><div class="live-disclosure" id="live-disclosure">Live-file precision, recall and F1 are NOT measured. Those metrics require independently labelled ground truth for this particular capture.</div>
         </div>
+        <div class="lab-section" id="lab-assessment" aria-labelledby="lab-qa-title">
+          <div class="lab-heading"><span class="kicker">SECTION 2 · AUTOMATIC · SYNTHETIC PROBES</span><h4 id="lab-qa-title">Automated Model Quality Assessment</h4><p>After an AI-assisted scan TRACE automatically tests the same V2 model on fictional, labelled probes built to resemble this capture's field structure. It never uses values from your capture, and it is not an accuracy measurement of your capture.</p></div>
+          <div class="coverage-banner" id="qa-disclosure" data-kind="warning">These metrics are measured on automatically generated, labelled synthetic probes matched to aspects of this capture's structure. They are not precision, recall or F1 measured on the original uploaded traffic.</div>
+          <div class="coverage-panel" id="qa-panel" aria-live="polite">
+            <div class="coverage-top"><span class="coverage-chip" id="qa-chip" data-state="none">NO ASSESSMENT</span><strong id="qa-headline">An assessment appears here after an AI-assisted scan completes.</strong><button type="button" class="btn btn-outline hidden" id="qa-cancel">Cancel assessment</button></div>
+            <p class="coverage-detail" id="qa-detail">The original capture's ML coverage (Section 1) and this probe assessment are measured separately.</p>
+            <div id="qa-banner" class="coverage-banner hidden" role="status"></div>
+            <div id="qa-body" class="hidden">
+              <div class="table-panel"><div class="table-scroll"><table><thead><tr><th>CONTEXT-MATCHED SYNTHETIC PROBE METRIC</th><th>PROBES SCORED</th><th>TP</th><th>FP</th><th>FN</th><th>PRECISION</th><th>RECALL</th><th>F1</th></tr></thead><tbody id="qa-table"></tbody></table></div><div class="table-foot"><span id="qa-foot">Exact-span scoring on synthetic probes only. n/a = undefined (zero denominator).</span></div></div>
+              <dl class="coverage-grid" id="qa-grid"></dl>
+              <div class="gt-detail"><div><strong>Boundary diagnostics</strong><ul id="qa-boundary"></ul></div><div><strong>False positives on negative probes</strong><ul id="qa-negatives"></ul></div><div><strong>Prediction stability (diagnostic)</strong><ul id="qa-stability"></ul></div><div><strong>Independent-detector diagnostic</strong><ul id="qa-detector"></ul></div><div><strong>Capture-context applicability</strong><ul id="qa-applicability"></ul></div><div><strong>Reproducibility</strong><ul id="qa-repro"></ul></div></div>
+              <div class="model-note"><strong>Scientific limitations</strong><span id="qa-limits"></span></div>
+            </div>
+          </div>
+        </div>
         <div class="lab-section" id="lab-groundtruth" aria-labelledby="lab-gt-title">
-          <div class="lab-heading"><span class="kicker">SECTION 2 · THIS CAPTURE, WITH VERIFIED LABELS</span><h4 id="lab-gt-title">Ground-Truth Evaluation</h4><p>Precision, recall and F1 for <em>this</em> file, computed by exact-span comparison against independent annotations bound to the capture by SHA-256. Without a verified manifest, no accuracy is shown.</p></div>
+          <div class="lab-heading"><span class="kicker">SECTION 3 · THIS CAPTURE, WITH VERIFIED LABELS</span><h4 id="lab-gt-title">Ground-Truth Evaluation</h4><p>Precision, recall and F1 for <em>this</em> file, computed by exact-span comparison against independent annotations bound to the capture by SHA-256. Without a verified manifest, no accuracy is shown.</p></div>
           <div class="gt-controls">
             <label class="btn btn-outline gt-upload" for="gt-file">Choose manifest (.json)</label><input type="file" id="gt-file" accept=".json,application/json" class="visually-hidden">
             <button type="button" class="btn btn-outline" id="gt-demo">Use showcase demonstration annotations</button>
@@ -119,7 +134,7 @@
           </div>
         </div>
         <div class="lab-section" id="lab-benchmark">
-          <div class="lab-heading"><span class="kicker">SECTION 3 · SEPARATE, OFFLINE</span><h4>Published synthetic benchmark</h4><p>A frozen 1,058-field synthetic challenge set. It is a different dataset from your capture and is never presented as its accuracy.</p></div>
+          <div class="lab-heading"><span class="kicker">SECTION 4 · SEPARATE, OFFLINE</span><h4>Published synthetic benchmark</h4><p>A frozen 1,058-field synthetic challenge set. It is a different dataset from your capture and is never presented as its accuracy.</p></div>
           <details class="research-details"><summary>View published synthetic benchmark — not this file’s accuracy</summary><div class="benchmark-separator"><div><div class="kicker">OFFLINE RESEARCH REFERENCE · NOT LIVE FILE ACCURACY</div><h4 id="benchmark-title">Model benchmark</h4></div><span id="benchmark-source">Loading research reference…</span></div><div class="metric-grid model-grid"><article class="metric"><div class="metric-head">OFFLINE PRECISION</div><div class="metric-value" id="benchmark-precision">—</div><div class="metric-foot">Labelled benchmark only</div></article><article class="metric"><div class="metric-head">OFFLINE RECALL</div><div class="metric-value" id="benchmark-recall">—</div><div class="metric-foot">Labelled benchmark only</div></article><article class="metric"><div class="metric-head">OFFLINE BILSTM F1</div><div class="metric-value" id="benchmark-f1">—</div><div class="metric-foot" id="benchmark-ci">Confidence interval unavailable</div></article><article class="metric"><div class="metric-head">SOURCE MODEL</div><div class="metric-value metric-word" id="benchmark-version">—</div><div class="metric-foot">Results apply to this version only</div></article></div><div class="model-note"><strong>Comparators on the same synthetic set</strong><span id="benchmark-comparators">Comparator rows load with the benchmark.</span></div><div class="model-note"><strong>Interpretation</strong><span id="benchmark-note">No verified benchmark has been loaded. Live-file precision, recall and F1 require independently labelled ground truth. Model scores are uncalibrated.</span></div></details>
         </div>
       </section>
