@@ -183,12 +183,15 @@ class SpanPredictor:
     Inference batching (output-preserving): encoded chunks are grouped by sequence length so a batch carries little
     padding, then decoded per chunk and reassembled in the original ``(pair, chunk)`` order. Each batch holds at most
     ``batch_size`` chunks AND at most ``max_batch_tokens`` padded positions (``batch rows x longest chunk``), so peak
-    activation memory is bounded independently of ``batch_size``; the default token cap equals the legacy worst case
-    (64 chunks x ``max_seq``). ``length_bucketing=False`` reproduces the legacy batching exactly (input order, no token
-    cap) and exists for equivalence testing and benchmarking.
+    activation memory is bounded independently of ``batch_size``. The default token cap (4,096, a third of the legacy
+    worst case of 64 chunks x ``max_seq``) was chosen from end-to-end measurements: every large inference temporary
+    (char-CNN copies, convolution workspace, LSTM projections) scales with it, and full scans were both faster and lower
+    in peak RSS than at 12,288 (docs/ml/PERFORMANCE_MEMORY_HARDENING.md). ``length_bucketing=False`` reproduces the legacy
+    batching exactly (input order, no token cap) and exists for equivalence testing and benchmarking.
     """
 
     DEFAULT_BATCH_SIZE = 64
+    DEFAULT_MAX_BATCH_TOKENS = 4096
 
     def __init__(self, model, vocab: Vocab, batch_size: int = DEFAULT_BATCH_SIZE, *, length_bucketing: bool = True,
                  max_batch_tokens: int | None = None):
@@ -200,7 +203,7 @@ class SpanPredictor:
             raise ValueError("batch_size must be a positive int")
         self.model, self.vocab, self.batch_size = self.models[0], vocab, batch_size
         self.length_bucketing = bool(length_bucketing)
-        cap = self.DEFAULT_BATCH_SIZE * self.model.cfg.max_seq if max_batch_tokens is None else max_batch_tokens
+        cap = max(self.DEFAULT_MAX_BATCH_TOKENS, self.model.cfg.max_seq) if max_batch_tokens is None else max_batch_tokens
         if type(cap) is not int or cap < self.model.cfg.max_seq:
             raise ValueError("max_batch_tokens must be an int >= max_seq")
         self.max_batch_tokens = cap

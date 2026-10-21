@@ -360,3 +360,49 @@ def test_model_time_excludes_cache_only_batches():
     runner.flush()
     assert runner.model_evaluations == 1 and runner.cache_hits == 1
     assert runner.seconds == recorded_model_seconds
+
+
+# ------------------------------------------------------------------ memory-hardening defaults and byte-bounded cache
+def test_memory_hardening_defaults():
+    from packet_pii.ml.bilstm import SpanPredictor
+    assert SpanPredictor.DEFAULT_MAX_BATCH_TOKENS == 4096 and SpanPredictor.DEFAULT_BATCH_SIZE == 64
+    assert MLWorkBudget().batch_fields == 1024
+    assert ml_runner.PREDICTION_CACHE_MAX_ENTRIES == 16_384 and ml_runner.PREDICTION_CACHE_MAX_BYTES == 16 * 2 ** 20
+
+
+def test_cache_entry_estimate_is_conservative_against_cpython_sizes():
+    import sys
+    from collections import OrderedDict
+    od = OrderedDict()
+    base = sys.getsizeof(od)
+    for n_spans in (0, 1, 3, 40):
+        od.clear()
+        measured = []
+        for i in range(2000):
+            spans = tuple((i, i + 5 + k, 'PERSON_NAME', 0.5 + i / 1e6 + k / 1e9, 'uncalibrated_model_score', 'v2') for k in range(n_spans))
+            key = ml_runner._cache_key('json_body.name', f'text {i} {n_spans}')
+            od[key] = spans or ()
+            per_value = sys.getsizeof(key) + (sys.getsizeof(spans) if spans else 0) + sum(
+                sys.getsizeof(s) + sys.getsizeof(s[3]) + sys.getsizeof(s[0]) + sys.getsizeof(s[1]) for s in spans)
+            measured.append(per_value)
+        slot = (sys.getsizeof(od) - base) / len(od)
+        assert MLBatchRunner._entry_bytes(spans) >= max(measured) + slot, n_spans
+
+
+def test_cache_byte_bound_evicts_and_tracks_bytes(monkeypatch):
+    monkeypatch.setattr(ml_runner, 'PREDICTION_CACHE_MAX_BYTES', 64 * 1024)
+    stub = CacheableStub()
+    fields = [('json_body.v', f'NAME {i}') for i in range(400)]          # each prediction holds one span
+    runner, out = _run(stub, [('m', fields, {})], MLWorkBudget(batch_fields=16))
+    per_entry = MLBatchRunner._entry_bytes(((0, 4, 'PERSON_NAME', .9, 'uncalibrated_model_score', 'stub-cache-1'),))
+    assert runner.cache_bytes <= 64 * 1024 and runner.cache_bytes == len(runner._cache) * per_entry
+    assert runner.cache_evictions == 400 - len(runner._cache) > 0 and len(out[0][1]) == 400
+
+
+def test_oversized_prediction_is_not_cached(monkeypatch):
+    monkeypatch.setattr(ml_runner, 'PREDICTION_CACHE_MAX_BYTES', 64 * 300)  # a no-span entry fits, a one-span entry does not
+    stub = CacheableStub()
+    runner, out = _run(stub, MESSAGES)
+    _, ref = _run(CacheableStub(), MESSAGES, prediction_cache=False)
+    assert out == ref and len(runner._cache) == 1 and runner.cache_bytes == MLBatchRunner._entry_bytes(())
+    assert ml_runner._cache_key('json_body.note', 'plain') in runner._cache

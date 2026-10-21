@@ -44,7 +44,8 @@ GIB = 1024 * MIB
 class AnalysisLimits:
     """Validated retention/work budgets; profiles never change Standard defaults.
 
-    RSS is a sampled process-lifetime high-water guard, not an OS reservation.
+    ``max_memory_bytes`` bounds process RSS attributable to this analysis (see ``_MemoryGuard``); it is a guard checked
+    at stage boundaries and during result aggregation, not an OS reservation.
     Prefer analyze_to_report for large workloads: analyze materializes results.
     """
     max_capture_bytes: int = 128 * MIB
@@ -89,8 +90,80 @@ def _peak_rss_bytes() -> int:
     return int(peak if sys.platform == 'darwin' else peak * 1024)
 
 
-def _check_memory(budget: AnalysisLimits) -> None:
-    if _peak_rss_bytes() > budget.max_memory_bytes:
+def _current_rss_bytes() -> int | None:
+    """Current resident set size, or None when the platform offers no cheap reliable reading."""
+    try:
+        with open('/proc/self/statm', 'rb') as fh:  # Linux: resident pages are the second field
+            return int(fh.read().split()[1]) * resource.getpagesize()
+    except (OSError, ValueError, IndexError):
+        pass
+    if sys.platform == 'darwin':
+        try:
+            import ctypes
+            import ctypes.util
+
+            class _Time(ctypes.Structure):
+                _fields_ = [('seconds', ctypes.c_int), ('microseconds', ctypes.c_int)]
+
+            class _Info(ctypes.Structure):  # mach_task_basic_info (MACH_TASK_BASIC_INFO = 20)
+                _fields_ = [('virtual_size', ctypes.c_uint64), ('resident_size', ctypes.c_uint64),
+                            ('resident_size_max', ctypes.c_uint64), ('user_time', _Time), ('system_time', _Time),
+                            ('policy', ctypes.c_int), ('suspend_count', ctypes.c_int)]
+            libc = ctypes.CDLL(ctypes.util.find_library('c'))
+            info, count = _Info(), ctypes.c_uint(ctypes.sizeof(_Info) // 4)
+            task = ctypes.c_uint.in_dll(libc, 'mach_task_self_')
+            if libc.task_info(task, 20, ctypes.byref(info), ctypes.byref(count)) == 0:
+                return int(info.resident_size)
+        except (OSError, AttributeError, ValueError):
+            pass
+    return None
+
+
+class _MemoryGuard:
+    """Process-memory guard for one analysis.
+
+    ``ru_maxrss`` is a process-lifetime high-water mark (and on Linux it is inherited across fork+exec), so comparing it
+    alone with the budget blames *earlier* peaks - model loading, a previous scan in the same dashboard process, a parent
+    process - on this analysis: after any transient spike above the budget every later scan failed immediately.
+
+    Rule, evaluated at every check:
+    * if the lifetime peak is within budget -> pass (identical to the previous guard);
+    * if the lifetime peak rose during this analysis and exceeds the budget -> fail (this analysis set it; exact);
+    * otherwise the over-budget peak predates the analysis: fail if *current* RSS exceeds the budget, or, when current
+      RSS cannot be read, fail closed exactly as before.
+    When the process started the analysis within budget, the result is identical to the previous guard. The only case
+    no longer failed is a transient spike between checks that stays below the process's own earlier peak.
+    """
+    __slots__ = ('limit', 'start_peak')
+
+    def __init__(self, budget: AnalysisLimits):
+        self.limit = budget.max_memory_bytes
+        self.start_peak = _peak_rss_bytes()
+
+    def check(self, stage: str | None = None) -> None:
+        peak = _peak_rss_bytes()
+        if peak <= self.limit:
+            return
+        if peak > self.start_peak:
+            observed, basis = peak, 'process peak reached during this analysis'
+        else:
+            current = _current_rss_bytes()
+            if current is None:
+                observed, basis = peak, 'process peak (current RSS unavailable)'
+            elif current <= self.limit:
+                return
+            else:
+                observed, basis = current, 'current process RSS'
+        where = f' during {stage}' if stage else ''
+        raise AnalysisLimitError(f'Analysis exceeded configured process memory budget: {basis} '
+                                 f'{observed // MIB} MiB > {self.limit // MIB} MiB{where}')
+
+
+def _check_memory(budget: AnalysisLimits, guard: '_MemoryGuard | None' = None, stage: str | None = None) -> None:
+    """With a guard: the analysis-attributable rule. Without one: the strict lifetime-peak check (never weaker)."""
+    if guard is not None:
+        guard.check(stage)
+    elif _peak_rss_bytes() > budget.max_memory_bytes:
         raise AnalysisLimitError('Analysis exceeded configured process memory budget')
 
 
@@ -213,14 +286,15 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             ml_detector: ContextualPIIDetector | None = None,
             ml_budget: 'MLWorkBudget | str | None' = None,
             ml_work_budget: 'LegacyMLWorkBudget | None' = None,
-            field_observer=None, disposition_observer=None) -> dict:
+            field_observer=None, disposition_observer=None, _memory_guard=None) -> dict:
     if not 0 <= threshold <= 1:
         raise ValueError('Confidence threshold must be in [0,1]')
     selected = AnalysisLimits.for_profile(profile)
     budget = limits if limits is not None else selected
     if not isinstance(budget, AnalysisLimits):
         raise TypeError('limits must be AnalysisLimits')
-    _check_memory(budget)
+    guard = _memory_guard if _memory_guard is not None else _MemoryGuard(budget)
+    _check_memory(budget, guard, 'start')
     if ml_work_budget is not None:
         if ml_budget is not None:
             raise ValueError('Choose ml_budget or ml_work_budget, not both')
@@ -250,7 +324,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                   'field_extraction','rule_detection','ml_inference','result_aggregation'):
         stages[stage] = 0.0
     def emit(stage, **counts):
-        _check_memory(budget)
+        _check_memory(budget, guard, stage)
         if progress is not None:
             progress(dict(stage=stage, elapsed_seconds=time.monotonic()-started, **counts))
     emit('reading', packets=0, endpoint_pairs=0)
@@ -364,7 +438,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             ml_findings += entry['detector'] == 'bilstm'
             findings.append(entry)
             if len(findings) % 1024 == 0:
-                _check_memory(budget)
+                _check_memory(budget, guard, 'result_aggregation')
         stages['result_aggregation'] += time.perf_counter()-tick
 
     def drain():
@@ -799,12 +873,13 @@ def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = Fal
             field_observer=None, disposition_observer=None) -> dict:
     """Compatible in-memory report API; use analyze_to_report for large outputs."""
     from .reporting import ReportLimitError
+    budget = limits if limits is not None else AnalysisLimits.for_profile(profile)
+    guard = _MemoryGuard(budget) if isinstance(budget, AnalysisLimits) else None
     try:
         report = _analyze(path, threshold, include_values, limits=limits, profile=profile,
                           progress=progress, timings=timings, ml_detector=ml_detector, ml_budget=ml_budget, ml_work_budget=ml_work_budget,
-                          field_observer=field_observer, disposition_observer=disposition_observer)
-        budget = limits if limits is not None else AnalysisLimits.for_profile(profile)
-        _check_memory(budget)
+                          field_observer=field_observer, disposition_observer=disposition_observer, _memory_guard=guard)
+        _check_memory(budget, guard, 'report_serialisation')
         # Include containers, metadata and UTF-8 encoding without a giant string.
         total = 0
         for chunk in json.JSONEncoder(ensure_ascii=False,allow_nan=False).iterencode(report):
@@ -844,15 +919,16 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
     if not isinstance(budget,AnalysisLimits):
         raise TypeError('limits must be AnalysisLimits')
     clock=time.monotonic()
+    guard = _MemoryGuard(budget)
     try:
         with ReportSpool(output.parent,budget.max_report_bytes,row_observer=row_observer) as rows:
             report = _analyze(source,threshold,include_values,limits=budget,profile=profile,
                               progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,ml_budget=ml_budget, ml_work_budget=ml_work_budget,
-                              field_observer=field_observer,disposition_observer=disposition_observer)
+                              field_observer=field_observer,disposition_observer=disposition_observer,_memory_guard=guard)
             row_names = ('flows', 'findings', 'ml_field_coverage') + EVIDENCE_ARRAYS
             for name in row_names:
                 report[name] = []
-            _check_memory(budget)
+            _check_memory(budget, guard, 'report_publication')
             if progress is not None:
                 progress(dict(stage='writing_report',elapsed_seconds=time.monotonic()-clock,
                               **report['summary']))
