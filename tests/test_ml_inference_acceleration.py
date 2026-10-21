@@ -119,6 +119,40 @@ def test_detector_attribution_and_threshold_unchanged(predictors):
     assert BiLSTMDetector(str(V2_DIR)).min_score == 0.35
 
 
+def test_near_threshold_spans_keep_their_inclusion_on_frozen_inputs(predictors):
+    import gzip
+    legacy, meta, load = predictors
+    with gzip.open(ROOT / 'src/packet_pii/ml/datasets/v2/val.jsonl.gz', 'rt', encoding='utf-8') as fh:   # read-only
+        pairs = [(row['location'], row['text']) for row in map(json.loads, fh)][:800]
+    threshold, old = meta['min_score'], legacy.predict_pairs(pairs)
+    near = [(i, span) for i, spans in enumerate(old) for span in spans if abs(span[3] - threshold) < 0.05]
+    assert len(near) >= 3 and any(span[3] < threshold for _, span in near)  # the check is not vacuous
+    for batch_size in (64, 512):
+        new = load(str(V2_DIR), batch_size)[0].predict_pairs(pairs)
+        assert _labels(new) == _labels(old) and _included(new, threshold) == _included(old, threshold)
+        for i, span in near:
+            twin = next(x for x in new[i] if x[:3] == span[:3])
+            assert (twin[3] >= threshold) == (span[3] >= threshold) and abs(twin[3] - span[3]) <= SCORE_TOLERANCE
+
+
+def test_real_model_cache_with_quality_flags_and_eviction(predictors):
+    from packet_pii.ml.infer import BiLSTMDetector
+    messages = [(f'm{i}', [('json_body.full_name', name), ('json_body.comment', f'Please call {name} tomorrow'),
+                           ('json_body.username', 'jessica_smith88'), ('json_body.note', LONG if i == 3 else 'ok')], flags)
+                for i, (name, flags) in enumerate([('Priya Patel', {}), ('Priya Patel', {'truncated': 'true'}),
+                                                   ("Siobhán O'Connor", {'stream_gap': 'true'}), ('Priya Patel', {}),
+                                                   ('Mary-Jane Watson-Parker', {}), ('Priya Patel', {'capture_incomplete': 'true'})])]
+    fast, out = _run(BiLSTMDetector(str(V2_DIR)), messages, MLWorkBudget(batch_fields=4), prediction_cache_entries=2)
+    slow, ref = _run(_NoCache(BiLSTMDetector(str(V2_DIR), length_bucketing=False)), messages, MLWorkBudget(batch_fields=4))
+    strip = lambda rows: [(k, [{x: y for x, y in f.items() if x != 'confidence'} for f in fs]) for k, fs in rows]  # noqa: E731
+    assert strip(out) == strip(ref) and out
+    diffs = [abs(a['confidence'] - b['confidence']) for (_, x), (_, y) in zip(out, ref) for a, b in zip(x, y)]
+    assert max(diffs) <= SCORE_TOLERANCE
+    flags = {key: sorted({tuple(f.get('input_quality', ())) for f in fs}) for key, fs in out}
+    assert flags['m1'] == [('truncated',)] and flags['m5'] == [('capture_incomplete',)] and flags['m0'] == [()]
+    assert fast.cache_hits > 0 and fast.cache_evictions > 0 and fast.evaluated == slow.evaluated
+
+
 # ------------------------------------------------------------------ runner: prediction cache (test doubles)
 class CacheableStub:
     """Flags text beginning with ``NAME``; records every field it is asked to infer."""
@@ -297,3 +331,20 @@ def test_ground_truth_evaluation_is_identical(tmp_path, predictors):
     for name in ('rules_only', 'model_only', 'rules_plus_model'):
         for key in ('tp', 'fp', 'fn'):
             assert fast['systems'][name]['micro'][key] == slow['systems'][name]['micro'][key], (name, key)
+
+
+# ------------------------------------------------------------------ integration guard: PR #28 SharedDetector wrapper
+def test_shared_detector_wrapper_keeps_prediction_caching():
+    """Skips on trees without ``SharedDetector``; after integration it fails loudly if the wrapper hides the opt-in."""
+    shared = getattr(ml_runner, 'shared', None)
+    if shared is None:
+        pytest.skip('SharedDetector not present in this tree (PR #28 not integrated)')
+    inner = CacheableStub()
+    wrapped = shared(inner)
+    assert wrapped is not inner and shared(wrapped) is wrapped
+    assert getattr(wrapped, 'prediction_cache_safe', False) is True, 'SharedDetector must forward prediction_cache_safe'
+    assert getattr(shared(PlainStub()), 'prediction_cache_safe', False) is False
+    runner, out = _run(wrapped, MESSAGES, prediction_cache=True)
+    _, ref = _run(CacheableStub(), MESSAGES, prediction_cache=False)
+    assert runner.prediction_cache_enabled and out == ref
+    assert (runner.model_evaluations, runner.cache_hits) == (4, 4) and len(inner.seen) == 4
