@@ -191,13 +191,19 @@ def test_cache_is_bounded_and_skips_long_fields(monkeypatch):
     stub = CacheableStub()
     fields = [('json_body.v', f'NAME {i}') for i in range(10)] + [('json_body.v', 'NAME ' + 'x' * 30)] * 2
     runner, out = _run(stub, [('m', fields, {})], MLWorkBudget(batch_fields=1))
-    assert len(runner._cache) == 3 and all(len(text) <= 20 for _, text in runner._cache)
-    assert runner.cache_hits == 0 and len(out[0][1]) == 12                # long repeat re-inferred, never cached
-    monkeypatch.setattr(ml_runner, 'PREDICTION_CACHE_MAX_KEY_CHARS', 25)
-    small = MLBatchRunner(CacheableStub(), MLWorkBudget(batch_fields=1))
-    small.add('m', [('json_body.v', f'NAME {i}') for i in range(5)])
-    small.flush()
-    assert small._cache_chars <= 25 and len(small._cache) == 1
+    assert len(runner._cache) == 3                                       # LRU bound
+    assert list(runner._cache) == [ml_runner._cache_key('json_body.v', f'NAME {i}') for i in (7, 8, 9)]
+    assert runner.cache_hits == 0 and len(out[0][1]) == 12 and len(stub.seen) == 12  # long repeat re-inferred, never cached
+
+
+def test_cache_retains_no_field_text_or_locations():
+    runner, _ = _run(CacheableStub(), MESSAGES)
+    assert runner._cache and all(type(k) is bytes and len(k) == 16 for k in runner._cache)
+    for spans in runner._cache.values():
+        for start, end, label, score, score_type, version in spans:
+            assert type(start) is int and type(end) is int and label in ('PERSON_NAME', 'USERNAME')
+    assert ml_runner._cache_key('ab', 'c') != ml_runner._cache_key('a', 'bc')  # location/text boundary is unambiguous
+    assert ml_runner._cache_key('loc', '\ud800 lone surrogate')               # never raises on odd input
 
 
 def test_detector_failure_is_not_cached_and_still_fails_closed():
@@ -206,7 +212,7 @@ def test_detector_failure_is_not_cached_and_still_fails_closed():
     with pytest.raises(InferenceError):  # add() runs full batches itself
         runner.add('m', [('json_body.a', 'NAME 1'), ('json_body.b', 'NAME 2'), ('json_body.c', 'NAME 3'), ('json_body.d', 'NAME 4')])
         runner.flush()
-    assert set(runner._cache) == {('json_body.a', 'NAME 1'), ('json_body.b', 'NAME 2')}
+    assert set(runner._cache) == {ml_runner._cache_key('json_body.a', 'NAME 1'), ml_runner._cache_key('json_body.b', 'NAME 2')}
 
 
 # ------------------------------------------------------------------ engine: real V2 end to end

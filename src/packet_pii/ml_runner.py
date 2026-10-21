@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from collections import Counter, OrderedDict, deque
 from dataclasses import dataclass
+import hashlib
 import time
 from typing import Callable, Mapping, Sequence
 
@@ -23,11 +24,19 @@ from .ml.detector import ContextualPIIDetector
 from .ml.input_policy import MAX_REPLACEMENT_RATIO, QUALITY_FLAGS
 from .ml.schema import DEFAULT_MAX_FIELD_CHARS, DEFAULT_MAX_FIELDS, MAX_LOCATION_CHARS, MlValidationError
 
-# Scan-local prediction cache bounds (see ``MLBatchRunner``): entries, total key characters, and the longest field text
-# that is cached at all (long free-text values rarely repeat, so they are not worth holding in memory).
+# Scan-local prediction cache bounds (see ``MLBatchRunner``): entries, and the longest field text that is cached at all
+# (long free-text values rarely repeat, so they are not worth hashing or holding).
 PREDICTION_CACHE_MAX_ENTRIES = 65_536
-PREDICTION_CACHE_MAX_KEY_CHARS = 8_000_000
 PREDICTION_CACHE_MAX_FIELD_CHARS = 4_096
+
+
+def _cache_key(location: str, text: str) -> bytes:
+    """128-bit BLAKE2b digest of the exact model input; the cache never retains field text or locations."""
+    digest = hashlib.blake2b(digest_size=16)
+    digest.update(str(len(location)).encode('ascii') + b':')
+    digest.update(location.encode('utf-8', 'surrogatepass'))
+    digest.update(text.encode('utf-8', 'surrogatepass'))
+    return digest.digest()
 
 SKIP_REASONS = ('location_too_long', 'field_too_large', 'invalid_field', 'time_budget', 'field_budget', 'character_budget')
 COVERAGE_STATES = ('not_requested', 'unavailable', 'no_eligible_fields', 'complete', 'partial', 'failed')
@@ -113,7 +122,8 @@ class MLBatchRunner:
 
     Prediction cache: when the detector declares ``prediction_cache_safe = True`` (its output depends only on the field
     location and text), an identical ``(location, text)`` pair seen again in this scan reuses the earlier *neural
-    prediction* (span offsets, label, raw score) instead of running the model again. Only predictions are reused: every
+    prediction* (span offsets, label, raw score) instead of running the model again; inputs are keyed by a 128-bit
+    BLAKE2b digest of the exact location and text, so the cache retains no field text. Only predictions are reused: every
     occurrence still gets its own finding, message provenance, field index and quality flags, and still counts as an
     evaluated field against the field and character budgets exactly as before. The cache lives only as long as this
     runner (one scan), is bounded (``PREDICTION_CACHE_*``, least-recently-used eviction), is never logged or serialised,
@@ -144,7 +154,6 @@ class MLBatchRunner:
         self.model_evaluations = self.cache_hits = 0
         self._cache: OrderedDict | None = (OrderedDict() if prediction_cache
                                            and getattr(detector, 'prediction_cache_safe', False) is True else None)
-        self._cache_chars = 0
 
     @property
     def prediction_cache_enabled(self) -> bool:
@@ -247,7 +256,10 @@ class MLBatchRunner:
         if cache is not None:
             to_model, leaders = [], {}
             for item in batch:
-                key = (item.field.location, item.field.text)
+                if len(item.field.text) > PREDICTION_CACHE_MAX_FIELD_CHARS:
+                    to_model.append(item)  # never hashed or cached
+                    continue
+                key = _cache_key(item.field.location, item.field.text)
                 hit = cache.get(key)
                 if hit is not None:
                     cache.move_to_end(key)
@@ -310,21 +322,19 @@ class MLBatchRunner:
             item.ticket.outstanding -= 1
         if cache is not None:
             for item in to_model:
-                self._remember((item.field.location, item.field.text), tuple(fresh[item.slot]))
+                if len(item.field.text) <= PREDICTION_CACHE_MAX_FIELD_CHARS:
+                    self._remember(_cache_key(item.field.location, item.field.text), tuple(fresh[item.slot]))
         self.inferred += len(batch)
         self.model_evaluations += len(to_model)
         self.cache_hits += len(batch) - len(to_model)
 
-    def _remember(self, key: tuple[str, str], spans: tuple) -> None:
-        size = len(key[0]) + len(key[1])
-        if len(key[1]) > PREDICTION_CACHE_MAX_FIELD_CHARS or key in self._cache:
-            return
+    def _remember(self, key: bytes, spans: tuple) -> None:
         cache = self._cache
-        cache[key] = spans
-        self._cache_chars += size
-        while len(cache) > PREDICTION_CACHE_MAX_ENTRIES or self._cache_chars > PREDICTION_CACHE_MAX_KEY_CHARS:
-            (location, text), _ = cache.popitem(last=False)
-            self._cache_chars -= len(location) + len(text)
+        if key in cache:
+            return
+        cache[key] = spans or ()  # shared empty tuple for the common no-prediction case
+        while len(cache) > PREDICTION_CACHE_MAX_ENTRIES:
+            cache.popitem(last=False)
 
     # ------------------------------------------------------------------ release
     def take_ready(self) -> list[tuple[object, list[dict]]]:
