@@ -99,6 +99,11 @@ class _BudgetWriter:
         return self.stream.write(text)
 
 
+# One configured encoder per row format: json.dumps with non-default arguments builds a new encoder on every call,
+# which dominated spooling of hundreds of thousands of evidence rows. Output is byte-identical.
+_ROW_ENCODER = json.JSONEncoder(ensure_ascii=False, separators=(',', ':'), allow_nan=False)
+
+
 class _Rows:
     def __init__(self, stream, owner, kind):
         self.stream, self.owner, self.kind, self.count = stream, owner, kind, 0
@@ -107,7 +112,7 @@ class _Rows:
         return self.count
 
     def append(self, row):
-        text = json.dumps(row,ensure_ascii=False,separators=(',',':'),allow_nan=False)+'\n'
+        text = _ROW_ENCODER.encode(row)+'\n'
         size = len(text.encode('utf-8'))
         if size > self.owner.maximum-self.owner.written:
             raise ReportLimitError('Report spool exceeds configured byte budget')

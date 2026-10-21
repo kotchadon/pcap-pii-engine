@@ -109,6 +109,15 @@ class TcpPacket:
     fragment_evidence: FragmentEvidence | None = None
 
 
+def with_endpoints(packet: TcpPacket, src: str, dst: str) -> TcpPacket:
+    """``dataclasses.replace(packet, src=src, dst=dst)`` without per-call field introspection (hot path: once per
+    TCP packet, used to share interned endpoint strings across a flow)."""
+    p = packet
+    return TcpPacket(p.timestamp, src, dst, p.sport, p.dport, p.seq, p.flags, p.payload, p.ack, p.network_protocol,
+                     p.network_offset, p.payload_offset, p.ipv4_checksum, p.tcp_checksum, p.source_ranges,
+                     p.frame_index, p.reassembled_fragments, p.fragment_evidence)
+
+
 class CaptureFormatError(ValueError):
     """The input capture is unreadable or not a supported PCAP/PCAPNG."""
 

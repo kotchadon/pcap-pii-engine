@@ -7,7 +7,7 @@ missing session context.
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 import re
@@ -18,7 +18,7 @@ import sys
 import time
 from urllib.parse import urlsplit
 
-from .capture import (CaptureDiagnostics, read_frames, decode_tcp, decode_tcp_with_reason, EVIDENCE_LOSS_REASONS,
+from .capture import (with_endpoints, CaptureDiagnostics, read_frames, decode_tcp, decode_tcp_with_reason, EVIDENCE_LOSS_REASONS,
                       endpoint_key, reassemble_detailed, sequence_offset, split_tcp_sessions, TcpPacket, TcpDecoder)
 from .http_extract import (HttpMessage, parse_http_stream_detailed, parse_http_stream_with_spans, extract_fields, body_skip_reason,
                            MAX_MESSAGES, MAX_FIELDS)
@@ -88,6 +88,10 @@ class AnalysisLimits:
 def _peak_rss_bytes() -> int:
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return int(peak if sys.platform == 'darwin' else peak * 1024)
+
+
+# Shared encoder for in-memory evidence budget accounting (same output as json.dumps(row, ensure_ascii=False)).
+_BUDGET_ENCODER = json.JSONEncoder(ensure_ascii=False)
 
 
 def _current_rss_bytes() -> int | None:
@@ -321,7 +325,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     started = time.monotonic()
     stages = timings if timings is not None else {}
     for stage in ('read_decode_group','session_segmentation','reassembly','http_parse',
-                  'field_extraction','rule_detection','ml_inference','result_aggregation'):
+                  'field_extraction','evidence','rule_detection','ml_inference','result_aggregation'):
         stages[stage] = 0.0
     def emit(stage, **counts):
         _check_memory(budget, guard, stage)
@@ -338,7 +342,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     def append_evidence(kind, row):
         nonlocal result_bytes
         if _rows is None:
-            result_bytes += len(json.dumps(row, ensure_ascii=False).encode('utf-8'))
+            result_bytes += len(_BUDGET_ENCODER.encode(row).encode('utf-8'))
             if result_bytes > budget.max_report_bytes:
                 raise AnalysisLimitError('Analysis exceeded configured evidence/report budget')
         evidence_rows[kind].append(row)
@@ -361,7 +365,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             buffered_tcp_bytes += len(packet.payload)
             # Intern endpoint strings at the pair level while retaining source metadata.
             direction = int((packet.src,packet.sport) != key[0])
-            packet = replace(packet, src=key[direction][0], dst=key[1-direction][0])
+            packet = with_endpoints(packet, key[direction][0], key[1-direction][0])
             flow_packets[key].append(packet)
         else:
             ignored += 1
@@ -612,6 +616,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     raise AnalysisLimitError('HTTP field limits prevent complete detection')
                 stages['field_extraction'] += time.perf_counter()-tick
                 fields_extracted += len(fields)
+                tick = time.perf_counter()
                 source_fields = (http2_evidence_for_fields(record.span, fields) if record.protocol == 'h2'
                                  else evidence_for_fields(record.stream, record.span, fields))
                 field_rows, field_map = field_metadata(record.message_id, record.stream_id, fields, source_fields,
@@ -635,6 +640,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     message_evidence.update(header_end=record.span.header_end, body_start=record.span.body_start,
                                             body_framing=record.span.body_framing, contiguous=True)
                 append_evidence('http_evidence', message_evidence)
+                stages['evidence'] += time.perf_counter()-tick
                 tick = time.perf_counter()
                 detections = detect_fields(fields, threshold, include_values)
                 if len(detections) >= 10000:
