@@ -348,3 +348,15 @@ def test_shared_detector_wrapper_keeps_prediction_caching():
     _, ref = _run(CacheableStub(), MESSAGES, prediction_cache=False)
     assert runner.prediction_cache_enabled and out == ref
     assert (runner.model_evaluations, runner.cache_hits) == (4, 4) and len(inner.seen) == 4
+
+
+def test_model_time_excludes_cache_only_batches():
+    detector = CacheableStub()
+    runner = MLBatchRunner(detector, MLWorkBudget(batch_fields=1))
+    runner.add('first', [('json_body.person', 'NAME Maya')])
+    recorded_model_seconds = runner.seconds
+    assert runner.model_evaluations == 1 and recorded_model_seconds >= 0
+    runner.add('second', [('json_body.person', 'NAME Maya')])
+    runner.flush()
+    assert runner.model_evaluations == 1 and runner.cache_hits == 1
+    assert runner.seconds == recorded_model_seconds
