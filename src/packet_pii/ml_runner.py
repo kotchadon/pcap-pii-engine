@@ -254,7 +254,6 @@ class MLBatchRunner:
                               'ml_fields_eligible_so_far': self.eligible, 'ml_batches': self.batches})
 
     def _run(self, batch: list[_Item]) -> None:
-        started = time.perf_counter()
         cache = self._cache
         reused: dict[int, tuple] = {}     # slot -> cached prediction tuple
         follower: dict[int, int] = {}     # slot -> slot of an identical field earlier in this batch
@@ -277,6 +276,7 @@ class MLBatchRunner:
                     to_model.append(item)
         predictions = []
         if to_model:
+            model_started = time.perf_counter()
             try:
                 predictions = run_detector(self.detector, [item.field for item in to_model])
             except MlValidationError as exc:
@@ -284,6 +284,8 @@ class MLBatchRunner:
                 raise
             except Exception as exc:
                 raise InferenceError('Contextual model inference failed') from exc
+            # Budget tracks actual detector work, not cache bookkeeping or finding reconstruction.
+            self.seconds += time.perf_counter() - model_started
         by_slot = {item.slot: item for item in to_model}
         fresh: dict[int, list] = {item.slot: [] for item in to_model}
         for span in predictions:  # validated and sorted by (field_index, start, end, label)
@@ -300,7 +302,6 @@ class MLBatchRunner:
                 raise failure
             fresh[span.field_index].append((span.start, span.end, span.label.value, span.score, span.score_type.value,
                                             span.model_version))
-        self.seconds += time.perf_counter() - started
         if to_model:
             self.batches += 1
         for item in batch:  # slot order == the order of the detector's sorted output
