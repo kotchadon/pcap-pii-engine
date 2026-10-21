@@ -1,0 +1,137 @@
+{
+  "label": "V2 inference acceleration benchmark (synthetic and frozen fictional inputs)",
+  "machine": {
+    "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "cpu_count": 4,
+    "python": "3.13.16",
+    "torch": "2.14.1",
+    "threads": 4
+  },
+  "baseline": {
+    "ref": "origin/main",
+    "commit": "11d41e8c583231edd86b621d96cc037fe676108f"
+  },
+  "candidate": {
+    "commit": "71a6d7389ee6c7d4ebb7c0fe7b8962c144c14d77",
+    "dirty": false
+  },
+  "full_scan": {
+    "capture": {
+      "path": "/tmp/trace-bench-a6z0ubo7/synthetic_scan.pcap",
+      "bytes": 54526536,
+      "mib": 52.0,
+      "packets": 344241,
+      "http_requests": 56834,
+      "sha256": "a93092b1d8606ae45acb03e384b640547fb1e261c010c32d446dca4591f4ff33",
+      "seed": 52
+    },
+    "ml_budget": {
+      "max_fields": 1000000,
+      "max_characters": 200000000,
+      "max_seconds": 7200.0,
+      "batch_fields": 1024
+    },
+    "analysis_profile": "large",
+    "report_to_disk": false,
+    "shared_detector": false,
+    "runs": {
+      "cache=16384": {
+        "wall_seconds": 322.16,
+        "model_seconds": 248.29,
+        "non_model_seconds": 73.88,
+        "peak_rss_mib": 1062.1,
+        "memory": {
+          "peak_rss_mib_process_hwm": 1062.1,
+          "getrusage_maxrss_mib_inherited": 1061.8,
+          "at_sampled_peak": {
+            "rss_mib": 1061.9,
+            "malloc": {
+              "live_heap_mib": 159.7,
+              "live_mmap_mib": 75.3,
+              "free_held_mib": 53.6,
+              "arena_mib": 213.4
+            },
+            "python_blocks": 5591655
+          },
+          "after_scan_report_alive": {
+            "rss_mib": 1062.1,
+            "malloc": {
+              "live_heap_mib": 150.9,
+              "live_mmap_mib": 75.3,
+              "free_held_mib": 62.4,
+              "arena_mib": 213.4
+            },
+            "python_blocks": 5222369
+          },
+          "after_release_and_gc": {
+            "rss_mib": 1120.1,
+            "malloc": {
+              "live_heap_mib": 144.1,
+              "live_mmap_mib": 320.1,
+              "free_held_mib": 69.2,
+              "arena_mib": 213.4
+            },
+            "python_blocks": 659574
+          },
+          "after_malloc_trim": {
+            "rss_mib": 1057.3,
+            "malloc": {
+              "live_heap_mib": 144.1,
+              "live_mmap_mib": 320.1,
+              "free_held_mib": 31.2,
+              "arena_mib": 175.3
+            }
+          }
+        },
+        "cache": {
+          "enabled": true,
+          "limit": 16384,
+          "entries_at_end": 16384,
+          "hits": 453237,
+          "model_inferred": 117187,
+          "evictions": 100803,
+          "hit_rate": 0.7946,
+          "measured_cache_object_mib": 6.79
+        },
+        "env": {},
+        "summary": {
+          "fields_extracted": 740926,
+          "http_messages": 113668,
+          "rules_findings": 113668,
+          "ml_findings": 318808,
+          "ml_fields_eligible": 570424,
+          "ml_fields_evaluated": 570424,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 170502,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 558,
+          "ml_processing_time_seconds": 248.28555807098383,
+          "ml_fields_model_inferred": 117187,
+          "ml_prediction_cache_hits": 453237,
+          "ml_prediction_cache_enabled": true,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 246180,
+            "USERNAME": 72628
+          }
+        },
+        "comparison_vs_matrix_baseline": {
+          "findings": [
+            432476,
+            432476
+          ],
+          "identical_except_confidence": true,
+          "rule_findings_identical": true,
+          "max_abs_model_confidence_difference": 1.0000000000287557e-06
+        },
+        "wall_speedup_vs_matrix_baseline": 3.7,
+        "model_speedup_vs_matrix_baseline": 4.52
+      }
+    }
+  },
+  "note": "Baseline is the corrected matrix run (docs/ml/results/v2_cache_memory_matrix_52mib_linux.json): same capture sha256, budget except batch_fields, machine and threads."
+}

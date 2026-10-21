@@ -13,8 +13,10 @@ handoff is [ML_COVERAGE_CONTRACT.md](ML_COVERAGE_CONTRACT.md).
 
 Capture profiles (`standard`, `large`, `stress`) and ML budgets are independent.
 Standard ML permits 10,000 fields / 2,000,000 Unicode characters. Explicit
-Extended permits 100,000 / 20,000,000. Both use batches of at most 256 fields /
-131,072 characters, and never submit a field over 65,536 characters. Fields are
+Extended permits 100,000 / 20,000,000. Both use batches of at most 1,024 fields /
+262,144 characters (raised from 256 fields by the V2 inference acceleration;
+results do not depend on batch size), and never submit a field over 65,536
+characters. Fields are
 not truncated to fit; skips have machine-readable reasons. A sufficiently large
 total budget permits every eligible field that also satisfies the independent
 per-field and per-batch safety limits. No unlimited mode is provided.
