@@ -178,19 +178,53 @@ def _forward(model: BiLSTMTagger, b: dict):
 
 # ------------------------------------------------------------------ prediction
 class SpanPredictor:
-    """(location, text) pairs -> unthresholded spans ``(start, end, label, raw_score)``."""
+    """(location, text) pairs -> unthresholded spans ``(start, end, label, raw_score)``.
 
-    def __init__(self, model, vocab: Vocab, batch_size: int = 64):
+    Inference batching (output-preserving): encoded chunks are grouped by sequence length so a batch carries little
+    padding, then decoded per chunk and reassembled in the original ``(pair, chunk)`` order. Each batch holds at most
+    ``batch_size`` chunks AND at most ``max_batch_tokens`` padded positions (``batch rows x longest chunk``), so peak
+    activation memory is bounded independently of ``batch_size``; the default token cap equals the legacy worst case
+    (64 chunks x ``max_seq``). ``length_bucketing=False`` reproduces the legacy batching exactly (input order, no token
+    cap) and exists for equivalence testing and benchmarking.
+    """
+
+    DEFAULT_BATCH_SIZE = 64
+
+    def __init__(self, model, vocab: Vocab, batch_size: int = DEFAULT_BATCH_SIZE, *, length_bucketing: bool = True,
+                 max_batch_tokens: int | None = None):
         """``model`` may be one tagger or a list of taggers with identical config/vocab (probability-averaging ensemble)."""
         self.models = list(model) if isinstance(model, (list, tuple)) else [model]
         if any(m.cfg != self.models[0].cfg for m in self.models):
             raise ValueError("ensemble members must share one model configuration")
+        if type(batch_size) is not int or batch_size < 1:
+            raise ValueError("batch_size must be a positive int")
         self.model, self.vocab, self.batch_size = self.models[0], vocab, batch_size
+        self.length_bucketing = bool(length_bucketing)
+        cap = self.DEFAULT_BATCH_SIZE * self.model.cfg.max_seq if max_batch_tokens is None else max_batch_tokens
+        if type(cap) is not int or cap < self.model.cfg.max_seq:
+            raise ValueError("max_batch_tokens must be an int >= max_seq")
+        self.max_batch_tokens = cap
+
+    def _batches(self, jobs: list) -> list[list[int]]:
+        """Partition job indices into forward batches (a permutation of ``range(len(jobs))``)."""
+        if not self.length_bucketing:
+            return [list(range(i, min(i + self.batch_size, len(jobs)))) for i in range(0, len(jobs), self.batch_size)]
+        order = sorted(range(len(jobs)), key=lambda j: len(jobs[j][1]))  # stable: ties keep input order
+        batches, current = [], []
+        for j in order:
+            # ascending lengths: the newest chunk is the longest, so padded size = (rows + 1) * its length
+            if current and (len(current) >= self.batch_size
+                            or (len(current) + 1) * len(jobs[j][1]) > self.max_batch_tokens):
+                batches.append(current)
+                current = []
+            current.append(j)
+        if current:
+            batches.append(current)
+        return batches
 
     def predict_pairs(self, pairs: Sequence[tuple[str, str]]) -> list[list[tuple[int, int, str, float]]]:
         max_seq = self.model.cfg.max_seq
-        jobs = []  # (pair_index, Encoded, chunk token slice offset)
-        results: list[list] = [[] for _ in pairs]
+        jobs = []  # (pair_index, Encoded) in original (pair, chunk) order; position = reversible mapping key
         for pi, (loc, text) in enumerate(pairs):
             toks = tokenize(text)
             probe = encode(self.vocab, loc, [])
@@ -199,29 +233,33 @@ class SpanPredictor:
                 raise ValueError("location context leaves no room for text tokens")
             for a, b in chunk_ranges(len(toks), room):
                 jobs.append((pi, encode(self.vocab, loc, toks[a:b])))
+        decoded: list[list] = [[] for _ in jobs]
         was_training = [m.training for m in self.models]
         for m in self.models:
             m.eval()
         try:
             with torch.inference_mode():
-                for i in range(0, len(jobs), self.batch_size):
-                    part = jobs[i:i + self.batch_size]
-                    batch = collate([e for _, e in part], max_seq)
+                for part in self._batches(jobs):
+                    batch = collate([jobs[j][1] for j in part], max_seq)
                     if len(self.models) == 1:
                         lp = torch.log_softmax(_forward(self.models[0], batch), dim=-1)
                     else:  # average member probabilities, then log
                         lp = torch.log(torch.stack([torch.softmax(_forward(m, batch), dim=-1) for m in self.models]).mean(0).clamp_min(1e-12))
-                    for k, (pi, enc) in enumerate(part):
+                    for k, j in enumerate(part):
+                        enc = jobs[j][1]
                         rows = lp[k, enc.n_ctx:len(enc)].tolist()
                         if not rows:
                             continue
                         path = viterbi_decode(rows)
                         probs = [2.718281828459045 ** rows[t][tag] for t, tag in enumerate(path)]
-                        for s, e, label, sc in tags_to_spans(enc.tokens, path, probs):
-                            results[pi].append((s, e, label, min(1.0, max(0.0, float(sc)))))
+                        decoded[j] = [(s, e, label, min(1.0, max(0.0, float(sc))))
+                                      for s, e, label, sc in tags_to_spans(enc.tokens, path, probs)]
         finally:
             for m, t in zip(self.models, was_training):
                 m.train(t)
+        results: list[list] = [[] for _ in pairs]
+        for (pi, _), spans in zip(jobs, decoded):  # original chunk order within each pair
+            results[pi].extend(spans)
         return results
 
 
@@ -352,7 +390,7 @@ def ensemble_version(member_sha256: list[str], prefix: str = "bilstm-v2") -> str
     return f"{prefix}-{hashlib.sha256('|'.join(member_sha256).encode()).hexdigest()[:12]}"
 
 
-def load_predictor(path: str, batch_size: int = 64) -> tuple["SpanPredictor", dict]:
+def load_predictor(path: str, batch_size: int = 64, **predictor_options) -> tuple["SpanPredictor", dict]:
     """Load a single checkpoint directory OR an ensemble directory (``ensemble.json`` + member subdirectories).
 
     Returns ``(SpanPredictor, meta)`` where ``meta`` has ``model_version``, ``min_score`` and ``model_sha256`` (ensemble: the
@@ -362,7 +400,7 @@ def load_predictor(path: str, batch_size: int = 64) -> tuple["SpanPredictor", di
     ej = os.path.join(path, ENSEMBLE_FILE)
     if not os.path.isfile(ej):
         model, vocab, meta = load_checkpoint(path)
-        return SpanPredictor(model, vocab, batch_size), meta
+        return SpanPredictor(model, vocab, batch_size, **predictor_options), meta
     try:
         with open(ej, encoding="utf-8") as f:
             ens = json.load(f)
@@ -393,4 +431,4 @@ def load_predictor(path: str, batch_size: int = 64) -> tuple["SpanPredictor", di
         raise CheckpointError(f"cannot load ensemble: {type(exc).__name__}") from None
     meta = {"model_version": version, "min_score": float(ms), "model_sha256": hashlib.sha256("|".join(shas).encode()).hexdigest(),
             "members": len(loaded), "score_semantics": "uncalibrated_model_score", "training": ens.get("selection", {})}
-    return SpanPredictor([l[0] for l in loaded], loaded[0][1], batch_size), meta
+    return SpanPredictor([l[0] for l in loaded], loaded[0][1], batch_size, **predictor_options), meta

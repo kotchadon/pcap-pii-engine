@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from .bilstm import CheckpointError, load_predictor
+from .bilstm import CheckpointError, SpanPredictor, load_predictor
 from .schema import EntitySpan, FieldInput, ScoreType, validate_fields
 
 
@@ -16,10 +16,18 @@ class BiLSTMDetector:
     * ``min_score`` filters spans (default: the operating point stored in the checkpoint metadata,
       chosen on the calibration split).
     * Never logs or stores text; works offline on CPU; deterministic for a fixed checkpoint.
+    * ``batch_size`` is the internal forward-batch size (chunks); ``max_batch_tokens`` bounds padded positions per
+      forward batch; ``length_bucketing=False`` restores legacy input-order batching. None of these change predictions.
     """
 
-    def __init__(self, checkpoint_dir: str, min_score: float | None = None, batch_size: int = 64):
-        self._predictor, self._meta = load_predictor(checkpoint_dir, batch_size if type(batch_size) is int and batch_size >= 1 else 64)
+    # Predictions depend only on (location, text) - ``FieldInput.context`` is ignored - so a caller may reuse them for an
+    # identical (location, text) pair within one scan (see ``MLBatchRunner``).
+    prediction_cache_safe = True
+
+    def __init__(self, checkpoint_dir: str, min_score: float | None = None, batch_size: int = SpanPredictor.DEFAULT_BATCH_SIZE,
+                 *, length_bucketing: bool = True, max_batch_tokens: int | None = None):
+        self._predictor, self._meta = load_predictor(checkpoint_dir, batch_size if type(batch_size) is int and batch_size >= 1 else 64,
+                                                     length_bucketing=length_bucketing, max_batch_tokens=max_batch_tokens)
         ms = self._meta.get("min_score", 0.0) if min_score is None else min_score
         if type(ms) not in (int, float) or not 0.0 <= ms <= 1.0:
             raise CheckpointError("min_score must be a number in [0, 1]")

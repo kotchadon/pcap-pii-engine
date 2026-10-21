@@ -11,7 +11,7 @@ detector's deterministic span order, so output does not depend on batch size.
 """
 from __future__ import annotations
 
-from collections import Counter, deque
+from collections import Counter, OrderedDict, deque
 from dataclasses import dataclass
 import time
 from typing import Callable, Mapping, Sequence
@@ -22,6 +22,12 @@ from .ml import FieldInput, run_detector
 from .ml.detector import ContextualPIIDetector
 from .ml.input_policy import MAX_REPLACEMENT_RATIO, QUALITY_FLAGS
 from .ml.schema import DEFAULT_MAX_FIELD_CHARS, DEFAULT_MAX_FIELDS, MAX_LOCATION_CHARS, MlValidationError
+
+# Scan-local prediction cache bounds (see ``MLBatchRunner``): entries, total key characters, and the longest field text
+# that is cached at all (long free-text values rarely repeat, so they are not worth holding in memory).
+PREDICTION_CACHE_MAX_ENTRIES = 65_536
+PREDICTION_CACHE_MAX_KEY_CHARS = 8_000_000
+PREDICTION_CACHE_MAX_FIELD_CHARS = 4_096
 
 SKIP_REASONS = ('location_too_long', 'field_too_large', 'invalid_field', 'time_budget', 'field_budget', 'character_budget')
 COVERAGE_STATES = ('not_requested', 'unavailable', 'no_eligible_fields', 'complete', 'partial', 'failed')
@@ -103,14 +109,23 @@ class MLBatchRunner:
     """Queue eligible fields from many messages and infer them in bounded, order-preserving batches.
 
     ``checkpoint`` is called before and after every detector call with a small counter dict; it may raise (for example to
-    cancel the scan). A failure of the detector raises ``InferenceError``/``MlValidationError`` flagged
+    cancel the scan).
+
+    Prediction cache: when the detector declares ``prediction_cache_safe = True`` (its output depends only on the field
+    location and text), an identical ``(location, text)`` pair seen again in this scan reuses the earlier *neural
+    prediction* (span offsets, label, raw score) instead of running the model again. Only predictions are reused: every
+    occurrence still gets its own finding, message provenance, field index and quality flags, and still counts as an
+    evaluated field against the field and character budgets exactly as before. The cache lives only as long as this
+    runner (one scan), is bounded (``PREDICTION_CACHE_*``, least-recently-used eviction), is never logged or serialised,
+    and is disabled with ``prediction_cache=False`` or for detectors that do not opt in. ``model_evaluations`` counts
+    fields actually sent to the detector and ``cache_hits`` the reused ones; ``evaluated`` = both (model-covered fields). A failure of the detector raises ``InferenceError``/``MlValidationError`` flagged
     ``ml_inference_failed``; the runner is then unusable and the caller must not publish a result.
     """
 
     def __init__(self, detector: ContextualPIIDetector, budget: MLWorkBudget, *, include_values: bool = False,
                  checkpoint: Callable[[dict], None] | None = None, max_pending_messages: int = 4096,
                  disposition: Callable[[object, int, str], None] | None = None,
-                 zero_work: bool = False):
+                 zero_work: bool = False, prediction_cache: bool = True):
         if not isinstance(budget, MLWorkBudget):
             raise TypeError('budget must be an MLWorkBudget')
         self.detector, self.budget, self.include_values = detector, budget, include_values
@@ -126,6 +141,14 @@ class MLBatchRunner:
         self.seconds = 0.0
         self.skip_reasons: Counter = Counter()
         self.labels: Counter = Counter()
+        self.model_evaluations = self.cache_hits = 0
+        self._cache: OrderedDict | None = (OrderedDict() if prediction_cache
+                                           and getattr(detector, 'prediction_cache_safe', False) is True else None)
+        self._cache_chars = 0
+
+    @property
+    def prediction_cache_enabled(self) -> bool:
+        return self._cache is not None
 
     # ------------------------------------------------------------------ admission
     def add(self, key, fields: Sequence[tuple[str, str]], quality: Mapping[str, str] | None = None) -> None:
@@ -217,20 +240,37 @@ class MLBatchRunner:
 
     def _run(self, batch: list[_Item]) -> None:
         started = time.perf_counter()
-        try:
-            predictions = run_detector(self.detector, [item.field for item in batch])
-        except MlValidationError as exc:
-            exc.ml_inference_failed = True  # contract errors carry indices/types, never field text
-            raise
-        except Exception as exc:
-            raise InferenceError('Contextual model inference failed') from exc
-        self.seconds += time.perf_counter() - started
-        self.batches += 1
-        by_slot = {item.slot: item for item in batch}
-        for span in predictions:
-            item = by_slot.get(span.field_index)
+        cache = self._cache
+        reused: dict[int, tuple] = {}     # slot -> cached prediction tuple
+        follower: dict[int, int] = {}     # slot -> slot of an identical field earlier in this batch
+        to_model = batch
+        if cache is not None:
+            to_model, leaders = [], {}
+            for item in batch:
+                key = (item.field.location, item.field.text)
+                hit = cache.get(key)
+                if hit is not None:
+                    cache.move_to_end(key)
+                    reused[item.slot] = hit
+                elif key in leaders:
+                    follower[item.slot] = leaders[key]
+                else:
+                    leaders[key] = item.slot
+                    to_model.append(item)
+        predictions = []
+        if to_model:
+            try:
+                predictions = run_detector(self.detector, [item.field for item in to_model])
+            except MlValidationError as exc:
+                exc.ml_inference_failed = True  # contract errors carry indices/types, never field text
+                raise
+            except Exception as exc:
+                raise InferenceError('Contextual model inference failed') from exc
+        by_slot = {item.slot: item for item in to_model}
+        fresh: dict[int, list] = {item.slot: [] for item in to_model}
+        for span in predictions:  # validated and sorted by (field_index, start, end, label)
             error = None
-            if item is None:
+            if span.field_index not in by_slot:
                 error = 'Detector returned a span for an unknown field'
             elif span.model_version != self.detector.model_version:
                 error = 'Detector returned a different model version'
@@ -240,27 +280,51 @@ class MLBatchRunner:
                 failure = MlValidationError(error)
                 failure.ml_inference_failed = True
                 raise failure
-            original = item.field.text[span.start:span.end]
-            finding = {
-                'pii_type': span.label.value,
-                'location': item.field.location,
-                'confidence': span.score,  # raw, uncalibrated; never averaged with rules
-                'confidence_type': span.score_type.value,
-                'value': original if self.include_values else _mask(original),
-                'detector': 'bilstm',
-                'model_version': span.model_version,
-                'span_start': span.start,
-                'span_end': span.end,
-                'field_index': item.index,  # position within the HTTP message's extracted fields
-            }
-            quality = sorted(k for k in QUALITY_FLAGS if item.field.context.get(k) == 'true')
-            if quality:
-                finding['input_quality'] = quality
-            item.ticket.findings.append(finding)
-            self.labels[span.label.value] += 1
-        for item in batch:
+            fresh[span.field_index].append((span.start, span.end, span.label.value, span.score, span.score_type.value,
+                                            span.model_version))
+        self.seconds += time.perf_counter() - started
+        if to_model:
+            self.batches += 1
+        for item in batch:  # slot order == the order of the detector's sorted output
+            slot = item.slot
+            spans = fresh[slot] if slot in fresh else reused[slot] if slot in reused else fresh[follower[slot]]
+            for start, end, label, score, score_type, model_version in spans:
+                original = item.field.text[start:end]
+                finding = {
+                    'pii_type': label,
+                    'location': item.field.location,
+                    'confidence': score,  # raw, uncalibrated; never averaged with rules
+                    'confidence_type': score_type,
+                    'value': original if self.include_values else _mask(original),
+                    'detector': 'bilstm',
+                    'model_version': model_version,
+                    'span_start': start,
+                    'span_end': end,
+                    'field_index': item.index,  # position within the HTTP message's extracted fields
+                }
+                quality = sorted(k for k in QUALITY_FLAGS if item.field.context.get(k) == 'true')
+                if quality:
+                    finding['input_quality'] = quality
+                item.ticket.findings.append(finding)
+                self.labels[label] += 1
             item.ticket.outstanding -= 1
+        if cache is not None:
+            for item in to_model:
+                self._remember((item.field.location, item.field.text), tuple(fresh[item.slot]))
         self.inferred += len(batch)
+        self.model_evaluations += len(to_model)
+        self.cache_hits += len(batch) - len(to_model)
+
+    def _remember(self, key: tuple[str, str], spans: tuple) -> None:
+        size = len(key[0]) + len(key[1])
+        if len(key[1]) > PREDICTION_CACHE_MAX_FIELD_CHARS or key in self._cache:
+            return
+        cache = self._cache
+        cache[key] = spans
+        self._cache_chars += size
+        while len(cache) > PREDICTION_CACHE_MAX_ENTRIES or self._cache_chars > PREDICTION_CACHE_MAX_KEY_CHARS:
+            (location, text), _ = cache.popitem(last=False)
+            self._cache_chars -= len(location) + len(text)
 
     # ------------------------------------------------------------------ release
     def take_ready(self) -> list[tuple[object, list[dict]]]:

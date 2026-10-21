@@ -71,6 +71,26 @@ sum(ml_skip_reasons.values()) = ml_fields_skipped
 
 An evaluated field was submitted to a detector call whose outputs passed the
 strict model contract, regardless of whether it produced any predictions.
+
+Prediction cache (additive, V2 inference acceleration): within one scan an
+identical `(location, text)` pair may reuse an earlier validated neural
+prediction instead of running the model again, but only for detectors that
+declare `prediction_cache_safe = True` (the BiLSTM ignores `FieldInput.context`).
+A reused field is still an *evaluated* field and still consumes the field and
+character budgets; it keeps its own message provenance, field index and quality
+flags. For a successful hybrid scan:
+
+```
+ml_fields_evaluated = ml_fields_model_inferred + ml_prediction_cache_hits
+```
+
+`ml_fields_model_inferred` counts fields actually sent to the model (unique
+neural evaluations); `ml_prediction_cache_hits` counts fields whose prediction
+was reused; `ml_prediction_cache_enabled` says whether reuse was possible. With
+the cache disabled, `ml_fields_model_inferred = ml_fields_evaluated`. Rules-only
+reports carry `0, 0, false`. The cache is private to the scan's runner, bounded
+(65,536 entries / 8,000,000 key characters, fields over 4,096 characters are
+never cached, least-recently-used eviction) and never logged or serialised.
 `ml_characters_evaluated` sums full original input lengths of those fields.
 `ml_predictions_by_label` counts validated emitted spans; predictions are not
 field counts. `ml_processing_time_seconds` measures validated inference and
