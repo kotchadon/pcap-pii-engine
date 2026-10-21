@@ -67,11 +67,13 @@ After installing, the CLI also works with `pcap-pii demo.pcap -o demo-report.jso
 | URL query, JSON, URL-encoded/multipart forms, headers | Implemented for common text payloads |
 | gzip/deflate bodies | Implemented with output size cap |
 | Email/IP/phone/card/credential/username/structured name candidates | Implemented as rules and validators |
+| Advertising IDs (IDFA/GAID), explicitly transmitted age, gender/sex, device and account IDs | Context-validated deterministic rules; see [`PII_DETECTION_TAXONOMY.md`](docs/integration/PII_DETECTION_TAXONOMY.md) |
+| Network Evidence v2 | Verified capture hashing, packet-to-stream provenance, HTTP field source mapping and redacted Inspector; higher report-storage requirements apply |
 | Confidence threshold + structured JSON report | Implemented; scores are heuristics, not calibrated probabilities |
 | Contextual ML (BiLSTM V2, opt-in via `--ml-checkpoint`) | Implemented, **experimental**; bounded work budgets with explicit coverage accounting (see below) |
-| TLS HTTPS without session keys, HTTP/2, HTTP/3 | **NOT supported** |
+| Encrypted TLS HTTP/2 or HTTP/3/QUIC | Not decrypted or decoded; only authorised plaintext/decrypted application data can be inspected |
 | TCP sequence wraparound, repeated connection tuples | Handled (reused tuples are split into separate flows) |
-| IP fragments, IPv6 extension headers, HTTP/2, undecodable bodies | **NOT supported**; counted by reason and the report is flagged `analysis_incomplete` |
+| IP fragments / IPv6 extensions / plaintext HTTP/2 | Bounded, conservative support in Network Evidence v2; malformed/unsupported traffic still accounted for |
 | Production-grade HTTP framing, large-scale streaming, comprehensive evasion handling | **NOT supported** |
 
 The parser **skips malformed and incomplete traffic** rather than treating it as complete. Its output is not a forensic guarantee.
@@ -97,6 +99,10 @@ pcap-pii-evaluate examples/groundtruth/controlled_fixture_v1.pcap \
 ```
 
 Without a manifest, TRACE reports no accuracy for an uploaded file. The 81.8 % offline F1 is a different, synthetic benchmark. Method, the controlled fixture and measured V2 results: `docs/ml/GROUND_TRUTH_EVALUATION.md`; engineering handover: `docs/integration/HANDOVER_ML_COVERAGE_GROUNDTRUTH.md`.
+
+### Automated model quality assessment (synthetic probes)
+
+After every AI-assisted scan the dashboard automatically runs a small, bounded, local assessment: fictional, labelled probes (names, usernames, hard negatives) built from a privacy-safe structural summary of the capture are scored with the real V2 model. The result is called **Context-matched synthetic probe F1** and is *not* the accuracy of your capture (no values or field names from it are used). It is shown in Model laboratory → Automated Model Quality Assessment, separate from live coverage, from manifest-based ground-truth evaluation, and from the offline benchmark. `--assessment-probes 0` disables it. Details: `docs/ml/AUTOMATED_MODEL_QUALITY_ASSESSMENT.md`.
 
 ## Security and data-handling
 
