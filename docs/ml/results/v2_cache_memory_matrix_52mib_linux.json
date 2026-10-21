@@ -1,0 +1,491 @@
+{
+  "label": "V2 inference acceleration benchmark (synthetic and frozen fictional inputs)",
+  "machine": {
+    "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "cpu_count": 4,
+    "python": "3.13.16",
+    "torch": "2.14.1",
+    "threads": 4
+  },
+  "baseline": {
+    "ref": "origin/main",
+    "commit": "11d41e8c583231edd86b621d96cc037fe676108f"
+  },
+  "candidate": {
+    "commit": "88c9ceaba346b8d589339ccff843acfb7f37271b",
+    "dirty": false
+  },
+  "full_scan": {
+    "capture": {
+      "path": "/tmp/trace-bench-m3dps_us/synthetic_scan.pcap",
+      "bytes": 54526536,
+      "mib": 52.0,
+      "packets": 344241,
+      "http_requests": 56834,
+      "sha256": "a93092b1d8606ae45acb03e384b640547fb1e261c010c32d446dca4591f4ff33",
+      "seed": 52
+    },
+    "ml_budget": {
+      "max_fields": 1000000,
+      "max_characters": 200000000,
+      "max_seconds": 7200.0
+    },
+    "analysis_profile": "large",
+    "report_to_disk": false,
+    "shared_detector": false,
+    "runs": {
+      "baseline": {
+        "wall_seconds": 1191.06,
+        "model_seconds": 1123.07,
+        "non_model_seconds": 68.0,
+        "peak_rss_mib": 1139.6,
+        "memory": {
+          "peak_rss_mib_process_hwm": 1139.6,
+          "getrusage_maxrss_mib_inherited": 1139.6,
+          "at_sampled_peak": {
+            "rss_mib": 1121.8,
+            "malloc": {
+              "live_heap_mib": 219.7,
+              "live_mmap_mib": 7.0,
+              "free_held_mib": 105.0,
+              "arena_mib": 324.8
+            },
+            "python_blocks": 5549088
+          },
+          "after_scan_report_alive": {
+            "rss_mib": 1083.4,
+            "malloc": {
+              "live_heap_mib": 180.0,
+              "live_mmap_mib": 7.0,
+              "free_held_mib": 96.4,
+              "arena_mib": 276.4
+            },
+            "python_blocks": 5266805
+          },
+          "after_release_and_gc": {
+            "rss_mib": 1138.9,
+            "malloc": {
+              "live_heap_mib": 175.0,
+              "live_mmap_mib": 251.8,
+              "free_held_mib": 101.4,
+              "arena_mib": 276.4
+            },
+            "python_blocks": 659989
+          },
+          "after_malloc_trim": {
+            "rss_mib": 1075.6,
+            "malloc": {
+              "live_heap_mib": 175.0,
+              "live_mmap_mib": 251.8,
+              "free_held_mib": 52.4,
+              "arena_mib": 227.4
+            }
+          }
+        },
+        "cache": {},
+        "env": {},
+        "summary": {
+          "fields_extracted": 740926,
+          "http_messages": 113668,
+          "rules_findings": 113668,
+          "ml_findings": 318808,
+          "ml_fields_eligible": 570424,
+          "ml_fields_evaluated": 570424,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 170502,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 2229,
+          "ml_processing_time_seconds": 1123.0685328529598,
+          "ml_fields_model_inferred": null,
+          "ml_prediction_cache_hits": null,
+          "ml_prediction_cache_enabled": null,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 246180,
+            "USERNAME": 72628
+          }
+        }
+      },
+      "cache=0": {
+        "wall_seconds": 735.61,
+        "model_seconds": 670.79,
+        "non_model_seconds": 64.82,
+        "peak_rss_mib": 1107.8,
+        "memory": {
+          "peak_rss_mib_process_hwm": 1107.8,
+          "getrusage_maxrss_mib_inherited": 1107.8,
+          "at_sampled_peak": {
+            "rss_mib": 1096.6,
+            "malloc": {
+              "live_heap_mib": 249.3,
+              "live_mmap_mib": 41.0,
+              "free_held_mib": 29.7,
+              "arena_mib": 279.0
+            },
+            "python_blocks": 5642371
+          },
+          "after_scan_report_alive": {
+            "rss_mib": 1061.7,
+            "malloc": {
+              "live_heap_mib": 193.4,
+              "live_mmap_mib": 41.0,
+              "free_held_mib": 50.2,
+              "arena_mib": 243.6
+            },
+            "python_blocks": 5265586
+          },
+          "after_release_and_gc": {
+            "rss_mib": 1044.1,
+            "malloc": {
+              "live_heap_mib": 188.5,
+              "live_mmap_mib": 285.8,
+              "free_held_mib": 55.1,
+              "arena_mib": 243.6
+            },
+            "python_blocks": 659479
+          },
+          "after_malloc_trim": {
+            "rss_mib": 993.8,
+            "malloc": {
+              "live_heap_mib": 188.5,
+              "live_mmap_mib": 285.8,
+              "free_held_mib": 26.2,
+              "arena_mib": 214.7
+            }
+          }
+        },
+        "cache": {
+          "enabled": false,
+          "limit": 1,
+          "entries_at_end": 0,
+          "hits": 0,
+          "model_inferred": 570424,
+          "evictions": 0,
+          "hit_rate": 0.0,
+          "measured_cache_object_mib": 0.0
+        },
+        "env": {},
+        "summary": {
+          "fields_extracted": 740926,
+          "http_messages": 113668,
+          "rules_findings": 113668,
+          "ml_findings": 318808,
+          "ml_fields_eligible": 570424,
+          "ml_fields_evaluated": 570424,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 170502,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 2229,
+          "ml_processing_time_seconds": 670.7917466068902,
+          "ml_fields_model_inferred": 570424,
+          "ml_prediction_cache_hits": 0,
+          "ml_prediction_cache_enabled": false,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 246180,
+            "USERNAME": 72628
+          }
+        },
+        "comparison_vs_baseline": {
+          "findings": [
+            432476,
+            432476
+          ],
+          "identical_except_confidence": true,
+          "rule_findings_identical": true,
+          "max_abs_model_confidence_difference": 1.0000000000287557e-06
+        },
+        "wall_speedup": 1.62,
+        "model_speedup": 1.67
+      },
+      "cache=4096": {
+        "wall_seconds": 655.07,
+        "model_seconds": 586.62,
+        "non_model_seconds": 68.45,
+        "peak_rss_mib": 1111.8,
+        "memory": {
+          "peak_rss_mib_process_hwm": 1111.8,
+          "getrusage_maxrss_mib_inherited": 1111.8,
+          "at_sampled_peak": {
+            "rss_mib": 1092.9,
+            "malloc": {
+              "live_heap_mib": 215.3,
+              "live_mmap_mib": 41.0,
+              "free_held_mib": 33.7,
+              "arena_mib": 249.0
+            },
+            "python_blocks": 5538735
+          },
+          "after_scan_report_alive": {
+            "rss_mib": 1028.9,
+            "malloc": {
+              "live_heap_mib": 157.3,
+              "live_mmap_mib": 41.0,
+              "free_held_mib": 26.8,
+              "arena_mib": 184.1
+            },
+            "python_blocks": 5171212
+          },
+          "after_release_and_gc": {
+            "rss_mib": 993.2,
+            "malloc": {
+              "live_heap_mib": 151.9,
+              "live_mmap_mib": 285.8,
+              "free_held_mib": 58.2,
+              "arena_mib": 210.1
+            },
+            "python_blocks": 659342
+          },
+          "after_malloc_trim": {
+            "rss_mib": 945.1,
+            "malloc": {
+              "live_heap_mib": 151.9,
+              "live_mmap_mib": 285.8,
+              "free_held_mib": 32.1,
+              "arena_mib": 183.9
+            }
+          }
+        },
+        "cache": {
+          "enabled": true,
+          "limit": 4096,
+          "entries_at_end": 4096,
+          "hits": 448999,
+          "model_inferred": 121425,
+          "evictions": 117329,
+          "hit_rate": 0.7871,
+          "measured_cache_object_mib": 1.54
+        },
+        "env": {},
+        "summary": {
+          "fields_extracted": 740926,
+          "http_messages": 113668,
+          "rules_findings": 113668,
+          "ml_findings": 318808,
+          "ml_fields_eligible": 570424,
+          "ml_fields_evaluated": 570424,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 170502,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 2229,
+          "ml_processing_time_seconds": 586.6243738730082,
+          "ml_fields_model_inferred": 121425,
+          "ml_prediction_cache_hits": 448999,
+          "ml_prediction_cache_enabled": true,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 246180,
+            "USERNAME": 72628
+          }
+        },
+        "comparison_vs_baseline": {
+          "findings": [
+            432476,
+            432476
+          ],
+          "identical_except_confidence": true,
+          "rule_findings_identical": true,
+          "max_abs_model_confidence_difference": 1.0000000000287557e-06
+        },
+        "wall_speedup": 1.82,
+        "model_speedup": 1.91
+      },
+      "cache=16384": {
+        "wall_seconds": 647.78,
+        "model_seconds": 577.31,
+        "non_model_seconds": 70.46,
+        "peak_rss_mib": 1092.0,
+        "memory": {
+          "peak_rss_mib_process_hwm": 1092.0,
+          "getrusage_maxrss_mib_inherited": 1092.0,
+          "at_sampled_peak": {
+            "rss_mib": 1087.0,
+            "malloc": {
+              "live_heap_mib": 208.4,
+              "live_mmap_mib": 41.0,
+              "free_held_mib": 33.1,
+              "arena_mib": 241.5
+            },
+            "python_blocks": 5573433
+          },
+          "after_scan_report_alive": {
+            "rss_mib": 1028.1,
+            "malloc": {
+              "live_heap_mib": 154.4,
+              "live_mmap_mib": 41.0,
+              "free_held_mib": 25.6,
+              "arena_mib": 180.1
+            },
+            "python_blocks": 5221430
+          },
+          "after_release_and_gc": {
+            "rss_mib": 1021.3,
+            "malloc": {
+              "live_heap_mib": 147.7,
+              "live_mmap_mib": 285.8,
+              "free_held_mib": 73.1,
+              "arena_mib": 220.7
+            },
+            "python_blocks": 659401
+          },
+          "after_malloc_trim": {
+            "rss_mib": 960.8,
+            "malloc": {
+              "live_heap_mib": 147.7,
+              "live_mmap_mib": 285.8,
+              "free_held_mib": 32.3,
+              "arena_mib": 179.9
+            }
+          }
+        },
+        "cache": {
+          "enabled": true,
+          "limit": 16384,
+          "entries_at_end": 16384,
+          "hits": 453237,
+          "model_inferred": 117187,
+          "evictions": 100803,
+          "hit_rate": 0.7946,
+          "measured_cache_object_mib": 6.79
+        },
+        "env": {},
+        "summary": {
+          "fields_extracted": 740926,
+          "http_messages": 113668,
+          "rules_findings": 113668,
+          "ml_findings": 318808,
+          "ml_fields_eligible": 570424,
+          "ml_fields_evaluated": 570424,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 170502,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 2229,
+          "ml_processing_time_seconds": 577.312493564943,
+          "ml_fields_model_inferred": 117187,
+          "ml_prediction_cache_hits": 453237,
+          "ml_prediction_cache_enabled": true,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 246180,
+            "USERNAME": 72628
+          }
+        },
+        "comparison_vs_baseline": {
+          "findings": [
+            432476,
+            432476
+          ],
+          "identical_except_confidence": true,
+          "rule_findings_identical": true,
+          "max_abs_model_confidence_difference": 1.0000000000287557e-06
+        },
+        "wall_speedup": 1.84,
+        "model_speedup": 1.95
+      },
+      "cache=65536": {
+        "wall_seconds": 652.37,
+        "model_seconds": 581.64,
+        "non_model_seconds": 70.74,
+        "peak_rss_mib": 1111.0,
+        "memory": {
+          "peak_rss_mib_process_hwm": 1111.0,
+          "getrusage_maxrss_mib_inherited": 1111.0,
+          "at_sampled_peak": {
+            "rss_mib": 1109.9,
+            "malloc": {
+              "live_heap_mib": 189.6,
+              "live_mmap_mib": 41.0,
+              "free_held_mib": 57.0,
+              "arena_mib": 246.6
+            },
+            "python_blocks": 5797567
+          },
+          "after_scan_report_alive": {
+            "rss_mib": 1047.0,
+            "malloc": {
+              "live_heap_mib": 159.9,
+              "live_mmap_mib": 41.0,
+              "free_held_mib": 22.9,
+              "arena_mib": 182.8
+            },
+            "python_blocks": 5430078
+          },
+          "after_release_and_gc": {
+            "rss_mib": 1018.0,
+            "malloc": {
+              "live_heap_mib": 147.7,
+              "live_mmap_mib": 285.8,
+              "free_held_mib": 67.6,
+              "arena_mib": 215.3
+            },
+            "python_blocks": 659372
+          },
+          "after_malloc_trim": {
+            "rss_mib": 960.8,
+            "malloc": {
+              "live_heap_mib": 147.7,
+              "live_mmap_mib": 285.8,
+              "free_held_mib": 20.0,
+              "arena_mib": 167.6
+            }
+          }
+        },
+        "cache": {
+          "enabled": true,
+          "limit": 65536,
+          "entries_at_end": 65536,
+          "hits": 453240,
+          "model_inferred": 117184,
+          "evictions": 51648,
+          "hit_rate": 0.7946,
+          "measured_cache_object_mib": 27.64
+        },
+        "env": {},
+        "summary": {
+          "fields_extracted": 740926,
+          "http_messages": 113668,
+          "rules_findings": 113668,
+          "ml_findings": 318808,
+          "ml_fields_eligible": 570424,
+          "ml_fields_evaluated": 570424,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 170502,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 2229,
+          "ml_processing_time_seconds": 581.6355769158872,
+          "ml_fields_model_inferred": 117184,
+          "ml_prediction_cache_hits": 453240,
+          "ml_prediction_cache_enabled": true,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 246180,
+            "USERNAME": 72628
+          }
+        },
+        "comparison_vs_baseline": {
+          "findings": [
+            432476,
+            432476
+          ],
+          "identical_except_confidence": true,
+          "rule_findings_identical": true,
+          "max_abs_model_confidence_difference": 1.0000000000287557e-06
+        },
+        "wall_speedup": 1.83,
+        "model_speedup": 1.93
+      }
+    }
+  }
+}

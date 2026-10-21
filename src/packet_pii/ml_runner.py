@@ -27,7 +27,7 @@ from .ml.schema import DEFAULT_MAX_FIELD_CHARS, DEFAULT_MAX_FIELDS, MAX_LOCATION
 # Scan-local prediction cache bounds (see ``MLBatchRunner``): entries, and the longest field text that is cached at all
 # (long free-text values rarely repeat, so they are not worth hashing or holding).
 PREDICTION_CACHE_ENABLED = True
-PREDICTION_CACHE_MAX_ENTRIES = 65_536
+PREDICTION_CACHE_MAX_ENTRIES = 16_384  # 52 MiB matrix: same hit rate as 65,536, ~7 MiB of cache objects
 PREDICTION_CACHE_MAX_FIELD_CHARS = 4_096
 
 
