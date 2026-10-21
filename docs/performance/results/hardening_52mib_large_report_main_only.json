@@ -1,0 +1,137 @@
+{
+  "label": "V2 inference acceleration benchmark (synthetic and frozen fictional inputs)",
+  "machine": {
+    "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "cpu_count": 4,
+    "python": "3.13.16",
+    "torch": "2.14.1",
+    "threads": 4
+  },
+  "baseline": {
+    "ref": "origin/main",
+    "commit": "a74dfcb8819758dfecb7a73a5d4b47272bb5b88e"
+  },
+  "candidate": {
+    "commit": "1d861fc58e73f206796b72e8863080b0541bab21",
+    "dirty": false
+  },
+  "full_scan": {
+    "capture": {
+      "path": "/tmp/trace-bench-m7stg77f/synthetic_scan.pcap",
+      "bytes": 54526536,
+      "mib": 52.0,
+      "packets": 344241,
+      "http_requests": 56834,
+      "sha256": "a93092b1d8606ae45acb03e384b640547fb1e261c010c32d446dca4591f4ff33",
+      "seed": 52
+    },
+    "ml_budget": {
+      "max_fields": 1000000,
+      "max_characters": 200000000,
+      "max_seconds": 7200.0
+    },
+    "analysis_profile": "large",
+    "report_to_disk": true,
+    "shared_detector": true,
+    "runs": {
+      "baseline": {
+        "wall_seconds": 677.31,
+        "model_seconds": 535.41,
+        "non_model_seconds": 141.9,
+        "peak_rss_mib": 928.1,
+        "memory": {
+          "peak_rss_mib_process_hwm": 928.1,
+          "getrusage_maxrss_mib_inherited": 928.1,
+          "at_sampled_peak": {
+            "rss_mib": 920.5,
+            "malloc": {
+              "live_heap_mib": 215.3,
+              "live_mmap_mib": 41.0,
+              "free_held_mib": 37.5,
+              "arena_mib": 252.8
+            },
+            "python_blocks": 2069262
+          },
+          "after_scan_report_alive": {
+            "rss_mib": 879.9,
+            "malloc": {
+              "live_heap_mib": 156.0,
+              "live_mmap_mib": 41.0,
+              "free_held_mib": 56.0,
+              "arena_mib": 212.0
+            },
+            "python_blocks": 1179667
+          },
+          "report_bytes": 1038057323,
+          "after_release_and_gc": {
+            "rss_mib": 1114.1,
+            "malloc": {
+              "live_heap_mib": 148.9,
+              "live_mmap_mib": 398.6,
+              "free_held_mib": 63.1,
+              "arena_mib": 212.0
+            },
+            "python_blocks": 663897
+          },
+          "after_malloc_trim": {
+            "rss_mib": 1058.5,
+            "malloc": {
+              "live_heap_mib": 148.9,
+              "live_mmap_mib": 398.6,
+              "free_held_mib": 31.5,
+              "arena_mib": 180.4
+            }
+          }
+        },
+        "cache": {
+          "enabled": true,
+          "limit": 65536,
+          "entries_at_end": 65536,
+          "hits": 453240,
+          "model_inferred": 117184,
+          "evictions": 51648,
+          "hit_rate": 0.7946,
+          "measured_cache_object_mib": 27.64
+        },
+        "env": {},
+        "stage_seconds": {
+          "read_decode_group": 34.552,
+          "session_segmentation": 1.147,
+          "reassembly": 11.898,
+          "http_parse": 1.792,
+          "field_extraction": 3.489,
+          "rule_detection": 9.198,
+          "ml_inference": 535.413,
+          "result_aggregation": 15.268,
+          "report_write": 7.108
+        },
+        "summary": {
+          "fields_extracted": 740926,
+          "http_messages": 113668,
+          "rules_findings": 113668,
+          "ml_findings": 318808,
+          "ml_fields_eligible": 570424,
+          "ml_fields_evaluated": 570424,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 170502,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 2229,
+          "ml_processing_time_seconds": 535.4132132719824,
+          "ml_fields_model_inferred": 117184,
+          "ml_prediction_cache_hits": 453240,
+          "ml_prediction_cache_enabled": true,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 246180,
+            "USERNAME": 72628
+          }
+        }
+      }
+    }
+  },
+  "convolution_path": "default"
+}

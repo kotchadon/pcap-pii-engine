@@ -1,0 +1,258 @@
+{
+  "label": "V2 inference acceleration benchmark (synthetic and frozen fictional inputs)",
+  "machine": {
+    "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "cpu_count": 4,
+    "python": "3.13.16",
+    "torch": "2.14.1",
+    "threads": 4
+  },
+  "baseline": {
+    "ref": "11d41e8",
+    "commit": "11d41e8c583231edd86b621d96cc037fe676108f"
+  },
+  "candidate": {
+    "commit": "1d861fc58e73f206796b72e8863080b0541bab21",
+    "dirty": false
+  },
+  "full_scan": {
+    "capture": {
+      "path": "/tmp/trace-bench-detsuwc6/synthetic_scan.pcap",
+      "bytes": 2097281,
+      "mib": 2.0,
+      "packets": 13294,
+      "http_requests": 2195,
+      "sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+      "seed": 52
+    },
+    "ml_budget": {
+      "max_fields": 1000000,
+      "max_characters": 200000000,
+      "max_seconds": 7200.0
+    },
+    "analysis_profile": "standard",
+    "report_to_disk": false,
+    "shared_detector": false,
+    "runs": {
+      "baseline": {
+        "wall_seconds": 109.4,
+        "model_seconds": 106.86,
+        "non_model_seconds": 2.53,
+        "peak_rss_mib": 860.4,
+        "memory": {
+          "peak_rss_mib_process_hwm": 860.4,
+          "getrusage_maxrss_mib_inherited": 860.4,
+          "at_sampled_peak": {
+            "rss_mib": 848.4,
+            "malloc": {
+              "live_heap_mib": 213.7,
+              "live_mmap_mib": 223.2,
+              "free_held_mib": 26.6,
+              "arena_mib": 240.3
+            },
+            "python_blocks": 858316
+          },
+          "after_scan_report_alive": {
+            "rss_mib": 817.4,
+            "malloc": {
+              "live_heap_mib": 151.9,
+              "live_mmap_mib": 223.2,
+              "free_held_mib": 56.0,
+              "arena_mib": 207.9
+            },
+            "python_blocks": 844971
+          },
+          "after_release_and_gc": {
+            "rss_mib": 817.4,
+            "malloc": {
+              "live_heap_mib": 160.9,
+              "live_mmap_mib": 223.2,
+              "free_held_mib": 47.0,
+              "arena_mib": 207.9
+            },
+            "python_blocks": 660867
+          },
+          "after_malloc_trim": {
+            "rss_mib": 771.0,
+            "malloc": {
+              "live_heap_mib": 160.9,
+              "live_mmap_mib": 223.2,
+              "free_held_mib": 23.0,
+              "arena_mib": 183.9
+            }
+          }
+        },
+        "cache": {},
+        "env": {},
+        "stage_seconds": {
+          "read_decode_group": 0.131,
+          "session_segmentation": 0.067,
+          "reassembly": 0.088,
+          "http_parse": 0.123,
+          "field_extraction": 0.134,
+          "rule_detection": 0.346,
+          "ml_inference": 106.863,
+          "result_aggregation": 0.424
+        },
+        "summary": {
+          "fields_extracted": 28673,
+          "http_messages": 4390,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 87,
+          "ml_processing_time_seconds": 106.86251853899375,
+          "ml_fields_model_inferred": null,
+          "ml_prediction_cache_hits": null,
+          "ml_prediction_cache_enabled": null,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          }
+        }
+      },
+      "cache=16384": {
+        "wall_seconds": 27.28,
+        "model_seconds": 19.29,
+        "non_model_seconds": 8.0,
+        "peak_rss_mib": 717.5,
+        "memory": {
+          "peak_rss_mib_process_hwm": 717.5,
+          "getrusage_maxrss_mib_inherited": 717.2,
+          "at_sampled_peak": {
+            "rss_mib": 717.4,
+            "malloc": {
+              "live_heap_mib": 191.4,
+              "live_mmap_mib": 95.1,
+              "free_held_mib": 26.9,
+              "arena_mib": 218.3
+            },
+            "python_blocks": 1689039
+          },
+          "after_scan_report_alive": {
+            "rss_mib": 717.5,
+            "malloc": {
+              "live_heap_mib": 191.4,
+              "live_mmap_mib": 95.1,
+              "free_held_mib": 26.9,
+              "arena_mib": 218.3
+            },
+            "python_blocks": 1689025
+          },
+          "after_release_and_gc": {
+            "rss_mib": 709.6,
+            "malloc": {
+              "live_heap_mib": 203.7,
+              "live_mmap_mib": 95.1,
+              "free_held_mib": 14.6,
+              "arena_mib": 218.3
+            },
+            "python_blocks": 662956
+          },
+          "after_malloc_trim": {
+            "rss_mib": 695.6,
+            "malloc": {
+              "live_heap_mib": 203.7,
+              "live_mmap_mib": 95.1,
+              "free_held_mib": 10.7,
+              "arena_mib": 214.4
+            }
+          }
+        },
+        "cache": {
+          "enabled": true,
+          "limit": 16384,
+          "entries_at_end": 5717,
+          "hits": 16371,
+          "model_inferred": 5717,
+          "evictions": 0,
+          "hit_rate": 0.7412,
+          "measured_cache_object_mib": 2.02
+        },
+        "env": {},
+        "stage_seconds": {
+          "read_decode_group": 0.889,
+          "session_segmentation": 0.048,
+          "reassembly": 0.373,
+          "http_parse": 0.072,
+          "field_extraction": 0.141,
+          "evidence": 1.368,
+          "rule_detection": 0.393,
+          "ml_inference": 19.286,
+          "result_aggregation": 0.553
+        },
+        "summary": {
+          "fields_extracted": 28673,
+          "http_messages": 4390,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_empty": 0,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_inference_batches": 22,
+          "ml_processing_time_seconds": 19.286317037996923,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          }
+        },
+        "comparison_vs_baseline": {
+          "findings": [
+            16530,
+            16530
+          ],
+          "identical_except_confidence": true,
+          "candidate_only_keys": [
+            "evidence"
+          ],
+          "baseline_only_keys": [],
+          "rule_findings_identical": true,
+          "max_abs_model_confidence_difference": 1.0000000000287557e-06
+        },
+        "wall_speedup": 4.01,
+        "model_speedup": 5.54
+      }
+    }
+  },
+  "convolution_path": "generic (mkldnn disabled)",
+  "gate": {
+    "criteria": {
+      "rss_ratio": 1.1,
+      "rss_slack_mib": 32.0,
+      "wall_ratio": 1.05,
+      "max_confidence_delta": 1e-05
+    },
+    "runs": {
+      "cache=16384": {
+        "pass": true,
+        "checks": {
+          "candidate_completed": true,
+          "findings_identical_except_confidence": true,
+          "no_baseline_fields_missing": true,
+          "confidence_delta_within_tolerance": true,
+          "coverage_identical": true,
+          "peak_rss_within_bound": true,
+          "wall_time_within_bound": true
+        }
+      }
+    },
+    "pass": true
+  }
+}
