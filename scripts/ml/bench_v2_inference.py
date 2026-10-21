@@ -202,6 +202,7 @@ def worker(spec: dict) -> dict:
     report = analyze(spec['pcap'], ml_detector=detector, ml_budget=MLWorkBudget(**spec['budget']),
                      profile=spec.get('profile', 'standard'))
     wall = time.perf_counter() - started
+    peak = _peak_rss_mib()  # scan peak, read before the benchmark's own findings serialisation inflates it
     Path(spec['out']).write_text(json.dumps(report['findings']), encoding='utf-8')
     keys = ('fields_extracted', 'http_messages', 'rules_findings', 'ml_findings', 'ml_fields_eligible', 'ml_fields_evaluated',
             'ml_fields_skipped', 'ml_fields_skipped_by_reason', 'ml_fields_excluded_by_policy', 'ml_fields_empty',
@@ -210,7 +211,7 @@ def worker(spec: dict) -> dict:
     summary = {k: report['summary'].get(k) for k in keys}
     return {'wall_seconds': round(wall, 2), 'model_seconds': round(report['summary']['ml_processing_time_seconds'], 2),
             'non_model_seconds': round(wall - report['summary']['ml_processing_time_seconds'], 2),
-            'peak_rss_mib': _peak_rss_mib(), 'summary': summary}
+            'peak_rss_mib': peak, 'summary': summary}
 
 
 def run_worker(spec: dict) -> dict:
