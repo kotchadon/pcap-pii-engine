@@ -251,7 +251,11 @@ def test_truncation_by_budget_makes_the_suite_partial():
 
 def test_stability_and_independent_detector_diagnostics_are_reported_not_scored_as_accuracy(small):
     suite, _ = small
-    result = assess_summary(Detector('gold'), BASE, AssessmentBudget(max_strata=2, stability_probes=10))
+    detector = Detector('gold')
+    result = assess_summary(detector, BASE, AssessmentBudget(max_strata=2, stability_probes=10))
+    assert result['workload']['batches'] == detector.calls
+    assert result['workload']['stability_batches'] > 0
+    assert result['workload']['model_seconds'] >= result['workload']['stability_model_seconds']
     assert set(result['stability']) == {'trailing_period', 'label_prefix', 'quoted'}
     assert all(v['probes'] > 0 for v in result['stability'].values())
     detector = result['independent_detector']
