@@ -88,9 +88,10 @@ ml_fields_evaluated = ml_fields_model_inferred + ml_prediction_cache_hits
 neural evaluations); `ml_prediction_cache_hits` counts fields whose prediction
 was reused; `ml_prediction_cache_enabled` says whether reuse was possible. With
 the cache disabled, `ml_fields_model_inferred = ml_fields_evaluated`. Rules-only
-reports carry `0, 0, false`. The cache is private to the scan's runner, bounded
-(65,536 entries / 8,000,000 key characters, fields over 4,096 characters are
-never cached, least-recently-used eviction) and never logged or serialised.
+reports carry `0, 0, false`. The cache is private to the scan's runner, keyed
+by a 128-bit BLAKE2b digest of the exact location and text (it retains no field
+text), bounded (65,536 entries, least-recently-used eviction; fields over 4,096
+characters are never hashed or cached) and never logged or serialised.
 `ml_characters_evaluated` sums full original input lengths of those fields.
 `ml_predictions_by_label` counts validated emitted spans; predictions are not
 field counts. `ml_processing_time_seconds` measures validated inference and
