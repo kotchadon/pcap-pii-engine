@@ -35,7 +35,7 @@ class RawFrame:
     truncated: bool = False
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)  # one or more per buffered packet: slots save ~48 B each (Python 3.13)
 class PacketSourceRange:
     """Half-open TCP payload and original captured frame byte ranges.
 
@@ -86,7 +86,7 @@ def clip_packet_source(source: PacketSourceRange, start: int,
                              source.section_index)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)  # every TCP packet is buffered until EOF: slots save ~56 B each (Python 3.13)
 class TcpPacket:
     timestamp: float
     src: str

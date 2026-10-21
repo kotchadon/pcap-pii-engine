@@ -335,6 +335,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     read_started = time.perf_counter()
     diagnostics = CaptureDiagnostics()
     flow_packets: dict[tuple, list[TcpPacket]] = defaultdict(list)
+    pair_keys: dict[tuple, tuple] = {}  # first key object per endpoint pair (<= max_flows): canonical endpoint strings
     decoder = TcpDecoder()
     evidence_rows = {name: [] if _rows is None else getattr(_rows, name) for name in EVIDENCE_ARRAYS}
     result_bytes = 0
@@ -363,9 +364,11 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             if len(packet.payload) > budget.max_tcp_payload_bytes - buffered_tcp_bytes:
                 raise AnalysisLimitError('Capture exceeds configured buffered TCP payload limit')
             buffered_tcp_bytes += len(packet.payload)
-            # Intern endpoint strings at the pair level while retaining source metadata.
-            direction = int((packet.src,packet.sport) != key[0])
-            packet = with_endpoints(packet, key[direction][0], key[1-direction][0])
+            # Intern endpoint strings at the pair level while retaining source metadata. ``key`` is built from this
+            # packet's own strings, so the canonical (first-seen) key must be used for the strings to be shared.
+            canonical = pair_keys.setdefault(key, key)
+            direction = int((packet.src,packet.sport) != canonical[0])
+            packet = with_endpoints(packet, canonical[direction][0], canonical[1-direction][0])
             flow_packets[key].append(packet)
         else:
             ignored += 1
