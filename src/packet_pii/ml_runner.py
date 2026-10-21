@@ -383,6 +383,11 @@ class SharedDetector:
     def model_version(self):
         return self._detector.model_version
 
+    @property
+    def prediction_cache_safe(self) -> bool:
+        # Forward only an explicit opt-in; the shared wrapper does not change model semantics.
+        return getattr(self._detector, 'prediction_cache_safe', False) is True
+
     def predict_fields(self, fields):
         with self._lock:
             return self._detector.predict_fields(fields)
