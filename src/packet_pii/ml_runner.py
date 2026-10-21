@@ -285,3 +285,28 @@ class MLBatchRunner:
     @property
     def coverage_ratio(self) -> float | None:
         return None if self.eligible == 0 else round(self.evaluated / self.eligible, 6)
+
+
+class SharedDetector:
+    """Serialises individual detector calls so a scan and a post-scan assessment can interleave safely.
+
+    The wrapped model is not assumed to be re-entrant; each ``predict_fields`` call (one bounded batch) holds the lock,
+    so neither stage blocks the other for longer than a single batch.
+    """
+
+    def __init__(self, detector):
+        import threading
+        self._detector, self._lock = detector, threading.Lock()
+
+    @property
+    def model_version(self):
+        return self._detector.model_version
+
+    def predict_fields(self, fields):
+        with self._lock:
+            return self._detector.predict_fields(fields)
+
+
+def shared(detector):
+    """Idempotent: wrap a detector for shared use (None stays None)."""
+    return detector if detector is None or isinstance(detector, SharedDetector) else SharedDetector(detector)
