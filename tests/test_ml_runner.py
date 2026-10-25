@@ -75,6 +75,14 @@ def test_engine_rejects_a_bad_budget_argument(tmp_path):
         analyze(capture(tmp_path), ml_detector=Stub(), ml_budget=10_000)
 
 
+def test_engine_runs_with_opt_in_high_capacity_and_reports_selected_limits(tmp_path):
+    report = analyze(capture(tmp_path), ml_detector=Stub(), ml_budget='high_capacity')
+    assert report['metadata']['ml_work_limits']['profile'] == 'high_capacity'
+    assert report['metadata']['ml_work_limits']['max_fields'] == 2_500_000
+    assert report['summary']['ml_fields_skipped'] == 0
+    assert report['summary']['ml_coverage_status'] in ('complete', 'no_eligible_fields')
+
+
 # ------------------------------------------------------------------ coverage states
 def test_rules_only_reports_not_requested(tmp_path):
     s = analyze(capture(tmp_path))['summary']
