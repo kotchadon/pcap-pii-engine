@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-25",
+  "source_base_pr33": "876814ada91ea66b6745b213f91d59c33a4c1e7c",
+  "executed_platform": "Linux x86_64; not macOS or M3",
+  "related_regressions": {
+    "passed": 78,
+    "seconds": 9.83,
+    "command": "python -m pytest -q tests/test_static_page.py tests/test_http_investigation_ui.py tests/test_content_lease.py tests/test_http_investigation.py tests/test_dashboard_jobs.py tests/test_dashboard_disconnect.py tests/test_http_evidence.py tests/test_reporting_security.py"
+  },
+  "after_independent_oracle_review": {
+    "passed": 6,
+    "seconds": 0.19,
+    "command": "python -m pytest -q tests/test_mentor_demo_oracle.py tests/test_http_investigation_ui.py",
+    "note": "Overlaps the earlier suite; do not add counts as distinct tests"
+  },
+  "demo_entry_point": {
+    "status": "passed",
+    "command": "bash scripts/validation/run_mentor_demo.sh --output docs/integration/demo_20261025",
+    "record": "../demo_20261025/verification.json"
+  },
+  "browser": {
+    "status": "blocked",
+    "playwright": "1.62.1",
+    "browser": "Google Chrome 156.0.8078.47",
+    "failure": "Official Chrome binary launched by Playwright exited with SIGSEGV before page creation; earlier bundled browser download was an invalid ZIP",
+    "scope": "No UI journey, screenshot, static page rendering or visual acceptance claimed; JS syntax and Node DOM-double behavior checks passed"
+  },
+  "v2": {
+    "status": "blocked",
+    "reason": "Genuine weights exist in remote GitHub tree (3,899,463 bytes per seed); connector fetch_file(base64) returned empty content and fetch_blob failed UTF-8 decoding. No usable local weights; no inference results invented."
+  },
+  "macbook_m3": {
+    "status": "not_run",
+    "reason": "Commands supplied, Linux execution only"
+  },
+  "tshark": {
+    "status": "passed",
+    "version": "4.2.2",
+    "tcp_reassemble_out_of_order": true,
+    "gui_wireshark_executed": false
+  },
+  "privacy": "Only explicitly fictional fixture bytes, reports and recovered source were exported; no private traffic used",
+  "protected": "No ML checkpoint, threshold, ensemble, frozen dataset/evaluator, capture/TCP/HTTP parser or frontend CSS/navigation changes",
+  "tested_source_commit": "eb9c77c88653ae8a34259b0a7888d5f8d8afe416",
+  "tested_source_tree": "86d5933b9e6e07db86c826c9edcf988a9a3f294c"
+}

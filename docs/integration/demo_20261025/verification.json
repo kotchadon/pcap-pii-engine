@@ -1,0 +1,101 @@
+{
+  "independent_tools": {
+    "dpkt": "1.9.8",
+    "h11": "0.16.0"
+  },
+  "capture_sha256": "fa0070187d39425fc03bf15ba1700cfe1c57a20e724af03a4338c10676ed9d83",
+  "frames": 11,
+  "handshake_seq_ack_verified": true,
+  "requests": 2,
+  "responses_including_interim": 3,
+  "request_stream_sha256": "9e794ce026f9c1f3c056b6a1be2dbf52378ad97ab88287d8e7e24972c92f2561",
+  "response_stream_sha256": "f0066356d100230e7324c4f3a625c31cdeae7b4472864dea0e98a21ca72a42b1",
+  "chunked_gzip_unicode_verified": true,
+  "report_compared": true,
+  "out_of_order_and_consistent_retransmission_verified": true,
+  "html_body_sha256": "dbbf209b3e15a494c872201f0c1142261664dcecc20b1478c943430e4322ccd7",
+  "html_body_bytes": 322,
+  "exact_email_support_frames": [
+    5,
+    4
+  ],
+  "exact_email_source_intervals": [
+    {
+      "frame": 5,
+      "stream_start": 248,
+      "stream_end": 255,
+      "file_start": 713,
+      "file_end": 720,
+      "frame_start": 302,
+      "frame_end": 309,
+      "tcp_seq_start": 1249,
+      "tcp_seq_end": 1256,
+      "hex": "616c6578406578",
+      "ascii": "alex@ex"
+    },
+    {
+      "frame": 4,
+      "stream_start": 255,
+      "stream_end": 268,
+      "file_start": 304,
+      "file_end": 317,
+      "frame_start": 54,
+      "frame_end": 67,
+      "tcp_seq_start": 1256,
+      "tcp_seq_end": 1269,
+      "hex": "616d706c652e696e76616c6964",
+      "ascii": "ample.invalid"
+    }
+  ],
+  "wireshark_tshark_executed": true,
+  "rules_findings": 9,
+  "authenticated_http_workflow": "passed",
+  "source_matches_independent_response_body": true,
+  "missing_response_packet": {
+    "status": "passed",
+    "http_messages": 3,
+    "http_observed_incomplete": true,
+    "final_200_recovered": false
+  },
+  "missing_handshake": {
+    "status": "passed",
+    "syn_observed": false,
+    "connection_completeness": "unknown"
+  },
+  "static_representation": "lossy_inert_text_and_structure_no_resources",
+  "browser": {
+    "status": "not_run",
+    "command": "node scripts/validation/browser_mentor_demo.cjs http://127.0.0.1:8765 mentor-demo.pcap"
+  },
+  "v2": {
+    "status": "not_run",
+    "reason": "Separate genuine-checkpoint acceptance required; this demo is rules-only"
+  },
+  "platform": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "python": "3.12.14"
+  },
+  "scope": "Fictional protocol/provenance demonstration, not measured detection accuracy",
+  "tshark": {
+    "status": "passed",
+    "version": "TShark (Wireshark) 4.2.2 (Git v4.2.2 packaged as 4.2.2-1.1build3).",
+    "handshake_sequence_and_original_payload_slices": true,
+    "tcp_reassemble_out_of_order": true,
+    "observed_http_methods": [
+      "POST",
+      "GET"
+    ],
+    "observed_http_statuses": [
+      "100",
+      "200",
+      "200"
+    ],
+    "retransmission_flag_frames": [
+      6
+    ],
+    "out_of_order_flag_frames": [
+      5
+    ]
+  }
+}

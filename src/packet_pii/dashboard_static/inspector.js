@@ -307,7 +307,29 @@ const TraceInspector=(()=>{
    try{
     const result=await request('content',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message_id:m.http_message_id,acknowledge_sensitive_content:true})});
     if(mine!==st.contentSeq||!alive(seq,epoch))return;
-    host.replaceChildren(sourceViewer(result.text,result.is_html,result.content_type),button('Hide source','btn btn-ghost btn-sm',()=>{clearSource();box.checked=false;reveal.disabled=true;status.textContent='The source is hidden.'}));
+    const hide=button('Hide source','btn btn-ghost btn-sm',()=>{clearSource();box.checked=false;reveal.disabled=true;status.textContent='The source is hidden.'});
+    const view=el('div','source-view');view.append(sourceViewer(result.text,result.is_html,result.content_type));
+    const parts=[];
+    if(result.is_html){
+     // Two views of the same authorised response: literal source, or the server's inert structure/text projection.
+     const sw=el('div','switcher');sw.setAttribute('role','group');sw.setAttribute('aria-label','How to show this response');
+     const src=button('Source','switch-btn'),pg=button('Page view','switch-btn');src.setAttribute('aria-pressed','true');pg.setAttribute('aria-pressed','false');
+     let projection=null;
+     src.addEventListener('click',()=>{if(mine!==st.contentSeq)return;src.setAttribute('aria-pressed','true');pg.setAttribute('aria-pressed','false');view.replaceChildren(sourceViewer(result.text,true,result.content_type))});
+     pg.addEventListener('click',async()=>{
+      if(mine!==st.contentSeq)return;src.setAttribute('aria-pressed','false');pg.setAttribute('aria-pressed','true');
+      if(projection){view.replaceChildren(pageView(projection));return}
+      view.replaceChildren(loadingBox('Building an inert view of the page text…'));
+      try{
+       const r=await request('content',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message_id:m.http_message_id,acknowledge_sensitive_content:true,representation:'static'})});
+       if(mine!==st.contentSeq||!alive(seq,epoch))return;
+       projection=r.static_representation;
+       if(pg.getAttribute('aria-pressed')==='true')view.replaceChildren(pageView(projection));
+      }catch(e){if(mine===st.contentSeq&&alive(seq,epoch))view.replaceChildren(note(explain(e),'warn'))}
+     });
+     sw.append(src,pg);parts.push(sw);
+    }
+    host.replaceChildren(...parts,view,hide);
     status.textContent=(result.is_html?'HTML source':'Response text')+(result.status==='partial'?' · partial':'')+' · capture fingerprint re-checked (SHA-256 '+String(result.capture_sha256||'').slice(0,12)+'…). '+(result.limitations||[]).map(humanLimit).join(' ');
    }catch(e){if(mine===st.contentSeq&&alive(seq,epoch)){status.textContent=explain(e);reveal.disabled=!box.checked}}
   });
@@ -317,6 +339,33 @@ const TraceInspector=(()=>{
   const out=[],re=/<!--.*?(?:-->|$)|<\/?[A-Za-z!?][^>]*>?|[^<]+|</g;let m;
   while((m=re.exec(line))){const t=m[0];out.push({text:t,cls:t.startsWith('<!--')?'tok-comment':t[0]==='<'&&t.length>1?'tok-tag':null})}
   return out;
+ }
+ // Inert page view: the server's allowlisted {tag,children} tree. Elements are created without attributes,
+ // so nothing can run, load, link or navigate. Unknown tags are flattened to their text.
+ const PAGE_TAGS=new Set(('p div section article header footer main aside blockquote h1 h2 h3 h4 h5 h6 ul ol li pre code em strong b i u s br hr '+
+  'table thead tbody tfoot tr th td caption dl dt dd span address figure figcaption').split(' '));
+ const PAGE_LIMITS={projection_node_or_depth_limit:'Only part of the page could be shown.',lossy_structure_and_text_not_original_browser_layout:'This shows the page’s text and basic structure, not its original appearance.',
+  all_attributes_css_scripts_and_resource_references_omitted:'Scripts, styles, links, images and all other resources are left out.',malformed_html_uses_python_parser_not_browser_dom_rules:'Malformed HTML may be arranged differently from a browser.'};
+ function pageView(projection){
+  const wrap=el('div','page-wrap');
+  if(!projection||projection.representation!=='inert_structure_text_v1'||!Array.isArray(projection.nodes)){wrap.append(note('This version of the page view is not supported.','warn'));return wrap}
+  const doc=el('div','page-view');doc.setAttribute('role','document');doc.setAttribute('aria-label','Inert view of the captured page text');
+  let count=0;
+  const build=(node,parent,depth)=>{
+   if(count>=4096||depth>64)return;count++;
+   if(typeof node==='string'){parent.append(typeof document.createTextNode==='function'?document.createTextNode(node):el('span',null,node));return}
+   if(!node||typeof node!=='object'||!Array.isArray(node.children))return;
+   const target=PAGE_TAGS.has(node.tag)?document.createElement(node.tag):parent;
+   for(const c of node.children)build(c,target,depth+1);
+   if(target!==parent)parent.append(target);
+  };
+  for(const n of projection.nodes)build(n,doc,0);
+  const omitted=Object.entries(projection.omitted_elements||{}).map(([k,v])=>nf(v)+' '+k).join(', ');
+  const head=el('div','src-toolbar');head.append(el('span','chip chip-accent','Page view'),el('span','chip chip-warn','Unmasked'),el('span',null,'Text and structure only'));
+  wrap.append(head,doc);
+  if(projection.source_status!=='recovered'||projection.projection_truncated)wrap.append(note('The response or its page view is incomplete.','warn'));
+  wrap.append(note('Left out: '+(omitted||'nothing')+'; '+nf(projection.attributes_discarded)+' attributes discarded. No resources were fetched. '+(projection.limitations||[]).map(x=>PAGE_LIMITS[x]||humanLimit(x)).join(' ')));
+  return wrap;
  }
  function sourceViewer(text,isHtml,mediaType){
   const box=el('div','src-viewer'),bar=el('div','src-toolbar');
@@ -461,5 +510,5 @@ const TraceInspector=(()=>{
  if(typeof document!=='undefined'&&typeof document.addEventListener==='function'){
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
  }
- return {init,openFinding,openMessage,openConnection,onView,onResult,close,back,tokenize,sourceViewer,_state:st};
+ return {init,openFinding,openMessage,openConnection,onView,onResult,close,back,tokenize,sourceViewer,pageView,_state:st};
 })();

@@ -46,7 +46,8 @@ def parse_http(raw, response=False):
 def verify(capture, report=None):
     raw = capture.read_bytes()
     assert len(raw) <= 65536, 'This oracle is bounded to the small mentor fixture'
-    streams, frames = {}, []
+    streams, frames, physical = {}, [], {}
+    record_offset = 24
     with capture.open('rb') as file:
         reader = dpkt.pcap.Reader(file)
         assert reader.datalink() == dpkt.pcap.DLT_EN10MB
@@ -54,12 +55,19 @@ def verify(capture, report=None):
             ip = dpkt.ethernet.Ethernet(packet).data; tcp = ip.data
             key = (socket.inet_ntoa(ip.src), tcp.sport, socket.inet_ntoa(ip.dst), tcp.dport)
             frames.append((tcp.seq, tcp.ack, tcp.flags))
+            physical[number] = {'data_offset': record_offset+16, 'packet': packet,
+                                'seq': tcp.seq, 'payload': bytes(tcp.data),
+                                'direction': key,
+                                'payload_frame_start': len(packet)-len(tcp.data)}
+            record_offset += 16+len(packet)
             positions = streams.setdefault(key, {})
             for i, value in enumerate(tcp.data):
                 position = tcp.seq + i
                 assert position not in positions or positions[position] == value, 'Conflicting TCP overlap'
                 positions[position] = value
     assert frames[:3] == [(1000, 0, 2), (9000, 1001, 18), (1001, 9001, 16)]
+    assert frames[3][0] > frames[4][0], 'Expected reordered request segments'
+    assert physical[5]['payload'] == physical[6]['payload'] and frames[4][0] == frames[5][0]
     assembled = {}
     for key, positions in streams.items():
         first, last = min(positions), max(positions)
@@ -73,19 +81,20 @@ def verify(capture, report=None):
     assert json.loads(req[0]['body'])['email'] == 'alex@example.invalid'
     assert b'<script>' in res[1]['body'] and b'alex@example.invalid' in res[1]['body']
     assert json.loads(gzip.decompress(res[2]['body']))['full_name'] == 'Alex Fiction'
-    supporting_frames = []
+    supporting_frames, evidence_intervals = [], []
     if report:
         r = json.loads(report.read_text())
         assert r['capture_evidence']['capture_sha256'] == hashlib.sha256(raw).hexdigest()
         assert r['summary']['http_messages'] == len(req) + len(res)
         assert r['summary']['http_transactions'] == 2
         first = next(h for h in r['http_evidence'] if h['start_line'].startswith('POST '))
+        stream_metadata = {s['stream_id']: s for s in r['stream_evidence'] if s.get('row_type') == 'stream'}
         fields = [f for f in r['field_evidence'] if f['http_message_id'] == first['http_message_id']]
         found = False
         for field in fields:
             if field['granularity'] != 'exact_stream_range':
                 continue
-            value = bytearray(); sources = []
+            value = bytearray(); sources = []; intervals = []
             for interval in field['stream_ranges']:
                 at = interval['start']
                 rows = sorted((s for s in r['stream_evidence'] if s.get('row_type') == 'source_range'
@@ -95,11 +104,29 @@ def verify(capture, report=None):
                     if a < b:
                         assert a == at
                         offset = source['file_start'] + a - source['stream_start']
-                        value.extend(raw[offset:offset+b-a]); at = b; sources.append(source['frame_index'])
+                        packet = physical[source['frame_index']]
+                        frame_start = source['frame_start']+a-source['stream_start']
+                        assert offset == packet['data_offset']+frame_start
+                        assert packet['payload_frame_start'] <= frame_start < frame_start+b-a <= len(packet['packet'])
+                        sequence = (source['tcp_seq_start']+a-source['stream_start']) % 2**32
+                        assert sequence == (packet['seq']+frame_start-packet['payload_frame_start']) % 2**32
+                        direction = tuple(stream_metadata[field['stream_id']]['direction'])
+                        assert packet['direction'] == direction, 'Packet belongs to another direction'
+                        independent_base = min(streams[direction])
+                        assert stream_metadata[field['stream_id']]['base_seq'] == independent_base
+                        assert sequence == (independent_base+a) % 2**32, 'Reported stream offset differs from TCP sequence origin'
+                        original = raw[offset:offset+b-a]
+                        assert original == packet['packet'][frame_start:frame_start+b-a]
+                        value.extend(original); at = b; sources.append(source['frame_index'])
+                        intervals.append({'frame': source['frame_index'], 'stream_start': a, 'stream_end': b,
+                                          'file_start': offset, 'file_end': offset+b-a,
+                                          'frame_start': frame_start, 'frame_end': frame_start+b-a,
+                                          'tcp_seq_start': sequence, 'tcp_seq_end': (sequence+b-a) % 2**32,
+                                          'hex': original.hex(), 'ascii': original.decode('ascii',errors='replace')})
                 assert at == interval['end']
             if value == b'alex@example.invalid':
                 assert sources == [5, 4], sources
-                supporting_frames = sources; found = True
+                supporting_frames = sources; evidence_intervals = intervals; found = True
         assert found, 'TRACE exact field source does not recover the independently parsed email'
     return {'independent_tools': {'dpkt': dpkt.__version__, 'h11': h11.__version__},
             'capture_sha256': hashlib.sha256(raw).hexdigest(), 'frames': len(frames),
@@ -107,7 +134,11 @@ def verify(capture, report=None):
             'request_stream_sha256': hashlib.sha256(requests).hexdigest(),
             'response_stream_sha256': hashlib.sha256(responses).hexdigest(),
             'chunked_gzip_unicode_verified': True, 'report_compared': report is not None,
+            'out_of_order_and_consistent_retransmission_verified': True,
+            'html_body_sha256': hashlib.sha256(res[1]['body']).hexdigest(),
+            'html_body_bytes': len(res[1]['body']),
             'exact_email_support_frames': supporting_frames,
+            'exact_email_source_intervals': evidence_intervals,
             'wireshark_tshark_executed': False}
 
 

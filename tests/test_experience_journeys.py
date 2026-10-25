@@ -202,9 +202,16 @@ def test_journey_d_sensitive_source_is_inert_and_hide_wins_races(browser, server
     def content(route):
         if gate['hold']:
             page.wait_for_timeout(1200)
-        route.fulfill(status=200, content_type='application/json',
-                      body=json.dumps({'text': HOSTILE, 'is_html': True, 'status': 'recovered', 'capture_sha256': 'a' * 64,
-                                       'content_type': 'text/html', 'limitations': ['external_resources_not_fetched']}))
+        body = {'text': HOSTILE, 'is_html': True, 'status': 'recovered', 'capture_sha256': 'a' * 64,
+                'content_type': 'text/html', 'limitations': ['external_resources_not_fetched']}
+        if json.loads(route.request.post_data or '{}').get('representation') == 'static':
+            # A hostile tree: the client must flatten anything outside its own allowlist and set no attributes.
+            body['static_representation'] = {'representation': 'inert_structure_text_v1', 'source_status': 'recovered',
+                'projection_truncated': False, 'omitted_elements': {'script': 1, 'img': 1}, 'attributes_discarded': 3,
+                'limitations': [], 'nodes': [{'tag': 'h1', 'children': ['Profile received']},
+                                             {'tag': 'script', 'children': ['window.__pwned=5']},
+                                             {'tag': 'a', 'children': [{'tag': 'img', 'children': []}, 'link text']}]}
+        route.fulfill(status=200, content_type='application/json', body=json.dumps(body))
     page.route('**/content', content)
     # Reveal, then navigate away before the answer: the late answer must never be shown.
     page.check('#insp-dynamic .source-section .ack input')
@@ -222,8 +229,14 @@ def test_journey_d_sensitive_source_is_inert_and_hide_wins_races(browser, server
     assert '<script>window.__pwned=2</script>' in page.inner_text('.src-code')
     assert page.evaluate('window.__pwned') is None
     assert page.locator('#inspector script, #inspector img, #inspector iframe, #inspector link, #inspector a').count() == 0
+    page.get_by_role('button', name='Page view', exact=True).click()
+    page.wait_for_selector('.page-view h1')
+    assert 'Profile received' in page.inner_text('.page-view') and 'link text' in page.inner_text('.page-view')
+    assert page.locator('#inspector script, #inspector img, #inspector a, #inspector iframe').count() == 0
+    assert page.evaluate('[...document.querySelectorAll(".page-view *")].every(e => e.attributes.length === 0)')
+    assert page.evaluate('window.__pwned') is None
     page.get_by_role('button', name='Hide source').click()
-    assert page.locator('.src-code').count() == 0
+    assert page.locator('.src-code, .page-view').count() == 0
     page.wait_for_timeout(300)
     assert problems == []
 
@@ -359,8 +372,9 @@ def test_cancel_shows_reported_steps_and_never_claims_results(browser, server):
     page.route(re.compile(r'.*/api/jobs/[0-9a-f]{32}$'), status)
     page.route(re.compile(r'.*/api/jobs/[0-9a-f]{32}/cancel$'), lambda r: (state.update(cancelled=True), r.fulfill(status=200, content_type='application/json', body='{"status":"cancelled"}')))
     page.click('#sample')
-    page.wait_for_selector('#progress-steps li.current')
-    assert page.inner_text('#progress-steps li.current') == 'Reading packets'
+    # The first step shows immediately; the reported stage replaces it at the first status poll.
+    page.wait_for_function('() => (document.querySelector("#progress-steps li.current")||{}).textContent === "Reading packets"')
+    assert page.locator('#progress-steps li.done').first.inner_text() == 'Preparing the capture'
     assert '4,096 packets' in page.inner_text('#status-stage')
     assert page.inner_text('#ctx-status') == 'Analysing'
     page.click('#cancel-job')

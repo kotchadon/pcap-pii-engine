@@ -52,7 +52,12 @@ def messages():
     response1 = (b'HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: '
                  + str(len(html)).encode() + b'\r\n\r\n' + html)
     request2 = b'GET /status HTTP/1.1\r\nHost: demo.example.invalid\r\n\r\n'
-    encoded = gzip.compress(b'{"full_name":"A\\u006cex Fiction","email":"reply@example.invalid"}', mtime=0)
+    encoded = bytearray(gzip.compress(b'{"full_name":"A\\u006cex Fiction","email":"reply@example.invalid"}', compresslevel=9, mtime=0))
+    # Python 3.13+ emits OS=255 while earlier zlib-backed gzip emits OS=3.
+    # Fix this informational header byte so the established fixture SHA stays
+    # identical across the supported Python versions on macOS and Linux.
+    encoded[9] = 3
+    encoded = bytes(encoded)
     chunks = b''.join(format(len(p), 'x').encode() + b'\r\n' + p + b'\r\n'
                       for p in (encoded[:17], encoded[17:])) + b'0\r\n\r\n'
     response2 = (b'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Encoding: gzip\r\n'
