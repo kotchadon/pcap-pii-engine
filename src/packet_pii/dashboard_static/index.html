@@ -143,6 +143,15 @@
           </div>
           <div class="answer-actions"><button class="btn btn-primary" type="button" data-go="findings"><span>Review findings</span><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button><button class="btn btn-ghost" type="button" data-go="flows">View traffic</button></div>
         </section>
+        <section class="scope-card card" id="scope-summary" aria-labelledby="scope-title">
+          <div class="card-head"><h3 id="scope-title">What TRACE could examine</h3><span class="section-meta">Scope, not an accuracy score</span></div>
+          <div class="scope-grid">
+            <div class="scope-item"><h4>Examined</h4><p id="scope-examined">Run an analysis to see which supported messages TRACE read.</p></div>
+            <div class="scope-item"><h4>Partly examined</h4><p id="scope-partial">After a scan, known gaps and processing limits appear here.</p></div>
+            <div class="scope-item"><h4>Cannot inspect</h4><p id="scope-uninspectable">Encrypted payloads and unsupported protocols are outside TRACE's supported decoders. Their full extent cannot be measured here.</p></div>
+          </div>
+          <p class="scope-foot">A completed scan is not proof of complete network visibility or absence of personal information.</p>
+        </section>
         <div class="summary-grid">
           <section class="card" aria-labelledby="exposed-title">
             <div class="card-head"><h3 id="exposed-title">What may be exposed</h3><span class="section-meta" id="breakdown-scope">Current capture</span></div>
