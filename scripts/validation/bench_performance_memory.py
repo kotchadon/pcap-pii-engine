@@ -56,7 +56,7 @@ def main():
     p.add_argument('--repeat',type=int,default=1)
     p.add_argument('--instrument',action='store_true')
     p.add_argument('--checkpoint',type=Path,help='Genuine checkpoint; omission explicitly selects Rules')
-    p.add_argument('--ml-profile',choices=('standard','extended','complete'),default='standard',
+    p.add_argument('--ml-profile',choices=('standard','extended','complete','high_capacity'),default='standard',
                    help='Explicit bounded ML work profile for Hybrid; default Standard is unchanged')
     p.add_argument('--no-cache',action='store_true')
     p.add_argument('--threads',type=int,default=2)
