@@ -33,12 +33,15 @@ Then start the interactive dashboard:
 PYTHONPATH=src .venv-mentor/bin/python -m packet_pii.dashboard --port 8765 --retain-capture-for-inspection
 ```
 
-Open `http://127.0.0.1:8765`, upload `demo-output/mentor-demo.pcap`, select the
-masked request EMAIL finding and **Inspect**. Choose frames5 and4, then the
-first final200 response. Acknowledge sensitive content before revealing source;
-hide it afterwards. Open `demo-output/captured-page.static.html` separately for
-the offline representation. Claude can integrate the same capability into his
-Inspector using the contract below; this branch does not redesign that UI.
+Open `http://127.0.0.1:8765`, upload `demo-output/mentor-demo.pcap`, open
+**Findings** and select the masked request Email finding; the inspector opens
+beside the list. Choose **Open this request**, then frames5 and4 under the
+field's packets, then the final **Response · 200**. Acknowledge sensitive
+content before **Show response source**; **Page view** shows the inert
+structure/text projection inside the inspector. Hide it afterwards. Open
+`demo-output/captured-page.static.html` separately for the offline
+representation. (The inspector integration of this contract lives in the
+redesign branch `feature/trace-human-centred-experience-v2`.)
 
 ## Actual artifacts and acceptance
 
