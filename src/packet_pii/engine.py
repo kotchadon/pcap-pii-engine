@@ -18,6 +18,7 @@ import sys
 import time
 from urllib.parse import urlsplit
 
+from .investigation import message_metadata
 from .capture import (CaptureDiagnostics, read_frames, decode_tcp, decode_tcp_with_reason, EVIDENCE_LOSS_REASONS,
                       endpoint_key, reassemble_detailed, sequence_offset, split_tcp_sessions, TcpPacket, TcpDecoder)
 from .http_extract import (HttpMessage, parse_http_stream_detailed, parse_http_stream_with_spans, extract_fields, body_skip_reason,
@@ -560,6 +561,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 else:
                     message_evidence.update(header_end=record.span.header_end, body_start=record.span.body_start,
                                             body_framing=record.span.body_framing, contiguous=True)
+                message_evidence.update(message_metadata(record, session_index))
                 append_evidence('http_evidence', message_evidence)
                 tick = time.perf_counter()
                 detections = detect_fields(fields, threshold, include_values)

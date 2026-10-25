@@ -128,3 +128,16 @@ main{max-width:1520px;padding-top:43px}.title-section{margin-bottom:26px}.title-
 .evidence-fact span{font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:#36526a;overflow-wrap:anywhere;white-space:pre-wrap}
 .evidence-disclosure{color:#718597;font-size:11px;line-height:1.6;margin:15px 0 0}
 @media(max-width:1050px){.evidence-columns{grid-template-columns:1fr}}
+
+/* Conversation investigation: independent scroll panes preserve selection. */
+.investigation-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+.investigation-panel{min-width:0;max-height:72vh;overflow:auto;overscroll-behavior:contain;padding:22px;border:1px solid #dfe7ef;border-radius:12px;background:#fff}
+.investigation-panel h4{margin:16px 0 10px}.investigation-panel h4:first-child{margin-top:0}
+.investigation-fact{display:flex;flex-direction:column;gap:4px;margin:10px 0;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.investigation-fact span{white-space:pre-wrap}.investigation-choice{display:block;width:100%;text-align:left;padding:10px;margin:5px 0;border:1px solid #b8c9d8;border-radius:7px;background:#f5f9fc;color:#173754;cursor:pointer;font:inherit;font-size:12px;overflow-wrap:anywhere}
+.investigation-choice[aria-pressed=true]{background:#dceeff;border:2px solid #246dad}.investigation-choice:focus-visible,.source-disclosure summary:focus-visible{outline:3px solid #2569b9;outline-offset:2px}
+.conversation-list{display:flex;flex-wrap:wrap;gap:6px}.conversation-list .investigation-choice{width:auto;flex:1 1 230px}
+#conversation-list{max-height:220px;overflow:auto}#conversation-status,#conversation-mapping,#content-status{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.source-disclosure{margin-top:18px;border-top:1px solid #c6d6e4;padding-top:14px;font-size:12px;line-height:1.7}.source-disclosure summary{cursor:pointer;font-weight:700}.source-disclosure .btn{margin:8px 4px 0 0}
+#conversation-content{white-space:pre-wrap;overflow-wrap:anywhere;max-height:360px;overflow:auto;font-size:12px;background:#f0f4f8}
+@media(max-width:1000px){.investigation-layout{grid-template-columns:1fr}.investigation-panel{max-height:none}.conversation-list .investigation-choice{flex-basis:100%}}

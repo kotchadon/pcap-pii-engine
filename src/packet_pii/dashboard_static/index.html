@@ -14,6 +14,7 @@
     <nav class="nav" aria-label="Application sections">
       <button class="nav-link active" data-tab="overview"><span class="nav-mark" aria-hidden="true">▦</span> Overview <span class="nav-key">01</span></button>
       <button class="nav-link" data-tab="findings"><span class="nav-mark" aria-hidden="true">◉</span> PII findings <span class="nav-key">02</span></button>
+      <button class="nav-link" data-tab="conversation"><span class="nav-mark" aria-hidden="true">⇄</span> HTTP conversations</button>
       <button class="nav-link" data-tab="flows"><span class="nav-mark" aria-hidden="true">⤧</span> Network flows <span class="nav-key">03</span></button>
       <button class="nav-link" data-tab="model"><span class="nav-mark" aria-hidden="true">✧</span> Model laboratory <span class="nav-key">04</span></button>
     <button class="nav-link" data-tab="how"><span class="nav-mark" aria-hidden="true">⌁</span> How TRACE works <span class="nav-key">05</span></button></nav>
@@ -82,6 +83,32 @@
           <p class="inspector-disclosure">Detection signals may overlap. An individual PII finding is not proof of exfiltration or misuse.</p>
         </article>
       </section>
+      <section class="section view hidden" id="view-conversation" aria-label="HTTP conversation investigation">
+        <div class="section-head"><div><div class="kicker">PACKETS → STREAM → HTTP → FIELD → FINDING</div><h3>Recorded HTTP conversations</h3></div></div>
+        <p>A packet carries bytes. An HTTP message can span several packets. A transaction associates a request with observed responses; missing halves are never invented.</p>
+        <div id="conversation-list" class="conversation-list" aria-label="Choose a conversation"></div>
+        <div class="pagination"><button id="conversation-prev" class="btn btn-outline" disabled>← Previous</button><span id="conversation-page">No page loaded</span><button id="conversation-next" class="btn btn-outline" disabled>Next →</button></div>
+        <p id="conversation-status" role="status" aria-live="polite">Load a capture to begin.</p>
+        <div class="investigation-layout">
+          <article class="panel investigation-panel" aria-label="Reconstructed exchange">
+            <h4>Request / response</h4><div id="conversation-messages" class="conversation-list"></div>
+            <div id="conversation-meta"></div>
+            <h4>Extracted fields · values withheld</h4><div id="conversation-fields"></div>
+            <details class="source-disclosure"><summary>Recoverable response source · sensitive, optional</summary>
+              <p>Requires explicit capture retention when starting TRACE. This reveals unmasked text locally. HTML stays escaped; no webpage scripts or remote resources run.</p>
+              <label><input type="checkbox" id="content-ack" disabled> I am authorised to view this response and understand it may contain sensitive values.</label>
+              <div><button id="content-reveal" class="btn btn-outline" disabled>Reveal response source</button><button id="content-hide" class="btn btn-outline">Hide source</button></div>
+              <p id="content-status" role="status">Response source is hidden.</p><pre id="conversation-content" tabindex="0" aria-label="Escaped response source"></pre>
+            </details>
+          </article>
+          <aside class="panel investigation-panel" aria-label="Selected finding and evidence">
+            <h4>Selected finding</h4><div id="selected-finding"></div>
+            <h4>Findings in this message</h4><div id="conversation-findings"></div>
+            <h4>Supporting packet evidence</h4><p id="conversation-mapping" role="status">Select a field.</p>
+            <div id="conversation-sources"></div><div id="conversation-packet" aria-live="polite"></div>
+          </aside>
+        </div>
+      </section>
       <section class="section view hidden" id="view-flows"><div class="section-head"><div><div class="kicker">TRANSPORT / RECONSTRUCTION</div><h3>Network flow inventory</h3></div><span class="section-meta" id="flows-total">0 flows</span></div><div class="table-panel"><div class="table-scroll"><table><thead><tr><th>FLOW ID</th><th>ENDPOINT A</th><th>ENDPOINT B</th><th>PACKETS</th><th>HTTP MESSAGES</th><th>TRANSACTIONS</th><th>GAPS</th></tr></thead><tbody id="flows-body"><tr><td colspan="7" class="table-empty">No traffic to display yet.</td></tr></tbody></table></div><div class="table-foot">A flow represents an endpoint pair, not necessarily a separately isolated TCP session.</div></div><div class="pagination"><button id="flows-prev" class="btn btn-outline" disabled>← Previous</button><span id="flows-page">No capture</span><button id="flows-next" class="btn btn-outline" disabled>Next →</button></div></section>
       <section class="section view hidden" id="view-model"><div class="section-head"><div><div class="kicker">EXPERIMENTAL / MODEL LAB</div><h3>Contextual identity detection · BiLSTM V2</h3></div><span class="research-badge" id="model-active">RESEARCH · RULES-ONLY</span></div>
         <div class="lab-section" id="lab-live" aria-labelledby="lab-live-title">
@@ -142,5 +169,5 @@
       <footer class="footer"><span>TRACE / LOCAL PRIVACY AUDIT</span><span>No external services · Sensitive values masked by default</span><span>RESEARCH PROTOTYPE · BILSTM V2 EXPERIMENTAL</span></footer>
     </main>
   </div>
-</div><script src="/lab.js" defer></script><script src="/app.js" defer></script>
+</div><script src="/lab.js" defer></script><script src="/investigation.js" defer></script><script src="/app.js" defer></script>
 </body></html>

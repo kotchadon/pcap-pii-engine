@@ -1,0 +1,40 @@
+{
+  "independent_tools": {
+    "dpkt": "1.9.8",
+    "h11": "0.16.0"
+  },
+  "capture_sha256": "fa0070187d39425fc03bf15ba1700cfe1c57a20e724af03a4338c10676ed9d83",
+  "frames": 11,
+  "handshake_seq_ack_verified": true,
+  "requests": 2,
+  "responses_including_interim": 3,
+  "request_stream_sha256": "9e794ce026f9c1f3c056b6a1be2dbf52378ad97ab88287d8e7e24972c92f2561",
+  "response_stream_sha256": "f0066356d100230e7324c4f3a625c31cdeae7b4472864dea0e98a21ca72a42b1",
+  "chunked_gzip_unicode_verified": true,
+  "report_compared": true,
+  "exact_email_support_frames": [
+    5,
+    4
+  ],
+  "wireshark_tshark_executed": false,
+  "base_commit": "a74dfcb8819758dfecb7a73a5d4b47272bb5b88e",
+  "inspected_pr32_head": "79995e65a4006fd680a2a00d43fc4126dda7a068",
+  "validation": {
+    "related_backend_http_dashboard_reporting_identity_suite": {
+      "passed": 400,
+      "seconds": 17.89,
+      "command": "python -m pytest -q -rs tests/test_http*.py tests/test_network_evidence*.py tests/test_dashboard*.py tests/test_reporting_security.py tests/test_report_compression.py tests/test_evidence_inspector_ui.py tests/test_identity*.py"
+    },
+    "after_frontend_review_fixes": {
+      "passed": 4,
+      "seconds": 0.31,
+      "command": "python -m pytest -q tests/test_http_investigation_ui.py tests/test_evidence_inspector_ui.py"
+    },
+    "blocked": {
+      "real_browser": "Chromium absent; download failed; cloud browser could not reach local server",
+      "tshark": "Executable unavailable",
+      "genuine_v2": "Checkpoint weights absent"
+    }
+  },
+  "scope": "Fictional deterministic fixture; not uploaded-capture accuracy, model ground truth, or large-workload performance evidence."
+}

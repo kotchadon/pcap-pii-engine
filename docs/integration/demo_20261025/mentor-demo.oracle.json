@@ -1,0 +1,144 @@
+{
+  "synthetic": true,
+  "scope": "generator oracle; not a model accuracy manifest",
+  "sha256": "fa0070187d39425fc03bf15ba1700cfe1c57a20e724af03a4338c10676ed9d83",
+  "capture_bytes": 2078,
+  "client": "192.0.2.10:50123",
+  "server": "198.51.100.20:80",
+  "frames": [
+    {
+      "frame": 1,
+      "description": "client SYN",
+      "direction": "client_to_server",
+      "seq": 1000,
+      "ack": 0,
+      "flags": 2,
+      "payload_bytes": 0,
+      "payload_file_start": 94,
+      "payload_file_end": 94
+    },
+    {
+      "frame": 2,
+      "description": "server SYN ACK",
+      "direction": "server_to_client",
+      "seq": 9000,
+      "ack": 1001,
+      "flags": 18,
+      "payload_bytes": 0,
+      "payload_file_start": 164,
+      "payload_file_end": 164
+    },
+    {
+      "frame": 3,
+      "description": "client ACK",
+      "direction": "client_to_server",
+      "seq": 1001,
+      "ack": 9001,
+      "flags": 16,
+      "payload_bytes": 0,
+      "payload_file_start": 234,
+      "payload_file_end": 234
+    },
+    {
+      "frame": 4,
+      "description": "request tail arrives first",
+      "direction": "client_to_server",
+      "seq": 1256,
+      "ack": 9001,
+      "flags": 24,
+      "payload_bytes": 91,
+      "payload_file_start": 304,
+      "payload_file_end": 395
+    },
+    {
+      "frame": 5,
+      "description": "request head fills gap",
+      "direction": "client_to_server",
+      "seq": 1001,
+      "ack": 9001,
+      "flags": 24,
+      "payload_bytes": 255,
+      "payload_file_start": 465,
+      "payload_file_end": 720
+    },
+    {
+      "frame": 6,
+      "description": "consistent retransmission",
+      "direction": "client_to_server",
+      "seq": 1001,
+      "ack": 9001,
+      "flags": 24,
+      "payload_bytes": 255,
+      "payload_file_start": 790,
+      "payload_file_end": 1045
+    },
+    {
+      "frame": 7,
+      "description": "interim 100 response",
+      "direction": "server_to_client",
+      "seq": 9001,
+      "ack": 1347,
+      "flags": 24,
+      "payload_bytes": 25,
+      "payload_file_start": 1115,
+      "payload_file_end": 1140
+    },
+    {
+      "frame": 8,
+      "description": "HTML response head",
+      "direction": "server_to_client",
+      "seq": 9026,
+      "ack": 1347,
+      "flags": 24,
+      "payload_bytes": 165,
+      "payload_file_start": 1210,
+      "payload_file_end": 1375
+    },
+    {
+      "frame": 9,
+      "description": "HTML response tail",
+      "direction": "server_to_client",
+      "seq": 9191,
+      "ack": 1347,
+      "flags": 24,
+      "payload_bytes": 237,
+      "payload_file_start": 1445,
+      "payload_file_end": 1682
+    },
+    {
+      "frame": 10,
+      "description": "second request",
+      "direction": "client_to_server",
+      "seq": 1347,
+      "ack": 9428,
+      "flags": 24,
+      "payload_bytes": 52,
+      "payload_file_start": 1752,
+      "payload_file_end": 1804
+    },
+    {
+      "frame": 11,
+      "description": "gzip chunked response",
+      "direction": "server_to_client",
+      "seq": 9428,
+      "ack": 1399,
+      "flags": 24,
+      "payload_bytes": 204,
+      "payload_file_start": 1874,
+      "payload_file_end": 2078
+    }
+  ],
+  "expected_http_messages": 5,
+  "expected_transactions": 2,
+  "request_stream_sha256": "9e794ce026f9c1f3c056b6a1be2dbf52378ad97ab88287d8e7e24972c92f2561",
+  "response_stream_sha256": "f0066356d100230e7324c4f3a625c31cdeae7b4472864dea0e98a21ca72a42b1",
+  "email": "alex@example.invalid",
+  "email_support_frames": [
+    5,
+    4
+  ],
+  "html_response_frames": [
+    8,
+    9
+  ]
+}

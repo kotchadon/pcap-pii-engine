@@ -2,6 +2,7 @@
 const state={token:null,maxBytes:0,report:null,file:null,tab:'overview',scanMode:'rules',modelAvailable:false,modelVersion:null,busy:false,jobsSupported:false,profiles:{},profile:"standard",serverMaxBytes:0,jobId:null,reportJobId:null,reportFilename:null,pollTimer:null,pageSize:100,findingsOffset:0,flowsOffset:0,findingsTotal:0,flowsTotal:0,findingsRequest:0,flowsRequest:0};
 const $=id=>document.getElementById(id);
 const labels={overview:['Overview','Investigate with clarity.','An evidence-first view of network conversations and potential personal data exposure.'],findings:['PII findings','Inspect the evidence.','Potential exposure events, masked by default and traceable to specific network flows.'],flows:['Network flows','Follow the conversation.','TCP endpoints, HTTP exchanges and indicators of incomplete reconstruction.'],model:['Model laboratory','Measure the signal.','An honest view of the experimental contextual PII model and its limits.']};
+labels.conversation=['HTTP conversations','Follow the recorded exchange.','Requests, responses, fields and supporting packet evidence, with uncertainty visible.'];
 labels.how=['How TRACE works','From packets to evidence.','Understand the implemented analysis pipeline and the limits of its findings.'];
 const num=n=>Number(n||0).toLocaleString('en-AU');
 function setText(id,value){$(id).textContent=String(value)}
@@ -9,7 +10,7 @@ let timerHandle=null;
 function loading(on,message='Analysing capture...'){state.busy=on;$('statusbar').classList.toggle('hidden',!on);setText('status',message);for(const id of ['sample','choose','analysis-profile'])$(id).disabled=on;$('cancel-job').classList.toggle('hidden',!on||!state.jobId);for(const x of document.querySelectorAll('input[name="scan-mode"]'))x.disabled=on||(x.value==='hybrid'&&!state.modelAvailable);if(timerHandle){clearInterval(timerHandle);timerHandle=null;}if(on){const started=performance.now();const tick=()=>{if(state.jobId)return;const seconds=Math.floor((performance.now()-started)/1000);setText('status-elapsed',String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0'));};tick();timerHandle=setInterval(tick,1000);setText('status-stage','Processing locally; no completion estimate is available.');}}
 function error(msg){setText('errorbar',msg);$('errorbar').classList.remove('hidden')}
 function clearError(){$('errorbar').classList.add('hidden')}
-function switchTab(name){if(!labels[name])return;state.tab=name;for(const nav of document.querySelectorAll('.nav-link'))nav.classList.toggle('active',nav.dataset.tab===name);for(const sec of document.querySelectorAll('.view'))sec.classList.toggle('hidden',sec.id!==`view-${name}`);setText('crumb',labels[name][0]);setText('page-title',labels[name][1]);setText('page-description',labels[name][2]);}
+function switchTab(name){if(!labels[name])return;state.tab=name;for(const nav of document.querySelectorAll('.nav-link'))nav.classList.toggle('active',nav.dataset.tab===name);for(const sec of document.querySelectorAll('.view'))sec.classList.toggle('hidden',sec.id!==`view-${name}`);setText('crumb',labels[name][0]);setText('page-title',labels[name][1]);setText('page-description',labels[name][2]);if(typeof TraceInvestigation!=='undefined'){if(name==='conversation')void TraceInvestigation.activate();else TraceInvestigation.hideSource();}}
 for(const nav of document.querySelectorAll('.nav-link'))nav.addEventListener('click',()=>switchTab(nav.dataset.tab));
 function cell(row,text,cls=''){const td=document.createElement('td');td.textContent=String(text);if(cls)td.className=cls;row.appendChild(td);return td}
 function types(findings){const counts=new Map();for(const f of findings){const key=String(f.pii_type||'UNKNOWN');counts.set(key,(counts.get(key)||0)+1)}return [...counts].sort((a,b)=>b[1]-a[1]);}
@@ -62,7 +63,7 @@ function explainDetection(f){
  if(kind==='DEVICE_ID'||kind==='USER_ACCOUNT_ID')return 'A deterministic rule found an identifier-shaped value under a narrowly defined '+(kind==='DEVICE_ID'?'device':'user/account')+' field at '+loc+'. This does not verify a real person or device.';
  return 'The rule detector emitted a candidate '+kind+' finding at '+loc+'. Examine its location and source; rule scores are heuristics, not calibrated probabilities.';
 }
-function inspectFinding(f){
+function inspectFinding(f,navigate=true){
  setText('inspect-title',String(f.pii_type||'PII')+' · '+(f.detector==='bilstm'?'Contextual BiLSTM':'Rules'));
  setText('inspect-reason',explainDetection(f));
  setText('inspect-location',String(f.location||'—'));
@@ -70,7 +71,7 @@ function inspectFinding(f){
  setText('inspect-endpoints',String(f.source_ip||'—')+':'+String(f.source_port??'—')+' → '+String(f.destination_ip||'—')+':'+String(f.destination_port??'—'));
  setText('inspect-method',f.detector==='bilstm'?'BiLSTM · uncalibrated raw model score':'Rules · heuristic score');
  if(typeof TraceLab!=='undefined')TraceLab.inspect(f);
- void loadFindingEvidence(f);
+ if(navigate&&typeof TraceInvestigation!=='undefined'){switchTab('conversation');void TraceInvestigation.openFinding(f);}else void loadFindingEvidence(f);
 }
 
 /* Evidence v1.0: read-only authenticated joins. Never fetch raw capture bytes. */
@@ -195,7 +196,8 @@ function render(payload){
  setLiveEvidence(payload.report,!!payload.model_enabled);
  renderSummary();renderFindings();renderFlows();
  const first=(payload.report.findings||[]).find(f=>f.detector==='bilstm')||(payload.report.findings||[])[0];
- if(first)inspectFinding(first);else{setText('inspect-title','No findings to inspect');setText('inspect-reason','No finding has been selected for this capture.');for(const id of ['inspect-location','inspect-message','inspect-endpoints','inspect-method'])setText(id,'—');clearFindingEvidence('No findings to inspect.');}
+ if(typeof TraceInvestigation!=='undefined')TraceInvestigation.setReport(payload,state.token);
+ if(first)inspectFinding(first,false);else{setText('inspect-title','No findings to inspect');setText('inspect-reason','No finding has been selected for this capture.');for(const id of ['inspect-location','inspect-message','inspect-endpoints','inspect-method'])setText(id,'—');clearFindingEvidence('No findings to inspect.');}
  const limits=$('report-limitations');limits.replaceChildren();const limitations=payload.report.limitations||[];for(const item of (Array.isArray(limitations)?limitations:[limitations]).slice(0,20)){const li=document.createElement('li');li.textContent=typeof item==='string'?item:JSON.stringify(item);limits.appendChild(li)}$('limitations-panel').classList.toggle('hidden',!limits.children.length);
  $('export').disabled=false;switchTab('overview');
  if(typeof TraceLab!=='undefined')TraceLab.onResult(payload);

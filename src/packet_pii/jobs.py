@@ -17,6 +17,7 @@ import tempfile
 import threading
 import time
 
+from . import investigation
 from .engine import AnalysisLimits, AnalysisLimitError, analyze_to_report
 from .groundtruth import EvaluationCollector, EvaluationRejected, Manifest, RESULT_SCHEMA_VERSION, sha256_file
 from .ml_runner import ML_PROFILES, shared
@@ -67,6 +68,7 @@ class Job:
     assessment: dict | None = None
     assessment_cancel: threading.Event = field(default_factory=threading.Event)
     assessment_thread: threading.Thread | None = None
+    capture_expiry: threading.Timer | None = None
 
     @property
     def capture(self): return self.directory/'capture.bin'
@@ -78,7 +80,8 @@ class Job:
 
 class JobManager:
     def __init__(self, analysis_lock, detector=None, *, disk_quota_bytes=12*2**30,
-                 max_retained=3, ttl_seconds=3600, ml_work_budget=None, assessment_budget='default'):
+                 max_retained=3, ttl_seconds=3600, ml_work_budget=None, assessment_budget='default',
+                 retain_capture_for_inspection=False):
         if type(disk_quota_bytes) is not int or disk_quota_bytes < 32*MIB:
             raise ValueError('Job disk quota must be at least 32 MiB')
         self.analysis_lock, self.detector = analysis_lock, shared(detector)
@@ -90,6 +93,7 @@ class JobManager:
         self.ml_work_budget = LegacyMLWorkBudget() if ml_work_budget is None else ml_work_budget
         if not isinstance(self.ml_work_budget, LegacyMLWorkBudget):
             raise TypeError('ml_work_budget must be hybrid.MLWorkBudget')
+        self.retain_capture_for_inspection = bool(retain_capture_for_inspection)
         self.disk_quota = disk_quota_bytes
         self.max_retained, self.ttl = max_retained, ttl_seconds
         self.root = Path(tempfile.mkdtemp(prefix='trace_jobs_'));self.root.chmod(0o700)
@@ -103,6 +107,7 @@ class JobManager:
         done = sorted((j for j in self.jobs.values() if j.status in TERMINAL),key=lambda j:j.updated)
         for job in done:
             if now-job.updated > self.ttl or len(self.jobs) >= self.max_retained:
+                if job.capture_expiry is not None:job.capture_expiry.cancel()
                 shutil.rmtree(job.directory,ignore_errors=True)
                 self.jobs.pop(job.job_id,None)
 
@@ -215,6 +220,7 @@ class JobManager:
             conn.execute('CREATE TABLE rows(kind TEXT,n INTEGER,pii_type TEXT,location TEXT,value TEXT,data TEXT,PRIMARY KEY(kind,n))')
             conn.execute("CREATE INDEX evidence_ids ON rows(kind,json_extract(data,'$.evidence_id'))")
             conn.execute("CREATE INDEX evidence_streams ON rows(kind,json_extract(data,'$.stream_id'))")
+            investigation.create_index(conn)
             counts=Counter()
             collector=None;capture_hash=None
             if job.manifest is not None:
@@ -233,6 +239,7 @@ class JobManager:
                 conn.execute('INSERT INTO rows VALUES(?,?,?,?,?,?)',
                     (kind,counts[kind]-1,row.get('pii_type',''),row.get('location',''),row.get('value',''),
                      json.dumps(row,ensure_ascii=False,separators=(',',':'),allow_nan=False)))
+                investigation.index_row(conn,kind,row,counts[kind]-1)
                 if kind=='findings':job.types[row['pii_type']]+=1
                 if sum(counts.values())%1000==0:conn.commit()
             def progress(event):
@@ -285,11 +292,29 @@ class JobManager:
                                'Scan could not complete; no complete result is available')
                     job.progress={'stage':job.status};job.updated=time.monotonic();job.evaluation=None
         finally:
-            job.capture.unlink(missing_ok=True)
+            if not (self.retain_capture_for_inspection and job.status=='completed'):
+                job.capture.unlink(missing_ok=True)
+            else:
+                # Retained raw captures have an actual timed deletion, even
+                # when an idle dashboard receives no further API requests.
+                with self.lock:
+                    job.capture_expiry=threading.Timer(max(0,self.ttl-(time.monotonic()-job.updated)),self._expire_capture,args=(job,))
+                    job.capture_expiry.daemon=True
+                    try:
+                        job.capture_expiry.start()
+                    except (RuntimeError,OSError):
+                        # If timed deletion cannot be scheduled, retain no raw
+                        # capture; still release the completed scan normally.
+                        job.capture_expiry=None
+                        job.capture.unlink(missing_ok=True)
             self._release(job)
             if job.status=='completed' and job.assessment is not None and job.assessment['status']=='pending':
                 self._start_assessment(job)
             if self.closed:shutil.rmtree(self.root,ignore_errors=True)
+
+    def _expire_capture(self, job):
+        with self.lock:
+            job.capture.unlink(missing_ok=True)
 
     def _initial_assessment(self, job, receipt, sampler):
         if job.mode!='hybrid':
@@ -400,6 +425,54 @@ class JobManager:
             items=[json.loads(r[0]) for r in rows]
         return dict(items=items,total=total,offset=offset,limit=limit)
 
+    def investigate(self, job, kind, **kwargs):
+        if kind == 'content':
+            return self._recover_content(job, **kwargs)
+        # Serialize reads with retention pruning; every lookup is job-local.
+        with self.lock:
+            if self.get(job.job_id) is not job or job.status != 'completed':
+                raise ValueError('Results are not complete')
+            with closing(sqlite3.connect('file:'+str(job.index)+'?mode=ro', uri=True)) as conn:
+                if kind == 'conversations':
+                    return investigation.conversations(conn, **kwargs)
+                result = investigation.investigation(conn, **kwargs)
+                result['capture_identity'] = job.receipt.get('capture_evidence', {})
+                result['content_available'] = self.retain_capture_for_inspection and job.capture.is_file()
+                return result
+
+    def _recover_content(self, job, *, message_id):
+        # Lease the exact opened file and a small metadata snapshot. Pruning or
+        # expiry may unlink it without waiting for hashing; subsequent checks
+        # revoke disclosure and the descriptor is always closed in this call.
+        with self.lock:
+            if self.closed or self.get(job.job_id) is not job or job.status != 'completed' or job.cancel.is_set():
+                raise ValueError('Results are not available')
+            if not self.retain_capture_for_inspection or not job.capture.is_file():
+                raise ValueError('Capture retention was not enabled for this server')
+            with closing(sqlite3.connect('file:'+str(job.index)+'?mode=ro', uri=True)) as conn:
+                prepared = investigation.prepare_content(conn, message_id=message_id)
+            identity = dict(job.receipt.get('capture_evidence', {}))
+            deadline = job.updated + self.ttl
+            descriptor = os.open(job.capture, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
+        with os.fdopen(descriptor, 'rb') as stream:
+            opened = os.fstat(stream.fileno())
+
+            def validate_lease():
+                with self.lock:
+                    if (self.closed or time.monotonic() >= deadline or
+                        self.get(job.job_id) is not job or job.status != 'completed' or job.cancel.is_set()):
+                        raise ValueError('Capture inspection expired or unavailable')
+                    current = job.capture.stat(follow_symlinks=False)
+                    if ((current.st_dev, current.st_ino, current.st_size, current.st_mtime_ns, current.st_ctime_ns) !=
+                        (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)):
+                        raise ValueError('Retained capture was replaced or changed')
+
+            result = investigation.recover_content_stream(stream, identity, prepared, checkpoint=validate_lease)
+            # Parsing/decoding can also span an expiry: validate after all work,
+            # immediately before returning sensitive text to the handler.
+            validate_lease()
+            return result
+
     def cancel_job(self,job):
         with self.lock:
             if job.status not in TERMINAL:
@@ -423,7 +496,9 @@ class JobManager:
                 if job.upload_abort is not None:
                     try:job.upload_abort()
                     except OSError:pass
-            for job in self.jobs.values():job.assessment_cancel.set()
+            for job in self.jobs.values():
+                job.assessment_cancel.set()
+                if job.capture_expiry is not None:job.capture_expiry.cancel()
         for job in active:
             if job.thread is not None and job.thread is not threading.current_thread():job.thread.join(timeout=5)
         if all(j.thread is None or not j.thread.is_alive() for j in active):

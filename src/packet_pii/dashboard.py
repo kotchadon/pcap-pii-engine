@@ -33,7 +33,8 @@ _MAX_SYNC_UPLOAD = 8 * 1024 * 1024
 _ALLOWED = {'/': ('index.html', 'text/html; charset=utf-8'),
             '/app.css': ('app.css', 'text/css; charset=utf-8'),
             '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
-            '/lab.js': ('lab.js', 'text/javascript; charset=utf-8')}
+            '/lab.js': ('lab.js', 'text/javascript; charset=utf-8'),
+            '/investigation.js': ('investigation.js', 'text/javascript; charset=utf-8')}
 
 
 class DashboardServer(ThreadingHTTPServer):
@@ -41,7 +42,8 @@ class DashboardServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, addr: tuple[str, int], max_upload: int = _MAX_UPLOAD, ml_detector=None,
-                 *, job_disk_mib: int = 12288, ml_budget_profile: str = 'standard', assessment_budget='default'):
+                 *, job_disk_mib: int = 12288, ml_budget_profile: str = 'standard', assessment_budget='default',
+                 retain_capture_for_inspection: bool = False):
         if addr[0] != '127.0.0.1':
             raise ValueError('Dashboard must bind to 127.0.0.1')
         if type(max_upload) is not int or not 24 <= max_upload <= _MAX_UPLOAD:
@@ -54,7 +56,8 @@ class DashboardServer(ThreadingHTTPServer):
         self.analysis_lock = Lock()
         self.request_slots = BoundedSemaphore(8)
         self.jobs = JobManager(self.analysis_lock,self.ml_detector,assessment_budget=assessment_budget,disk_quota_bytes=job_disk_mib*1024*1024,
-                               ml_work_budget=LegacyMLWorkBudget.for_profile(ml_budget_profile))
+                               ml_work_budget=LegacyMLWorkBudget.for_profile(ml_budget_profile),
+                               retain_capture_for_inspection=retain_capture_for_inspection)
 
     def process_request(self, request, client_address):
         if not self.request_slots.acquire(blocking=False):
@@ -138,7 +141,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         if path == '/api/session':
             self._reply({'token': self.server.token, 'max_upload_bytes': self.server.max_upload,
-                         'jobs_supported': True, 'active_job_id': self.server.jobs.latest_id,
+                         'jobs_supported': True, 'capture_retention_enabled': self.server.jobs.retain_capture_for_inspection, 'active_job_id': self.server.jobs.latest_id,
                          'ml_budget_profile': self.server.ml_budget_profile,
                          'ml_budget_profiles': {name: vars(LegacyMLWorkBudget.for_profile(name)) for name in ('standard','extended')},
                          'profiles': {name:vars(AnalysisLimits.for_profile(name)) for name in ('standard','large','stress')},
@@ -304,7 +307,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self._reply({'manifest_id':self.server.jobs.add_manifest(manifest),'manifest':manifest.public()},201)
 
     def _job_get(self,path):
-        match=re.fullmatch(r'/api/jobs/([0-9a-f]{32})(?:/(findings|flows|report|evaluation|packet_evidence|stream_evidence|http_evidence|field_evidence|assessment))?',path)
+        match=re.fullmatch(r'/api/jobs/([0-9a-f]{32})(?:/(findings|flows|report|evaluation|packet_evidence|stream_evidence|http_evidence|field_evidence|assessment|conversations|investigation))?',path)
         if not match:
             self._reply({'error':'Job not found'},404);return
         job_id,kind=match.groups()
@@ -333,6 +336,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._headers(200,'application/json',os.fstat(stream.fileno()).st_size,
                                   download=f'trace-report-{job_id}.json')
                     while block:=stream.read(256*1024):self.wfile.write(block)
+            elif kind in ('conversations','investigation'):
+                query=parse_qs(urlsplit(self.path).query)
+                if kind=='conversations':
+                    result=self.server.jobs.investigate(job,kind,offset=int(query.get('offset',['0'])[0]),limit=int(query.get('limit',['25'])[0]))
+                else:
+                    result=self.server.jobs.investigate(job,kind,message_id=query.get('message_id',[''])[0],field_id=query.get('field_id',[''])[0],
+                        field_offset=int(query.get('field_offset',['0'])[0]),finding_offset=int(query.get('finding_offset',['0'])[0]),limit=int(query.get('limit',['50'])[0]))
+                self._reply(result)
             elif kind:
                 query=parse_qs(urlsplit(self.path).query)
                 page=self.server.jobs.page(job,kind,offset=int(query.get('offset',['0'])[0]),
@@ -348,6 +359,28 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except (OSError,sqlite3.Error):self._reply({'error':'Result unavailable'},404)
 
     def _job_post(self,path):
+        content=re.fullmatch(r'/api/jobs/([0-9a-f]{32})/content',path)
+        if content:
+            try:
+                length=self.headers.get('Content-Length','')
+                if self.headers.get('Content-Type')!='application/json' or not re.fullmatch(r'[0-9]{1,4}',length) or not 1<=int(length)<=1024:
+                    self.close_connection=True
+                    raise ValueError('Expected bounded JSON request')
+                payload=json.loads(self.rfile.read(int(length)))
+                if not isinstance(payload,dict) or payload.get('acknowledge_sensitive_content') is not True:
+                    raise ValueError('Explicit sensitive-content acknowledgement required')
+                representation=payload.get('representation','source')
+                if representation not in ('source','static'):
+                    raise ValueError('Unknown content representation')
+                result=self.server.jobs.investigate(self.server.jobs.get(content[1]),'content',message_id=payload.get('message_id',''))
+                if representation=='static':
+                    from .static_page import project_content
+                    result=dict(result,static_representation=project_content(result))
+                self._reply(result)
+            except KeyError:self._reply({'error':'Job or evidence unavailable'},404)
+            except (ValueError,UnicodeError):self._reply({'error':'Content unavailable: acknowledge sensitive content; retention, verified source, and a supported response within 64 KiB are required'},400)
+            except (OSError,sqlite3.Error):self._reply({'error':'Retained content unavailable'},404)
+            return
         acancel=re.fullmatch(r'/api/jobs/([0-9a-f]{32})/assessment/cancel',path)
         if acancel:
             try:self._reply(self.server.jobs.cancel_assessment(self.server.jobs.get(acancel[1])))
@@ -440,6 +473,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
 def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(description='Run local-only PCAP PII investigation dashboard')
+    p.add_argument('--retain-capture-for-inspection',action='store_true',help='Retain private captures until job expiry for explicit sensitive HTTP source inspection; off by default')
     p.add_argument('--port', type=int, default=8765)
     p.add_argument('--ml-checkpoint', default=None, help='Opt in to offline research BiLSTM checkpoint')
     p.add_argument('--job-disk-mib',type=int,default=12288,help='Private job disk quota MiB; conservative capacity is checked before accepting a scan')
@@ -450,7 +484,8 @@ def main(argv: list[str] | None = None) -> None:
         p.error('Port must be 1024–65535')
     ml_detector = load_experimental_bilstm(args.ml_checkpoint) if args.ml_checkpoint else None
     server = DashboardServer(('127.0.0.1', args.port), ml_detector=ml_detector,job_disk_mib=args.job_disk_mib,ml_budget_profile=args.ml_budget_profile,
-                             assessment_budget=None if args.assessment_probes==0 else AssessmentBudget(max_probes=args.assessment_probes))
+                             assessment_budget=None if args.assessment_probes==0 else AssessmentBudget(max_probes=args.assessment_probes),
+                             retain_capture_for_inspection=args.retain_capture_for_inspection)
     print(f'PCAP PII dashboard: http://127.0.0.1:{args.port}/ (Ctrl+C to stop)')
     try:
         server.serve_forever()
