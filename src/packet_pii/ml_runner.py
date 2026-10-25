@@ -94,9 +94,11 @@ class MLWorkBudget:
             'standard': dict(max_fields=10_000, max_characters=2_000_000, max_seconds=60.0),
             'extended': dict(max_fields=100_000, max_characters=20_000_000, max_seconds=300.0),
             'complete': dict(max_fields=1_000_000, max_characters=200_000_000, max_seconds=1_800.0),
+            # Explicit opt-in for very dense captures. Retain all per-batch, field and process memory guards.
+            'high_capacity': dict(max_fields=2_500_000, max_characters=500_000_000, max_seconds=3_600.0),
         }
         if name not in profiles:
-            raise ValueError('ML coverage profile must be standard, extended or complete')
+            raise ValueError('ML coverage profile must be standard, extended, complete or high_capacity')
         return cls(name=name, **profiles[name])
 
     def public(self) -> dict:
@@ -105,7 +107,7 @@ class MLWorkBudget:
                 'batch_characters': self.batch_characters, 'max_field_chars': self.max_field_chars}
 
 
-ML_PROFILES = ('standard', 'extended', 'complete')
+ML_PROFILES = ('standard', 'extended', 'complete', 'high_capacity')
 
 
 class _Ticket:
