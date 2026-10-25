@@ -503,3 +503,13 @@ summary::-webkit-details-marker{display:none}
   .sidebar,.topbar,.upload,.pagination,.inspector,.insp-scrim{display:none!important}
   .app{display:block}
 }
+
+/* Clear, report-grounded analysis scope (no invented coverage percentages). */
+.scope-card{margin-top:var(--s4)}
+.scope-card .card-head{margin-bottom:var(--s3)}
+.scope-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s3)}
+.scope-item{min-width:0;padding:var(--s3) var(--s4);border:1px solid var(--border);background:var(--surface-2);border-radius:var(--r-md)}
+.scope-item h4{font-size:var(--fs-sm);font-weight:650;margin-bottom:var(--s2)}
+.scope-item p{font-size:var(--fs-sm);color:var(--text-2);line-height:1.55;overflow-wrap:anywhere}
+.scope-foot{font-size:var(--fs-xs);color:var(--text-3);margin-top:var(--s3)}
+@media(max-width:980px){.scope-grid{grid-template-columns:1fr}}
