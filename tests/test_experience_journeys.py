@@ -108,7 +108,7 @@ def test_journey_a_first_use_and_b_inspect_in_place_on_desktop(browser, server):
     screenshot_artifact(page, 'summary-1440')
     # The answer leads: count, kinds, completeness.
     assert re.match(r'\d+ potential findings?', page.inner_text('#answer-title'))
-    assert page.inner_text('#verdict-icon') in ('Complete', 'Incomplete')
+    assert page.inner_text('#verdict-icon') in ('No reported gaps', 'Known limits')
     assert page.inner_text('#ctx-status') in ('Complete', 'Incomplete')
     page.click('.answer [data-go=findings]')
     page.wait_for_selector('#fi-support .msg-card')
@@ -303,6 +303,40 @@ def test_journey_e_slow_and_failed_evidence_never_shows_stale_details(browser, s
     page.wait_for_function('() => document.getElementById("conv-body").textContent.includes("could not reach")')
     assert [p for p in problems if not p.startswith('pageerror')] == []
 
+
+
+def test_summary_scope_distinguishes_supported_reconstruction_and_unreadable_content(browser, server):
+    page, problems = open_page(browser, server(), 1280, 800)
+    run_sample(page)
+    assert page.is_visible('#scope-summary')
+    examined = page.inner_text('#scope-examined')
+    assert 'supported HTTP messages reconstructed' in examined
+    assert 'captured frames' in examined
+    assert 'encrypted' in page.inner_text('#scope-uninspectable').lower()
+    assert 'not an all-clear' in page.inner_text('#scope-uninspectable').lower()
+    # Controlled report variations exercise truthful rendering. These values
+    # aren't an assertion that the showcase capture itself has missing packets.
+    page.evaluate('''() => {
+      state.report.summary.stream_gaps=2;
+      state.report.summary.analysis_incomplete=true;
+      state.report.summary.ml_coverage_status='partial';
+      state.report.summary.ml_fields_eligible=10;
+      state.report.summary.ml_fields_evaluated=6;
+      state.report.metadata.detection_method='rules_plus_bilstm';
+      renderSummary();
+    }''')
+    assert '2 reported stream gaps' in page.inner_text('#scope-partial')
+    assert '6 of 10 eligible fields' in page.inner_text('#scope-partial')
+    assert page.inner_text('#verdict-icon') == 'Known limits'
+    page.evaluate('''() => {
+      state.report.summary.potential_leaks=0;
+      state.report.finding_type_counts={};
+      state.report.findings=[];
+      renderSummary();
+    }''')
+    assert page.inner_text('#answer-title') == 'No potential findings in inspected content'
+    assert problems == []
+    page.close()
 
 def test_accessibility_basics(browser, server):
     page, problems = open_page(browser, server(), 1440, 900)
