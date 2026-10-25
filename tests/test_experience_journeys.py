@@ -6,6 +6,7 @@ or Chromium is unavailable; they are not replaced by DOM mocks.
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import threading
@@ -24,14 +25,28 @@ HOSTILE = ('<html><head><link rel="stylesheet" href="http://example.invalid/s.cs
 
 @pytest.fixture
 def browser():
-    sync_api = pytest.importorskip('playwright.sync_api')
-    exe = next((p for p in (CHROME, shutil.which('chromium'), shutil.which('google-chrome')) if p and Path(p).exists()), None)
-    if exe is None:
-        pytest.skip('no Chromium available')
-    with sync_api.sync_playwright() as pw:
+    # In developer environments the browser suite may be optional. In CI it is
+    # required: an absent Playwright/Chromium installation MUST fail the job.
+    required = os.environ.get('TRACE_REQUIRE_BROWSER') == '1'
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError as exc:
+        if required:
+            pytest.fail(f'Chromium UI tests required but Playwright is unavailable: {exc}')
+        pytest.skip('Playwright unavailable')
+    with sync_playwright() as pw:
+        exe = next((p for p in (CHROME, pw.chromium.executable_path,
+                                shutil.which('chromium'), shutil.which('google-chrome'))
+                    if p and Path(p).exists()), None)
+        if exe is None:
+            if required:
+                pytest.fail('Chromium UI tests required but no matching browser is installed')
+            pytest.skip('no Chromium available')
         try:
             b = pw.chromium.launch(executable_path=exe, args=['--no-sandbox'])
         except Exception as exc:  # pragma: no cover - environment dependent
+            if required:
+                pytest.fail(f'Chromium UI tests required but browser launch failed: {exc}')
             pytest.skip(f'cannot launch Chromium: {exc}')
         yield b
         b.close()
@@ -69,6 +84,15 @@ def run_sample(page):
     page.wait_for_selector('#view-summary:not(.hidden)')
 
 
+def screenshot_artifact(page, name):
+    """Screenshots contain only the deliberately fictional showcase capture."""
+    target = os.environ.get('TRACE_UI_ARTIFACT_DIR')
+    if target:
+        folder = Path(target)
+        folder.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(folder / (name + '.png')), animations='disabled')
+
+
 def box(page, selector):
     return page.locator(selector).bounding_box()
 
@@ -81,6 +105,7 @@ def test_journey_a_first_use_and_b_inspect_in_place_on_desktop(browser, server):
     assert 'Analysis starts as soon as you choose a file' in page.inner_text('#dropzone')
     assert page.inner_text('#ctx-status') == 'Not analysed'
     run_sample(page)
+    screenshot_artifact(page, 'summary-1440')
     # The answer leads: count, kinds, completeness.
     assert re.match(r'\d+ potential findings?', page.inner_text('#answer-title'))
     assert page.inner_text('#verdict-icon') in ('Complete', 'Incomplete')
@@ -101,6 +126,7 @@ def test_journey_a_first_use_and_b_inspect_in_place_on_desktop(browser, server):
     list_box, insp_box = box(page, '#view-findings .list-card'), box(page, '#inspector')
     assert insp_box['x'] >= list_box['x'] + list_box['width'] - 1, 'inspector must sit beside the list'
     assert insp_box['y'] < 120 and insp_box['height'] > 600, 'inspector must be visible without scrolling'
+    screenshot_artifact(page, 'inspector-1440')
     rows.nth(4).click()
     page.wait_for_function('v=>document.getElementById("inspect-sub").textContent===v', arg=rows.nth(4).locator('.row-sub').inner_text())
     assert page.evaluate('scrollY') == y0
@@ -143,6 +169,8 @@ def test_journey_b_drawer_and_sheet_open_in_place_and_return(browser, server, wi
     assert b['x'] >= 0 and b['x'] + b['width'] <= width + 1 and b['y'] + b['height'] <= height + 1
     if mode == 'sheet':
         assert abs(b['width'] - width) <= 1
+    if width in (1024, 390):
+        screenshot_artifact(page, f'inspector-{width}')
     assert page.evaluate('scrollY') == y0, 'opening must not move the page'
     page.keyboard.press('Escape')
     page.wait_for_function('() => document.getElementById("inspector").dataset.open==="false"')
