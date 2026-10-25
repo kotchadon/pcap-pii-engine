@@ -237,3 +237,24 @@ Superpowers completion menu; report environmental failures instead of waiting
 for approval to prepare a reviewable draft. Full suites run at significant
 milestones/final committed source, not after every tiny edit. Reviewer found one
 in-memory report guard gap; its red→green regression and fix are included.
+
+## CI follow-up on initial published commit 25f39d8
+
+GitHub executed the complete suite with genuine repository weights and datasets:
+core **859 passed / 170 skipped**; ML **1,060 passed / 22 skipped / 2 failed**.
+The newly added dense-versus-compacted real-V2 equivalence test passed. The two
+failures were stale integration assertions, independently reproduced on unchanged
+main: a valid HTTP/2 control-only connection is supported when HPACK is present,
+and finding records now require the existing `evidence` member. Production
+outputs were not changed to satisfy those assertions.
+
+The follow-up tests preserve exact top-level finding keys, additionally verify
+field-ID/message joins and decoded-versus-raw span semantics, and cover HTTP/2
+with and without HPACK in Rules and genuine Hybrid modes. An independent Rules
+provenance test runs without ML. Local available paths:3 passed,2 genuine-weight
+skips,72 deselected. Astra reviewed this delta and found no weakened coverage.
+The final PR status records the subsequent complete-suite result.
+
+CI now installs CPU-only torch (the first ML run unnecessarily downloaded CUDA
+packages), reports skip reasons, and coalesces push/PR runs for the same branch.
+The original failed run is retained as evidence; it was not relabelled a pass.
