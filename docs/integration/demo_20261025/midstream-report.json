@@ -1,0 +1,1546 @@
+{
+  "metadata": {
+    "engine": "pcap-pii-engine",
+    "version": "0.1.0",
+    "report_schema_version": "1.1.0",
+    "evidence_schema_version": "1.0.0",
+    "detection_method": "rules_only",
+    "confidence_type": "heuristic_not_calibrated",
+    "ml_requested": false,
+    "ml_model_loaded": false,
+    "ml_model_version": null,
+    "ml_work_limits": null,
+    "threshold": 0.8,
+    "raw_values_included": false,
+    "scope": "unencrypted HTTP/1.x and bounded prior-knowledge HTTP/2 over TCP",
+    "analysis_limits": {
+      "max_capture_bytes": 134217728,
+      "max_packets": 100000,
+      "max_flows": 20000,
+      "max_tcp_payload_bytes": 67108864
+    },
+    "analysis_profile": "standard",
+    "limits_overridden": false,
+    "resource_budgets": {
+      "max_report_bytes": 536870912,
+      "max_findings": 500000,
+      "max_memory_bytes": 1073741824
+    }
+  },
+  "capture_evidence": {
+    "capture_sha256": "93ce7aa0a6d69614a0553338207b42826acedc3a8bd8e3eec06550c8c799662e",
+    "capture_bytes": 1868,
+    "identity_status": "verified_read",
+    "frame_index_origin": 1,
+    "range_convention": "zero_based_half_open"
+  },
+  "summary": {
+    "packets_captured": 8,
+    "non_tcp_or_unsupported_packets": 0,
+    "unsupported_packets_by_reason": {},
+    "unsupported_packets_hiding_tcp": 0,
+    "packet_dispositions": {
+      "tcp_decoded": 8
+    },
+    "fragment_diagnostics": {},
+    "fragment_loss_events": {},
+    "fragment_datagrams_invalidated_after_emission": 0,
+    "tcp_observed_damage": false,
+    "tcp_capture_completeness": "unknown",
+    "http_observed_incomplete": false,
+    "flows_processed": 1,
+    "endpoint_pairs": 1,
+    "http_flows": 1,
+    "http_messages": 5,
+    "http_transactions": 2,
+    "unpaired_requests": 0,
+    "unpaired_responses": 0,
+    "total_data_bytes": 1716,
+    "processing_time_seconds": 0.0026,
+    "distinct_exposed_locations": 9,
+    "locations_flagged_by_rules": 9,
+    "locations_flagged_by_model": 0,
+    "locations_flagged_by_both": 0,
+    "potential_leaks": 9,
+    "fields_extracted": 20,
+    "rules_findings": 9,
+    "ml_findings": 0,
+    "ml_fields_eligible": 0,
+    "ml_fields_evaluated": 0,
+    "ml_fields_excluded_by_policy": 0,
+    "ml_fields_skipped": 0,
+    "ml_fields_skipped_by_reason": {},
+    "ml_skip_reasons": {},
+    "ml_inference_complete": null,
+    "ml_inference_invoked": false,
+    "ml_inference_batches": 0,
+    "ml_coverage_status": "not_requested",
+    "ml_coverage_ratio": null,
+    "ml_batches": 0,
+    "ml_fields_model_inferred": 0,
+    "ml_prediction_cache_hits": 0,
+    "ml_prediction_cache_enabled": false,
+    "ml_fields_empty": 0,
+    "ml_predictions_by_label": {
+      "PERSON_NAME": 0,
+      "USERNAME": 0
+    },
+    "ml_processing_time_seconds": 0.0,
+    "ml_invoked": false,
+    "ml_inference_failed": false,
+    "ml_incomplete": false,
+    "stream_gaps": 0,
+    "unterminated_http_messages": 0,
+    "http_incomplete_streams": 0,
+    "http_uncertain_streams": 0,
+    "http2_streams_not_decoded": 0,
+    "http2_connections_decoded": 0,
+    "http2_messages_decoded": 0,
+    "tls_streams_not_inspected": 0,
+    "http_bodies_not_inspected": 0,
+    "http_bodies_not_inspected_by_reason": {},
+    "capture_truncated_records": 0,
+    "capture_malformed_records": 0,
+    "capture_unsupported_packet_records": 0,
+    "analysis_incomplete": false
+  },
+  "flows": [
+    {
+      "flow_id": "flow_0001",
+      "endpoints": [
+        {
+          "ip": "192.0.2.10",
+          "port": 50123
+        },
+        {
+          "ip": "198.51.100.20",
+          "port": 80
+        }
+      ],
+      "packets": 8,
+      "http_messages": 5,
+      "http_transactions": 2,
+      "unpaired_requests": 0,
+      "unpaired_responses": 0,
+      "stream_gaps": 0,
+      "unterminated_http_messages": 0,
+      "http_diagnostics": []
+    }
+  ],
+  "findings": [
+    {
+      "pii_type": "CREDENTIAL_OR_TOKEN",
+      "location": "header.authorization",
+      "confidence": 0.92,
+      "value": "Be***en",
+      "detector": "rule",
+      "evidence": {
+        "http_message_id": "flow_0001_msg_0001",
+        "scope": "candidate_fields",
+        "raw_detection_span": "unavailable",
+        "field_ids": [
+          "flow_0001_msg_0001_field_3"
+        ],
+        "limitations": [
+          "rule_detector_does_not_supply_a_decoded_span"
+        ]
+      },
+      "flow_id": "flow_0001",
+      "http_message_id": "flow_0001_msg_0001",
+      "http_request_id": "flow_0001_req_0001",
+      "http_message_type": "request",
+      "timestamp": "2023-11-14T22:13:20.050000+00:00",
+      "source_ip": "192.0.2.10",
+      "source_port": 50123,
+      "destination_ip": "198.51.100.20",
+      "destination_port": 80,
+      "http_start_line": "POST [path-redacted] HTTP/1.1"
+    },
+    {
+      "pii_type": "PERSON_NAME_CANDIDATE",
+      "location": "json_body.full_name",
+      "confidence": 0.86,
+      "value": "Él***on",
+      "detector": "rule",
+      "evidence": {
+        "http_message_id": "flow_0001_msg_0001",
+        "scope": "candidate_fields",
+        "raw_detection_span": "unavailable",
+        "field_ids": [
+          "flow_0001_msg_0001_field_6"
+        ],
+        "limitations": [
+          "rule_detector_does_not_supply_a_decoded_span"
+        ]
+      },
+      "flow_id": "flow_0001",
+      "http_message_id": "flow_0001_msg_0001",
+      "http_request_id": "flow_0001_req_0001",
+      "http_message_type": "request",
+      "timestamp": "2023-11-14T22:13:20.050000+00:00",
+      "source_ip": "192.0.2.10",
+      "source_port": 50123,
+      "destination_ip": "198.51.100.20",
+      "destination_port": 80,
+      "http_start_line": "POST [path-redacted] HTTP/1.1"
+    },
+    {
+      "pii_type": "EMAIL",
+      "location": "json_body.email",
+      "confidence": 0.98,
+      "value": "a***@example.invalid",
+      "detector": "rule",
+      "evidence": {
+        "http_message_id": "flow_0001_msg_0001",
+        "scope": "candidate_fields",
+        "raw_detection_span": "unavailable",
+        "field_ids": [
+          "flow_0001_msg_0001_field_7"
+        ],
+        "limitations": [
+          "rule_detector_does_not_supply_a_decoded_span"
+        ]
+      },
+      "flow_id": "flow_0001",
+      "http_message_id": "flow_0001_msg_0001",
+      "http_request_id": "flow_0001_req_0001",
+      "http_message_type": "request",
+      "timestamp": "2023-11-14T22:13:20.050000+00:00",
+      "source_ip": "192.0.2.10",
+      "source_port": 50123,
+      "destination_ip": "198.51.100.20",
+      "destination_port": 80,
+      "http_start_line": "POST [path-redacted] HTTP/1.1"
+    },
+    {
+      "pii_type": "AGE",
+      "location": "json_body.age",
+      "confidence": 0.85,
+      "value": "[REDACTED]",
+      "detector": "rule",
+      "evidence": {
+        "http_message_id": "flow_0001_msg_0001",
+        "scope": "candidate_fields",
+        "raw_detection_span": "unavailable",
+        "field_ids": [
+          "flow_0001_msg_0001_field_8"
+        ],
+        "limitations": [
+          "rule_detector_does_not_supply_a_decoded_span"
+        ]
+      },
+      "flow_id": "flow_0001",
+      "http_message_id": "flow_0001_msg_0001",
+      "http_request_id": "flow_0001_req_0001",
+      "http_message_type": "request",
+      "timestamp": "2023-11-14T22:13:20.050000+00:00",
+      "source_ip": "192.0.2.10",
+      "source_port": 50123,
+      "destination_ip": "198.51.100.20",
+      "destination_port": 80,
+      "http_start_line": "POST [path-redacted] HTTP/1.1"
+    },
+    {
+      "pii_type": "GENDER",
+      "location": "json_body.gender",
+      "confidence": 0.85,
+      "value": "[REDACTED]",
+      "detector": "rule",
+      "evidence": {
+        "http_message_id": "flow_0001_msg_0001",
+        "scope": "candidate_fields",
+        "raw_detection_span": "unavailable",
+        "field_ids": [
+          "flow_0001_msg_0001_field_9"
+        ],
+        "limitations": [
+          "rule_detector_does_not_supply_a_decoded_span"
+        ]
+      },
+      "flow_id": "flow_0001",
+      "http_message_id": "flow_0001_msg_0001",
+      "http_request_id": "flow_0001_req_0001",
+      "http_message_type": "request",
+      "timestamp": "2023-11-14T22:13:20.050000+00:00",
+      "source_ip": "192.0.2.10",
+      "source_port": 50123,
+      "destination_ip": "198.51.100.20",
+      "destination_port": 80,
+      "http_start_line": "POST [path-redacted] HTTP/1.1"
+    },
+    {
+      "pii_type": "APPLE_ADVERTISING_ID",
+      "location": "json_body.idfa",
+      "confidence": 0.9,
+      "value": "aa***ee",
+      "detector": "rule",
+      "evidence": {
+        "http_message_id": "flow_0001_msg_0001",
+        "scope": "candidate_fields",
+        "raw_detection_span": "unavailable",
+        "field_ids": [
+          "flow_0001_msg_0001_field_10"
+        ],
+        "limitations": [
+          "rule_detector_does_not_supply_a_decoded_span"
+        ]
+      },
+      "flow_id": "flow_0001",
+      "http_message_id": "flow_0001_msg_0001",
+      "http_request_id": "flow_0001_req_0001",
+      "http_message_type": "request",
+      "timestamp": "2023-11-14T22:13:20.050000+00:00",
+      "source_ip": "192.0.2.10",
+      "source_port": 50123,
+      "destination_ip": "198.51.100.20",
+      "destination_port": 80,
+      "http_start_line": "POST [path-redacted] HTTP/1.1"
+    },
+    {
+      "pii_type": "EMAIL",
+      "location": "body.text",
+      "confidence": 0.98,
+      "value": "a***@example.invalid",
+      "detector": "rule",
+      "evidence": {
+        "http_message_id": "flow_0001_msg_0003",
+        "scope": "candidate_fields",
+        "raw_detection_span": "unavailable",
+        "field_ids": [
+          "flow_0001_msg_0003_field_2"
+        ],
+        "limitations": [
+          "rule_detector_does_not_supply_a_decoded_span"
+        ]
+      },
+      "flow_id": "flow_0001",
+      "http_message_id": "flow_0001_msg_0003",
+      "http_request_id": "flow_0001_req_0001",
+      "http_message_type": "response",
+      "timestamp": "2023-11-14T22:13:20.080000+00:00",
+      "source_ip": "198.51.100.20",
+      "source_port": 80,
+      "destination_ip": "192.0.2.10",
+      "destination_port": 50123,
+      "http_start_line": "HTTP/1.1 200"
+    },
+    {
+      "pii_type": "PERSON_NAME_CANDIDATE",
+      "location": "json_body.full_name",
+      "confidence": 0.86,
+      "value": "Al***on",
+      "detector": "rule",
+      "evidence": {
+        "http_message_id": "flow_0001_msg_0005",
+        "scope": "candidate_fields",
+        "raw_detection_span": "unavailable",
+        "field_ids": [
+          "flow_0001_msg_0005_field_3"
+        ],
+        "limitations": [
+          "rule_detector_does_not_supply_a_decoded_span"
+        ]
+      },
+      "flow_id": "flow_0001",
+      "http_message_id": "flow_0001_msg_0005",
+      "http_request_id": "flow_0001_req_0002",
+      "http_message_type": "response",
+      "timestamp": "2023-11-14T22:13:20.110000+00:00",
+      "source_ip": "198.51.100.20",
+      "source_port": 80,
+      "destination_ip": "192.0.2.10",
+      "destination_port": 50123,
+      "http_start_line": "HTTP/1.1 200"
+    },
+    {
+      "pii_type": "EMAIL",
+      "location": "json_body.email",
+      "confidence": 0.98,
+      "value": "r***@example.invalid",
+      "detector": "rule",
+      "evidence": {
+        "http_message_id": "flow_0001_msg_0005",
+        "scope": "candidate_fields",
+        "raw_detection_span": "unavailable",
+        "field_ids": [
+          "flow_0001_msg_0005_field_4"
+        ],
+        "limitations": [
+          "rule_detector_does_not_supply_a_decoded_span"
+        ]
+      },
+      "flow_id": "flow_0001",
+      "http_message_id": "flow_0001_msg_0005",
+      "http_request_id": "flow_0001_req_0002",
+      "http_message_type": "response",
+      "timestamp": "2023-11-14T22:13:20.110000+00:00",
+      "source_ip": "198.51.100.20",
+      "source_port": 80,
+      "destination_ip": "192.0.2.10",
+      "destination_port": 50123,
+      "http_start_line": "HTTP/1.1 200"
+    }
+  ],
+  "ml_field_coverage": [],
+  "packet_evidence": [
+    {
+      "frame_index": 1,
+      "record_offset": 24,
+      "data_offset": 40,
+      "captured_length": 145,
+      "wire_length": 145,
+      "timestamp": 1700000000.04,
+      "timestamp_resolution": 1e-06,
+      "linktype": 1,
+      "interface_id": 0,
+      "section_index": 0,
+      "truncated": false,
+      "evidence_id": "frame_1",
+      "disposition": "tcp_decoded",
+      "tcp_datagram": {
+        "src": "192.0.2.10",
+        "dst": "198.51.100.20",
+        "sport": 50123,
+        "dport": 80,
+        "seq": 1256,
+        "ack": 9001,
+        "flags": 24,
+        "network_protocol": "ipv4",
+        "network_offset": 14,
+        "payload_offset": 54,
+        "ipv4_checksum": "valid",
+        "tcp_checksum": "valid",
+        "reassembled_fragments": false,
+        "payload_length": 91
+      }
+    },
+    {
+      "frame_index": 2,
+      "record_offset": 185,
+      "data_offset": 201,
+      "captured_length": 309,
+      "wire_length": 309,
+      "timestamp": 1700000000.05,
+      "timestamp_resolution": 1e-06,
+      "linktype": 1,
+      "interface_id": 0,
+      "section_index": 0,
+      "truncated": false,
+      "evidence_id": "frame_2",
+      "disposition": "tcp_decoded",
+      "tcp_datagram": {
+        "src": "192.0.2.10",
+        "dst": "198.51.100.20",
+        "sport": 50123,
+        "dport": 80,
+        "seq": 1001,
+        "ack": 9001,
+        "flags": 24,
+        "network_protocol": "ipv4",
+        "network_offset": 14,
+        "payload_offset": 54,
+        "ipv4_checksum": "valid",
+        "tcp_checksum": "valid",
+        "reassembled_fragments": false,
+        "payload_length": 255
+      }
+    },
+    {
+      "frame_index": 3,
+      "record_offset": 510,
+      "data_offset": 526,
+      "captured_length": 309,
+      "wire_length": 309,
+      "timestamp": 1700000000.06,
+      "timestamp_resolution": 1e-06,
+      "linktype": 1,
+      "interface_id": 0,
+      "section_index": 0,
+      "truncated": false,
+      "evidence_id": "frame_3",
+      "disposition": "tcp_decoded",
+      "tcp_datagram": {
+        "src": "192.0.2.10",
+        "dst": "198.51.100.20",
+        "sport": 50123,
+        "dport": 80,
+        "seq": 1001,
+        "ack": 9001,
+        "flags": 24,
+        "network_protocol": "ipv4",
+        "network_offset": 14,
+        "payload_offset": 54,
+        "ipv4_checksum": "valid",
+        "tcp_checksum": "valid",
+        "reassembled_fragments": false,
+        "payload_length": 255
+      }
+    },
+    {
+      "frame_index": 4,
+      "record_offset": 835,
+      "data_offset": 851,
+      "captured_length": 79,
+      "wire_length": 79,
+      "timestamp": 1700000000.07,
+      "timestamp_resolution": 1e-06,
+      "linktype": 1,
+      "interface_id": 0,
+      "section_index": 0,
+      "truncated": false,
+      "evidence_id": "frame_4",
+      "disposition": "tcp_decoded",
+      "tcp_datagram": {
+        "src": "198.51.100.20",
+        "dst": "192.0.2.10",
+        "sport": 80,
+        "dport": 50123,
+        "seq": 9001,
+        "ack": 1347,
+        "flags": 24,
+        "network_protocol": "ipv4",
+        "network_offset": 14,
+        "payload_offset": 54,
+        "ipv4_checksum": "valid",
+        "tcp_checksum": "valid",
+        "reassembled_fragments": false,
+        "payload_length": 25
+      }
+    },
+    {
+      "frame_index": 5,
+      "record_offset": 930,
+      "data_offset": 946,
+      "captured_length": 219,
+      "wire_length": 219,
+      "timestamp": 1700000000.08,
+      "timestamp_resolution": 1e-06,
+      "linktype": 1,
+      "interface_id": 0,
+      "section_index": 0,
+      "truncated": false,
+      "evidence_id": "frame_5",
+      "disposition": "tcp_decoded",
+      "tcp_datagram": {
+        "src": "198.51.100.20",
+        "dst": "192.0.2.10",
+        "sport": 80,
+        "dport": 50123,
+        "seq": 9026,
+        "ack": 1347,
+        "flags": 24,
+        "network_protocol": "ipv4",
+        "network_offset": 14,
+        "payload_offset": 54,
+        "ipv4_checksum": "valid",
+        "tcp_checksum": "valid",
+        "reassembled_fragments": false,
+        "payload_length": 165
+      }
+    },
+    {
+      "frame_index": 6,
+      "record_offset": 1165,
+      "data_offset": 1181,
+      "captured_length": 291,
+      "wire_length": 291,
+      "timestamp": 1700000000.09,
+      "timestamp_resolution": 1e-06,
+      "linktype": 1,
+      "interface_id": 0,
+      "section_index": 0,
+      "truncated": false,
+      "evidence_id": "frame_6",
+      "disposition": "tcp_decoded",
+      "tcp_datagram": {
+        "src": "198.51.100.20",
+        "dst": "192.0.2.10",
+        "sport": 80,
+        "dport": 50123,
+        "seq": 9191,
+        "ack": 1347,
+        "flags": 24,
+        "network_protocol": "ipv4",
+        "network_offset": 14,
+        "payload_offset": 54,
+        "ipv4_checksum": "valid",
+        "tcp_checksum": "valid",
+        "reassembled_fragments": false,
+        "payload_length": 237
+      }
+    },
+    {
+      "frame_index": 7,
+      "record_offset": 1472,
+      "data_offset": 1488,
+      "captured_length": 106,
+      "wire_length": 106,
+      "timestamp": 1700000000.1,
+      "timestamp_resolution": 1e-06,
+      "linktype": 1,
+      "interface_id": 0,
+      "section_index": 0,
+      "truncated": false,
+      "evidence_id": "frame_7",
+      "disposition": "tcp_decoded",
+      "tcp_datagram": {
+        "src": "192.0.2.10",
+        "dst": "198.51.100.20",
+        "sport": 50123,
+        "dport": 80,
+        "seq": 1347,
+        "ack": 9428,
+        "flags": 24,
+        "network_protocol": "ipv4",
+        "network_offset": 14,
+        "payload_offset": 54,
+        "ipv4_checksum": "valid",
+        "tcp_checksum": "valid",
+        "reassembled_fragments": false,
+        "payload_length": 52
+      }
+    },
+    {
+      "frame_index": 8,
+      "record_offset": 1594,
+      "data_offset": 1610,
+      "captured_length": 258,
+      "wire_length": 258,
+      "timestamp": 1700000000.11,
+      "timestamp_resolution": 1e-06,
+      "linktype": 1,
+      "interface_id": 0,
+      "section_index": 0,
+      "truncated": false,
+      "evidence_id": "frame_8",
+      "disposition": "tcp_decoded",
+      "tcp_datagram": {
+        "src": "198.51.100.20",
+        "dst": "192.0.2.10",
+        "sport": 80,
+        "dport": 50123,
+        "seq": 9428,
+        "ack": 1399,
+        "flags": 24,
+        "network_protocol": "ipv4",
+        "network_offset": 14,
+        "payload_offset": 54,
+        "ipv4_checksum": "valid",
+        "tcp_checksum": "valid",
+        "reassembled_fragments": false,
+        "payload_length": 204
+      }
+    }
+  ],
+  "stream_evidence": [
+    {
+      "evidence_id": "flow_0001_direction_0",
+      "row_type": "stream",
+      "stream_id": "flow_0001_direction_0",
+      "flow_id": "flow_0001",
+      "direction": [
+        "192.0.2.10",
+        50123,
+        "198.51.100.20",
+        80
+      ],
+      "base_seq": 1001,
+      "safe_prefix_length": 398,
+      "unsafe": false,
+      "diagnostics": [
+        "initial_coverage_unknown",
+        "final_coverage_unknown",
+        "retransmission"
+      ],
+      "syn_observed": false,
+      "fin_observed": false,
+      "rst_observed": false,
+      "boundary_quality": "observations_only_completeness_unknown"
+    },
+    {
+      "evidence_id": "flow_0001_direction_0_range_0",
+      "row_type": "source_range",
+      "stream_id": "flow_0001_direction_0",
+      "flow_id": "flow_0001",
+      "stream_start": 0,
+      "stream_end": 255,
+      "tcp_seq_start": 1001,
+      "tcp_seq_end": 1256,
+      "frame_id": "frame_2",
+      "frame_index": 2,
+      "frame_start": 54,
+      "frame_end": 309,
+      "file_start": 255,
+      "file_end": 510,
+      "granularity": "exact_raw_range"
+    },
+    {
+      "evidence_id": "flow_0001_direction_0_range_1",
+      "row_type": "source_range",
+      "stream_id": "flow_0001_direction_0",
+      "flow_id": "flow_0001",
+      "stream_start": 255,
+      "stream_end": 346,
+      "tcp_seq_start": 1256,
+      "tcp_seq_end": 1347,
+      "frame_id": "frame_1",
+      "frame_index": 1,
+      "frame_start": 54,
+      "frame_end": 145,
+      "file_start": 94,
+      "file_end": 185,
+      "granularity": "exact_raw_range"
+    },
+    {
+      "evidence_id": "flow_0001_direction_0_range_2",
+      "row_type": "source_range",
+      "stream_id": "flow_0001_direction_0",
+      "flow_id": "flow_0001",
+      "stream_start": 346,
+      "stream_end": 398,
+      "tcp_seq_start": 1347,
+      "tcp_seq_end": 1399,
+      "frame_id": "frame_7",
+      "frame_index": 7,
+      "frame_start": 54,
+      "frame_end": 106,
+      "file_start": 1542,
+      "file_end": 1594,
+      "granularity": "exact_raw_range"
+    },
+    {
+      "evidence_id": "flow_0001_direction_1",
+      "row_type": "stream",
+      "stream_id": "flow_0001_direction_1",
+      "flow_id": "flow_0001",
+      "direction": [
+        "198.51.100.20",
+        80,
+        "192.0.2.10",
+        50123
+      ],
+      "base_seq": 9001,
+      "safe_prefix_length": 631,
+      "unsafe": false,
+      "diagnostics": [
+        "initial_coverage_unknown",
+        "final_coverage_unknown"
+      ],
+      "syn_observed": false,
+      "fin_observed": false,
+      "rst_observed": false,
+      "boundary_quality": "observations_only_completeness_unknown"
+    },
+    {
+      "evidence_id": "flow_0001_direction_1_range_0",
+      "row_type": "source_range",
+      "stream_id": "flow_0001_direction_1",
+      "flow_id": "flow_0001",
+      "stream_start": 0,
+      "stream_end": 25,
+      "tcp_seq_start": 9001,
+      "tcp_seq_end": 9026,
+      "frame_id": "frame_4",
+      "frame_index": 4,
+      "frame_start": 54,
+      "frame_end": 79,
+      "file_start": 905,
+      "file_end": 930,
+      "granularity": "exact_raw_range"
+    },
+    {
+      "evidence_id": "flow_0001_direction_1_range_1",
+      "row_type": "source_range",
+      "stream_id": "flow_0001_direction_1",
+      "flow_id": "flow_0001",
+      "stream_start": 25,
+      "stream_end": 190,
+      "tcp_seq_start": 9026,
+      "tcp_seq_end": 9191,
+      "frame_id": "frame_5",
+      "frame_index": 5,
+      "frame_start": 54,
+      "frame_end": 219,
+      "file_start": 1000,
+      "file_end": 1165,
+      "granularity": "exact_raw_range"
+    },
+    {
+      "evidence_id": "flow_0001_direction_1_range_2",
+      "row_type": "source_range",
+      "stream_id": "flow_0001_direction_1",
+      "flow_id": "flow_0001",
+      "stream_start": 190,
+      "stream_end": 427,
+      "tcp_seq_start": 9191,
+      "tcp_seq_end": 9428,
+      "frame_id": "frame_6",
+      "frame_index": 6,
+      "frame_start": 54,
+      "frame_end": 291,
+      "file_start": 1235,
+      "file_end": 1472,
+      "granularity": "exact_raw_range"
+    },
+    {
+      "evidence_id": "flow_0001_direction_1_range_3",
+      "row_type": "source_range",
+      "stream_id": "flow_0001_direction_1",
+      "flow_id": "flow_0001",
+      "stream_start": 427,
+      "stream_end": 631,
+      "tcp_seq_start": 9428,
+      "tcp_seq_end": 9632,
+      "frame_id": "frame_8",
+      "frame_index": 8,
+      "frame_start": 54,
+      "frame_end": 258,
+      "file_start": 1664,
+      "file_end": 1868,
+      "granularity": "exact_raw_range"
+    }
+  ],
+  "http_evidence": [
+    {
+      "evidence_id": "flow_0001_msg_0001",
+      "http_message_id": "flow_0001_msg_0001",
+      "flow_id": "flow_0001",
+      "stream_id": "flow_0001_direction_0",
+      "http_request_id": "flow_0001_req_0001",
+      "protocol": "http/1",
+      "pairing_status": "paired_best_effort",
+      "stream_start": 0,
+      "stream_end": 346,
+      "field_count": 11,
+      "start_line": "POST [path-redacted] HTTP/1.1",
+      "header_end": 208,
+      "body_start": 208,
+      "body_framing": "content_length",
+      "contiguous": true,
+      "message_type": "request",
+      "session": 1,
+      "direction": "client_to_server",
+      "source": {
+        "ip": "192.0.2.10",
+        "port": 50123
+      },
+      "destination": {
+        "ip": "198.51.100.20",
+        "port": 80
+      },
+      "client": {
+        "ip": "192.0.2.10",
+        "port": 50123
+      },
+      "server": {
+        "ip": "198.51.100.20",
+        "port": 80
+      },
+      "endpoint_attribution": "http_role_observed",
+      "timestamp": 1700000000.05,
+      "ordinal": 1,
+      "method": "POST",
+      "status": null,
+      "interim_response": false,
+      "association_basis": "directional_fifo_best_effort",
+      "reconstruction_complete": true,
+      "header_names": [
+        "authorization",
+        "content-length",
+        "content-type",
+        "expect",
+        "host"
+      ],
+      "header_count": 5,
+      "unknown_header_count": 0,
+      "header_values": "withheld"
+    },
+    {
+      "evidence_id": "flow_0001_msg_0002",
+      "http_message_id": "flow_0001_msg_0002",
+      "flow_id": "flow_0001",
+      "stream_id": "flow_0001_direction_1",
+      "http_request_id": "flow_0001_req_0001",
+      "protocol": "http/1",
+      "pairing_status": "paired_best_effort",
+      "stream_start": 0,
+      "stream_end": 25,
+      "field_count": 0,
+      "start_line": "HTTP/1.1 100",
+      "header_end": 25,
+      "body_start": 25,
+      "body_framing": "no_body",
+      "contiguous": true,
+      "message_type": "response",
+      "session": 1,
+      "direction": "server_to_client",
+      "source": {
+        "ip": "198.51.100.20",
+        "port": 80
+      },
+      "destination": {
+        "ip": "192.0.2.10",
+        "port": 50123
+      },
+      "client": {
+        "ip": "192.0.2.10",
+        "port": 50123
+      },
+      "server": {
+        "ip": "198.51.100.20",
+        "port": 80
+      },
+      "endpoint_attribution": "http_role_observed",
+      "timestamp": 1700000000.07,
+      "ordinal": 1,
+      "method": null,
+      "status": 100,
+      "interim_response": true,
+      "association_basis": "directional_fifo_best_effort",
+      "reconstruction_complete": true,
+      "header_names": [],
+      "header_count": 0,
+      "unknown_header_count": 0,
+      "header_values": "withheld"
+    },
+    {
+      "evidence_id": "flow_0001_msg_0003",
+      "http_message_id": "flow_0001_msg_0003",
+      "flow_id": "flow_0001",
+      "stream_id": "flow_0001_direction_1",
+      "http_request_id": "flow_0001_req_0001",
+      "protocol": "http/1",
+      "pairing_status": "paired_best_effort",
+      "stream_start": 25,
+      "stream_end": 427,
+      "field_count": 3,
+      "start_line": "HTTP/1.1 200",
+      "header_end": 105,
+      "body_start": 105,
+      "body_framing": "content_length",
+      "contiguous": true,
+      "message_type": "response",
+      "session": 1,
+      "direction": "server_to_client",
+      "source": {
+        "ip": "198.51.100.20",
+        "port": 80
+      },
+      "destination": {
+        "ip": "192.0.2.10",
+        "port": 50123
+      },
+      "client": {
+        "ip": "192.0.2.10",
+        "port": 50123
+      },
+      "server": {
+        "ip": "198.51.100.20",
+        "port": 80
+      },
+      "endpoint_attribution": "http_role_observed",
+      "timestamp": 1700000000.08,
+      "ordinal": 2,
+      "method": null,
+      "status": 200,
+      "interim_response": false,
+      "association_basis": "directional_fifo_best_effort",
+      "reconstruction_complete": true,
+      "header_names": [
+        "content-length",
+        "content-type"
+      ],
+      "header_count": 2,
+      "unknown_header_count": 0,
+      "header_values": "withheld"
+    },
+    {
+      "evidence_id": "flow_0001_msg_0004",
+      "http_message_id": "flow_0001_msg_0004",
+      "flow_id": "flow_0001",
+      "stream_id": "flow_0001_direction_0",
+      "http_request_id": "flow_0001_req_0002",
+      "protocol": "http/1",
+      "pairing_status": "paired_best_effort",
+      "stream_start": 346,
+      "stream_end": 398,
+      "field_count": 1,
+      "start_line": "GET [path-redacted] HTTP/1.1",
+      "header_end": 398,
+      "body_start": 398,
+      "body_framing": "no_body",
+      "contiguous": true,
+      "message_type": "request",
+      "session": 1,
+      "direction": "client_to_server",
+      "source": {
+        "ip": "192.0.2.10",
+        "port": 50123
+      },
+      "destination": {
+        "ip": "198.51.100.20",
+        "port": 80
+      },
+      "client": {
+        "ip": "192.0.2.10",
+        "port": 50123
+      },
+      "server": {
+        "ip": "198.51.100.20",
+        "port": 80
+      },
+      "endpoint_attribution": "http_role_observed",
+      "timestamp": 1700000000.1,
+      "ordinal": 2,
+      "method": "GET",
+      "status": null,
+      "interim_response": false,
+      "association_basis": "directional_fifo_best_effort",
+      "reconstruction_complete": true,
+      "header_names": [
+        "host"
+      ],
+      "header_count": 1,
+      "unknown_header_count": 0,
+      "header_values": "withheld"
+    },
+    {
+      "evidence_id": "flow_0001_msg_0005",
+      "http_message_id": "flow_0001_msg_0005",
+      "flow_id": "flow_0001",
+      "stream_id": "flow_0001_direction_1",
+      "http_request_id": "flow_0001_req_0002",
+      "protocol": "http/1",
+      "pairing_status": "paired_best_effort",
+      "stream_start": 427,
+      "stream_end": 631,
+      "field_count": 5,
+      "start_line": "HTTP/1.1 200",
+      "header_end": 530,
+      "body_start": 530,
+      "body_framing": "chunked",
+      "contiguous": true,
+      "message_type": "response",
+      "session": 1,
+      "direction": "server_to_client",
+      "source": {
+        "ip": "198.51.100.20",
+        "port": 80
+      },
+      "destination": {
+        "ip": "192.0.2.10",
+        "port": 50123
+      },
+      "client": {
+        "ip": "192.0.2.10",
+        "port": 50123
+      },
+      "server": {
+        "ip": "198.51.100.20",
+        "port": 80
+      },
+      "endpoint_attribution": "http_role_observed",
+      "timestamp": 1700000000.11,
+      "ordinal": 3,
+      "method": null,
+      "status": 200,
+      "interim_response": false,
+      "association_basis": "directional_fifo_best_effort",
+      "reconstruction_complete": true,
+      "header_names": [
+        "content-encoding",
+        "content-type",
+        "transfer-encoding"
+      ],
+      "header_count": 3,
+      "unknown_header_count": 0,
+      "header_values": "withheld"
+    }
+  ],
+  "field_evidence": [
+    {
+      "source_category": "header",
+      "stream_ranges": [
+        {
+          "start": 45,
+          "end": 65
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 20
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "iso-8859-1",
+      "evidence_id": "flow_0001_msg_0001_field_0",
+      "field_id": "flow_0001_msg_0001_field_0",
+      "http_message_id": "flow_0001_msg_0001",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 0,
+      "location": "header"
+    },
+    {
+      "source_category": "header",
+      "stream_ranges": [
+        {
+          "start": 81,
+          "end": 112
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 31
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "iso-8859-1",
+      "evidence_id": "flow_0001_msg_0001_field_1",
+      "field_id": "flow_0001_msg_0001_field_1",
+      "http_message_id": "flow_0001_msg_0001",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 1,
+      "location": "header"
+    },
+    {
+      "source_category": "header",
+      "stream_ranges": [
+        {
+          "start": 122,
+          "end": 134
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 12
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "iso-8859-1",
+      "evidence_id": "flow_0001_msg_0001_field_2",
+      "field_id": "flow_0001_msg_0001_field_2",
+      "http_message_id": "flow_0001_msg_0001",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 2,
+      "location": "header"
+    },
+    {
+      "source_category": "header",
+      "stream_ranges": [
+        {
+          "start": 151,
+          "end": 183
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 32
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "iso-8859-1",
+      "evidence_id": "flow_0001_msg_0001_field_3",
+      "field_id": "flow_0001_msg_0001_field_3",
+      "http_message_id": "flow_0001_msg_0001",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 3,
+      "location": "header"
+    },
+    {
+      "source_category": "header",
+      "stream_ranges": [
+        {
+          "start": 201,
+          "end": 204
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 3
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "iso-8859-1",
+      "evidence_id": "flow_0001_msg_0001_field_4",
+      "field_id": "flow_0001_msg_0001_field_4",
+      "http_message_id": "flow_0001_msg_0001",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 4,
+      "location": "header"
+    },
+    {
+      "source_category": "query_parameter",
+      "stream_ranges": [
+        {
+          "start": 0,
+          "end": 37
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 9
+      },
+      "transformations": [
+        "url_decode"
+      ],
+      "granularity": "transformed_source_range",
+      "limitations": [
+        "decoded_span_not_raw_byte_exact"
+      ],
+      "evidence_id": "flow_0001_msg_0001_field_5",
+      "field_id": "flow_0001_msg_0001_field_5",
+      "http_message_id": "flow_0001_msg_0001",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 5,
+      "location": "query_parameter"
+    },
+    {
+      "source_category": "json_body",
+      "stream_ranges": [
+        {
+          "start": 222,
+          "end": 237
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 14
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "utf-8",
+      "evidence_id": "flow_0001_msg_0001_field_6",
+      "field_id": "flow_0001_msg_0001_field_6",
+      "http_message_id": "flow_0001_msg_0001",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 6,
+      "location": "json_body"
+    },
+    {
+      "source_category": "json_body",
+      "stream_ranges": [
+        {
+          "start": 248,
+          "end": 268
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 20
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "utf-8",
+      "evidence_id": "flow_0001_msg_0001_field_7",
+      "field_id": "flow_0001_msg_0001_field_7",
+      "http_message_id": "flow_0001_msg_0001",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 7,
+      "location": "json_body"
+    },
+    {
+      "source_category": "json_body",
+      "stream_ranges": [
+        {
+          "start": 276,
+          "end": 278
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 2
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "utf-8",
+      "evidence_id": "flow_0001_msg_0001_field_8",
+      "field_id": "flow_0001_msg_0001_field_8",
+      "http_message_id": "flow_0001_msg_0001",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 8,
+      "location": "json_body"
+    },
+    {
+      "source_category": "json_body",
+      "stream_ranges": [
+        {
+          "start": 289,
+          "end": 298
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 9
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "utf-8",
+      "evidence_id": "flow_0001_msg_0001_field_9",
+      "field_id": "flow_0001_msg_0001_field_9",
+      "http_message_id": "flow_0001_msg_0001",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 9,
+      "location": "json_body"
+    },
+    {
+      "source_category": "json_body",
+      "stream_ranges": [
+        {
+          "start": 308,
+          "end": 344
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 36
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "utf-8",
+      "evidence_id": "flow_0001_msg_0001_field_10",
+      "field_id": "flow_0001_msg_0001_field_10",
+      "http_message_id": "flow_0001_msg_0001",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 10,
+      "location": "json_body"
+    },
+    {
+      "source_category": "header",
+      "stream_ranges": [
+        {
+          "start": 56,
+          "end": 80
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 24
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "iso-8859-1",
+      "evidence_id": "flow_0001_msg_0003_field_0",
+      "field_id": "flow_0001_msg_0003_field_0",
+      "http_message_id": "flow_0001_msg_0003",
+      "stream_id": "flow_0001_direction_1",
+      "field_index": 0,
+      "location": "header"
+    },
+    {
+      "source_category": "header",
+      "stream_ranges": [
+        {
+          "start": 98,
+          "end": 101
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 3
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "iso-8859-1",
+      "evidence_id": "flow_0001_msg_0003_field_1",
+      "field_id": "flow_0001_msg_0003_field_1",
+      "http_message_id": "flow_0001_msg_0003",
+      "stream_id": "flow_0001_direction_1",
+      "field_index": 1,
+      "location": "header"
+    },
+    {
+      "source_category": "body",
+      "stream_ranges": [
+        {
+          "start": 105,
+          "end": 427
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 322
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "utf-8",
+      "evidence_id": "flow_0001_msg_0003_field_2",
+      "field_id": "flow_0001_msg_0003_field_2",
+      "http_message_id": "flow_0001_msg_0003",
+      "stream_id": "flow_0001_direction_1",
+      "field_index": 2,
+      "location": "body"
+    },
+    {
+      "source_category": "header",
+      "stream_ranges": [
+        {
+          "start": 374,
+          "end": 394
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 20
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "iso-8859-1",
+      "evidence_id": "flow_0001_msg_0004_field_0",
+      "field_id": "flow_0001_msg_0004_field_0",
+      "http_message_id": "flow_0001_msg_0004",
+      "stream_id": "flow_0001_direction_0",
+      "field_index": 0,
+      "location": "header"
+    },
+    {
+      "source_category": "header",
+      "stream_ranges": [
+        {
+          "start": 458,
+          "end": 474
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 16
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "iso-8859-1",
+      "evidence_id": "flow_0001_msg_0005_field_0",
+      "field_id": "flow_0001_msg_0005_field_0",
+      "http_message_id": "flow_0001_msg_0005",
+      "stream_id": "flow_0001_direction_1",
+      "field_index": 0,
+      "location": "header"
+    },
+    {
+      "source_category": "header",
+      "stream_ranges": [
+        {
+          "start": 494,
+          "end": 498
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 4
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "iso-8859-1",
+      "evidence_id": "flow_0001_msg_0005_field_1",
+      "field_id": "flow_0001_msg_0005_field_1",
+      "http_message_id": "flow_0001_msg_0005",
+      "stream_id": "flow_0001_direction_1",
+      "field_index": 1,
+      "location": "header"
+    },
+    {
+      "source_category": "header",
+      "stream_ranges": [
+        {
+          "start": 519,
+          "end": 526
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 7
+      },
+      "transformations": [],
+      "granularity": "exact_stream_range",
+      "limitations": [],
+      "text_encoding": "iso-8859-1",
+      "evidence_id": "flow_0001_msg_0005_field_2",
+      "field_id": "flow_0001_msg_0005_field_2",
+      "http_message_id": "flow_0001_msg_0005",
+      "stream_id": "flow_0001_direction_1",
+      "field_index": 2,
+      "location": "header"
+    },
+    {
+      "source_category": "json_body",
+      "stream_ranges": [
+        {
+          "start": 530,
+          "end": 631
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 12
+      },
+      "transformations": [
+        "chunked_decode",
+        "gzip",
+        "json_string_unescape",
+        "json_parse"
+      ],
+      "granularity": "transformed_source_range",
+      "limitations": [
+        "decoded_span_not_raw_byte_exact"
+      ],
+      "evidence_id": "flow_0001_msg_0005_field_3",
+      "field_id": "flow_0001_msg_0005_field_3",
+      "http_message_id": "flow_0001_msg_0005",
+      "stream_id": "flow_0001_direction_1",
+      "field_index": 3,
+      "location": "json_body"
+    },
+    {
+      "source_category": "json_body",
+      "stream_ranges": [
+        {
+          "start": 530,
+          "end": 631
+        }
+      ],
+      "decoded_text_span": {
+        "start": 0,
+        "end": 21
+      },
+      "transformations": [
+        "chunked_decode",
+        "gzip",
+        "json_parse"
+      ],
+      "granularity": "transformed_source_range",
+      "limitations": [
+        "decoded_span_not_raw_byte_exact"
+      ],
+      "evidence_id": "flow_0001_msg_0005_field_4",
+      "field_id": "flow_0001_msg_0005_field_4",
+      "http_message_id": "flow_0001_msg_0005",
+      "stream_id": "flow_0001_direction_1",
+      "field_index": 4,
+      "location": "json_body"
+    }
+  ],
+  "limitations": [
+    "Encrypted HTTPS payloads cannot be inspected without decryption",
+    "IP fragments are reassembled under bounded conservative policies; ID reuse and unobserved TCP lifecycle remain ambiguous",
+    "Plaintext HTTP/2 requires a client preface and optional HPACK dependency; unsupported states stop conservatively; HTTP/3 and TLS are not decoded",
+    "HTTP/1.x request-response pairing is best-effort (direction, stream order, packet timing)",
+    "Rules only; optional contextual ML is not enabled",
+    "TCP is buffered until EOF under explicit budgets; large results should use analyze_to_report",
+    "No SYN/FIN does not prove capture completeness; analysis_incomplete flags observed damage",
+    "Findings mean possible PII exposure, not proof of exfiltration"
+  ]
+}

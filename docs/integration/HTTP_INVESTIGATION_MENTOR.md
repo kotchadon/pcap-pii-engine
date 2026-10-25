@@ -1,5 +1,9 @@
 # HTTP investigation handoff — 23 October 2026
 
+**25 October continuation:** see [executed demo and current acceptance](MENTOR_DEMO_COMPLETION.md).
+TShark now ran; an inert static representation and source-lease fix were added.
+The historical results and blockers below describe the original PR33 delivery.
+
 Base: `a74dfcb8819758dfecb7a73a5d4b47272bb5b88e`. Branch:
 `feature/trace-http-reconstruction-evidence-mentor`. No merge authorized.
 
