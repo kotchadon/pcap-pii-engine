@@ -196,12 +196,8 @@ def investigation(conn, *, message_id, field_id='', field_offset=0, finding_offs
                              ([] if not truncated else ['source_range_page_limit']))
 
 
-def recover_content(conn, capture, identity, *, message_id):
-    """Return plain source text only after checking the complete retained file.
-
-    Reuse the HTTP parser on one small, fully sourced message. No arbitrary
-    paths, URLs, keys, or cross-capture references are accepted.
-    """
+def prepare_content(conn, *, message_id):
+    """Snapshot bounded, job-local source metadata before releasing its index."""
     message = _one(conn, 'http_evidence', _id(message_id))
     if message.get('message_type') != 'response' or message.get('protocol') != 'http/1' or not message.get('contiguous'):
         raise ValueError('Only contiguous HTTP/1 response source is supported')
@@ -214,29 +210,59 @@ def recover_content(conn, capture, identity, *, message_id):
     if truncated or not sources:
         raise ValueError('Incomplete source coverage')
     sources.sort(key=lambda s: s['stream_start'])
+    return {'message': message, 'sources': sources}
+
+
+def recover_content(conn, capture, identity, *, message_id):
+    """Compatibility entry point for a caller-owned index and capture path."""
+    prepared = prepare_content(conn, message_id=message_id)
     descriptor = os.open(capture, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
     with os.fdopen(descriptor, 'rb') as stream:
-        before = os.fstat(stream.fileno())
-        digest = hashlib.sha256()
-        while block := stream.read(256 * 1024):
-            digest.update(block)
-        if (identity.get('identity_status') != 'verified_read' or
-            digest.hexdigest() != identity.get('capture_sha256') or before.st_size != identity.get('capture_bytes')):
-            raise ValueError('Retained capture identity mismatch')
-        pieces, position = [], start
-        for source in sources:
-            a, b = source['file_start'], source['file_end']
-            if source['stream_start'] != position or a is None or b is None or not 0 <= a <= b <= before.st_size or b-a != source['stream_end']-position:
-                raise ValueError('Incomplete or ambiguous source coverage')
-            stream.seek(a)
-            raw = stream.read(b-a)
-            if len(raw) != b-a:
-                raise ValueError('Captured source unavailable')
-            pieces.append(raw)
-            position = source['stream_end']
-        after = os.fstat(stream.fileno())
-        if position != end or (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (after.st_size, after.st_mtime_ns, after.st_ctime_ns):
-            raise ValueError('Retained capture changed during verification')
+        return recover_content_stream(stream, identity, prepared)
+
+
+def recover_content_stream(stream, identity, prepared, *, checkpoint=None):
+    """Verify/read one borrowed descriptor without a shared job-manager lock.
+
+    The caller owns the descriptor and must revalidate its lease before
+    disclosing the result. Optional checkpoints revoke expired work promptly.
+    No index, file path, external resources, or raw capture copies are needed.
+    """
+    message, sources = prepared['message'], prepared['sources']
+    message_id = message['http_message_id']
+    start, end = message['stream_start'], message['stream_end']
+    before = os.fstat(stream.fileno())
+    if identity.get('identity_status') != 'verified_read' or before.st_size != identity.get('capture_bytes'):
+        raise ValueError('Retained capture identity mismatch')
+    digest = hashlib.sha256()
+    stream.seek(0)
+    remaining = before.st_size
+    while remaining:
+        if checkpoint is not None:
+            checkpoint()
+        block = stream.read(min(256 * 1024, remaining))
+        if not block:
+            raise ValueError('Captured source unavailable')
+        digest.update(block)
+        remaining -= len(block)
+    if digest.hexdigest() != identity.get('capture_sha256'):
+        raise ValueError('Retained capture identity mismatch')
+    pieces, position = [], start
+    for source in sources:
+        if checkpoint is not None:
+            checkpoint()
+        a, b = source['file_start'], source['file_end']
+        if source['stream_start'] != position or a is None or b is None or not 0 <= a <= b <= before.st_size or b-a != source['stream_end']-position:
+            raise ValueError('Incomplete or ambiguous source coverage')
+        stream.seek(a)
+        raw = stream.read(b-a)
+        if len(raw) != b-a:
+            raise ValueError('Captured source unavailable')
+        pieces.append(raw)
+        position = source['stream_end']
+    after = os.fstat(stream.fileno())
+    if position != end or (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (after.st_size, after.st_mtime_ns, after.st_ctime_ns):
+        raise ValueError('Retained capture changed during verification')
     spans = parse_http_stream_with_spans(b''.join(pieces))
     if len(spans) != 1 or spans[0].end_offset != end-start or spans[0].body_framing != message['body_framing']:
         raise ValueError('Response requires unavailable request framing context')

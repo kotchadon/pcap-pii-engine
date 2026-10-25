@@ -369,7 +369,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 payload=json.loads(self.rfile.read(int(length)))
                 if not isinstance(payload,dict) or payload.get('acknowledge_sensitive_content') is not True:
                     raise ValueError('Explicit sensitive-content acknowledgement required')
+                representation=payload.get('representation','source')
+                if representation not in ('source','static'):
+                    raise ValueError('Unknown content representation')
                 result=self.server.jobs.investigate(self.server.jobs.get(content[1]),'content',message_id=payload.get('message_id',''))
+                if representation=='static':
+                    from .static_page import project_content
+                    result=dict(result,static_representation=project_content(result))
                 self._reply(result)
             except KeyError:self._reply({'error':'Job or evidence unavailable'},404)
             except (ValueError,UnicodeError):self._reply({'error':'Content unavailable: acknowledge sensitive content; retention, verified source, and a supported response within 64 KiB are required'},400)

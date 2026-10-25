@@ -6,12 +6,15 @@
 'use strict';
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const {pathToFileURL} = require('node:url');
 const {chromium} = require(require.resolve('playwright', {paths:[process.cwd(),process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES||process.cwd()]}));
 const base = process.argv[2] || 'http://127.0.0.1:8765';
 const capture = path.resolve(process.argv[3] || 'mentor-demo.pcap');
+const staticPage = process.argv[4] ? path.resolve(process.argv[4]) : null;
 if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(base)) throw Error('Use the local-only test server');
 (async()=>{
-  const browser = await chromium.launch({headless:true});
+  const browser = await chromium.launch({headless:true,
+    ...(process.env.TRACE_BROWSER_EXECUTABLE ? {executablePath:process.env.TRACE_BROWSER_EXECUTABLE} : {})});
   try {
     const page = await browser.newPage({viewport:{width:1440,height:1000}});
     const errors=[],remote=[];
@@ -42,6 +45,17 @@ if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(base)) throw Error('Use the local-only t
     assert.deepEqual(errors,[]);
     await page.setViewportSize({width:390,height:844});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
-    console.log(JSON.stringify({browser:'Chromium',status:'passed',checks:['upload','finding selection','packet navigation','response source','no active HTML','no remote fetch','keyboard','small screen']}));
+    if (staticPage) {
+      const offline=await browser.newPage();const requests=[];
+      offline.on('request',r=>requests.push(r.url()));
+      await offline.goto(pathToFileURL(staticPage).href);
+      assert.match(await offline.locator('body').innerText(),/Profile received/);
+      assert.match(await offline.locator('body').innerText(),/alex@example.invalid/);
+      assert.equal(await offline.locator('script,style,img,iframe,object,svg,form,a').count(),0);
+      assert.equal(await offline.evaluate(()=>window.TRACE_UNTRUSTED_EXECUTED),undefined);
+      assert.deepEqual(requests,[pathToFileURL(staticPage).href]);
+      await offline.close();
+    }
+    console.log(JSON.stringify({browser:await browser.version(),status:'passed',static_page:staticPage?'passed':'not_requested',checks:['upload','finding selection','packet navigation','response source','no active HTML','no remote fetch','keyboard','small screen']}));
   } finally { await browser.close(); }
 })().catch(error=>{console.error(error.message);process.exitCode=1;});

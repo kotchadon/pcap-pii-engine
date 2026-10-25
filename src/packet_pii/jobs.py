@@ -426,6 +426,8 @@ class JobManager:
         return dict(items=items,total=total,offset=offset,limit=limit)
 
     def investigate(self, job, kind, **kwargs):
+        if kind == 'content':
+            return self._recover_content(job, **kwargs)
         # Serialize reads with retention pruning; every lookup is job-local.
         with self.lock:
             if self.get(job.job_id) is not job or job.status != 'completed':
@@ -433,14 +435,43 @@ class JobManager:
             with closing(sqlite3.connect('file:'+str(job.index)+'?mode=ro', uri=True)) as conn:
                 if kind == 'conversations':
                     return investigation.conversations(conn, **kwargs)
-                if kind == 'content':
-                    if not self.retain_capture_for_inspection or not job.capture.is_file():
-                        raise ValueError('Capture retention was not enabled for this server')
-                    return investigation.recover_content(conn, job.capture, job.receipt.get('capture_evidence', {}), **kwargs)
                 result = investigation.investigation(conn, **kwargs)
                 result['capture_identity'] = job.receipt.get('capture_evidence', {})
                 result['content_available'] = self.retain_capture_for_inspection and job.capture.is_file()
                 return result
+
+    def _recover_content(self, job, *, message_id):
+        # Lease the exact opened file and a small metadata snapshot. Pruning or
+        # expiry may unlink it without waiting for hashing; subsequent checks
+        # revoke disclosure and the descriptor is always closed in this call.
+        with self.lock:
+            if self.closed or self.get(job.job_id) is not job or job.status != 'completed' or job.cancel.is_set():
+                raise ValueError('Results are not available')
+            if not self.retain_capture_for_inspection or not job.capture.is_file():
+                raise ValueError('Capture retention was not enabled for this server')
+            with closing(sqlite3.connect('file:'+str(job.index)+'?mode=ro', uri=True)) as conn:
+                prepared = investigation.prepare_content(conn, message_id=message_id)
+            identity = dict(job.receipt.get('capture_evidence', {}))
+            deadline = job.updated + self.ttl
+            descriptor = os.open(job.capture, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
+        with os.fdopen(descriptor, 'rb') as stream:
+            opened = os.fstat(stream.fileno())
+
+            def validate_lease():
+                with self.lock:
+                    if (self.closed or time.monotonic() >= deadline or
+                        self.get(job.job_id) is not job or job.status != 'completed' or job.cancel.is_set()):
+                        raise ValueError('Capture inspection expired or unavailable')
+                    current = job.capture.stat(follow_symlinks=False)
+                    if ((current.st_dev, current.st_ino, current.st_size, current.st_mtime_ns, current.st_ctime_ns) !=
+                        (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)):
+                        raise ValueError('Retained capture was replaced or changed')
+
+            result = investigation.recover_content_stream(stream, identity, prepared, checkpoint=validate_lease)
+            # Parsing/decoding can also span an expiry: validate after all work,
+            # immediately before returning sensitive text to the handler.
+            validate_lease()
+            return result
 
     def cancel_job(self,job):
         with self.lock:
