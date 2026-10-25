@@ -262,7 +262,7 @@ function renderSummary(){
  setText('breakdown-scope',r.finding_type_counts?'All findings in this capture':state.reportJobId?'First report page only · full totals above':'Current capture');
  const items=r.finding_type_counts?Object.entries(r.finding_type_counts).filter(x=>Number(x[1])>0).sort((a,b)=>b[1]-a[1]):types(f);
  const total=Number(s.potential_leaks)||0;
- setText('answer-title',total?num(total)+' potential '+(total===1?'finding':'findings'):'No personal information detected');
+ setText('answer-title',total?num(total)+' potential '+(total===1?'finding':'findings'):'No potential findings in inspected content');
  setText('answer-text',total
   ?'Involving '+num(items.length)+' '+(items.length===1?'type':'types')+' of information across '+num(s.http_messages)+' HTTP messages. Values are masked. Each finding is a candidate to review, not confirmed personal information.'
   :'TRACE checked '+num(s.http_messages)+' HTTP messages and found nothing at the current thresholds. That does not show the capture is free of personal information, especially if some traffic was encrypted or incomplete.');
@@ -273,9 +273,26 @@ function renderSummary(){
  if(s.ml_inference_failed)reasons.push('The contextual model failed or did not finish.');
  if(s.analysis_incomplete&&!reasons.length)reasons.push('A capture problem or processing limit stopped TRACE reading some traffic.');
  const bad=!!s.analysis_incomplete||reasons.length>0;
- setText('verdict-icon',bad?'Incomplete':'Complete');$('verdict-icon').classList.toggle('warning',bad);$('verdict-icon').dataset.state=bad?'warn':'ok';
- setText('verdict-title',bad?'Some traffic could not be fully analysed':'No capture or reconstruction problems reported');
- setText('verdict-text',bad?reasons.join(' ')+' Missing findings are not evidence of absence.':'TRACE did not report capture damage or gaps. This does not prove that every protocol or sensitive value was decoded; encrypted traffic is never read.');
+ // Different evidence boundaries must not be collapsed into a global "safe/complete" score.
+ // All quantities are from the actual report; unsupported encrypted content has no measured count.
+ setText('scope-examined',num(s.http_messages)+' supported HTTP messages reconstructed from '+num(s.packets_captured)+' captured frames. This counts messages TRACE processed, not all network content.');
+ const partialNotes=[];
+ if(Number(s.stream_gaps)>0)partialNotes.push(num(s.stream_gaps)+' reported stream gaps can make conversations incomplete.');
+ if(s.analysis_incomplete&&Number(s.stream_gaps)<=0)partialNotes.push('Capture processing or reconstruction was incomplete.');
+ const usedModel=r.metadata?.detection_method==='rules_plus_bilstm';
+ if(usedModel&&(s.ml_coverage_status==='partial'||s.ml_inference_failed)){
+  const eligible=Number(s.ml_fields_eligible),evaluated=Number(s.ml_fields_evaluated);
+  if(s.ml_coverage_status==='partial'&&Number.isFinite(eligible)&&eligible>0&&Number.isFinite(evaluated)&&evaluated>=0)
+   partialNotes.push('The contextual model evaluated '+num(evaluated)+' of '+num(eligible)+' eligible fields.');
+  else partialNotes.push('Contextual model coverage was incomplete.');
+ }
+ if(s.ml_inference_failed)partialNotes.push('The contextual model failed or did not finish.');
+ if(!partialNotes.length)partialNotes.push('No stream gaps or incomplete analysis were reported. Unsupported or encrypted content may still be unreadable.');
+ setText('scope-partial',partialNotes.join(' '));
+ setText('scope-uninspectable','Encrypted payloads and unsupported protocols are not decoded. TRACE does not measure all inaccessible content in this summary; an empty findings list is not an all-clear.');
+ setText('verdict-icon',bad?'Known limits':'No reported gaps');$('verdict-icon').classList.toggle('warning',bad);$('verdict-icon').dataset.state=bad?'warn':'ok';
+ setText('verdict-title',bad?'Some supported traffic could not be fully analysed':'No capture or reconstruction gaps reported');
+ setText('verdict-text',bad?reasons.join(' ')+' Missing findings are not evidence of absence.':'TRACE reported no capture damage or stream gaps. Only supported content was examined; encrypted traffic and unsupported protocols remain outside this result.');
  const root=$('breakdown');root.replaceChildren();
  if(!items.length){const p=document.createElement('p');p.className='empty-inline';p.textContent='No findings were reported at the current thresholds.';root.appendChild(p)}
  else{const max=items[0][1];for(const [label,count] of items.slice(0,8)){const line=document.createElement('button');line.type='button';line.className='bar-row';line.setAttribute('aria-label',typeLabel(label)+': '+count+' findings. Show them.');const name=document.createElement('span');name.className='bar-label';name.textContent=typeLabel(label);const track=document.createElement('span');track.className='bar-track';const fill=document.createElement('span');fill.className='bar-fill';fill.style.width=`${Math.max(3,(count/max)*100)}%`;track.appendChild(fill);const n=document.createElement('b');n.className='bar-count';n.textContent=count;line.append(name,track,n);line.addEventListener('click',()=>showType(label));root.appendChild(line)}}
