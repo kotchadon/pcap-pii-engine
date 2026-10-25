@@ -67,6 +67,7 @@ def test_memory_budget_failure_is_clean(tmp_path,monkeypatch):
     import packet_pii.engine as engine
     path=capture(tmp_path);target=tmp_path/'out.json'
     monkeypatch.setattr(engine,'_peak_rss_bytes',lambda:10*2**30)
+    monkeypatch.setattr(engine,'_current_rss_bytes',lambda:10*2**30)
     with pytest.raises(AnalysisLimitError,match='memory'):
         engine.analyze_to_report(path,target)
     assert not target.exists()

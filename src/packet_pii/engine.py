@@ -17,10 +17,11 @@ import resource
 import sys
 import time
 from urllib.parse import urlsplit
+from .memory import current_rss_bytes as _current_rss_bytes
 
 from .investigation import message_metadata
 from .capture import (CaptureDiagnostics, read_frames, decode_tcp, decode_tcp_with_reason, EVIDENCE_LOSS_REASONS,
-                      endpoint_key, reassemble_detailed, sequence_offset, split_tcp_sessions, TcpPacket, TcpDecoder)
+                      endpoint_key, reassemble_detailed, sequence_offset, split_tcp_sessions, TcpPacket, TcpDecoder, with_endpoints)
 from .http_extract import (HttpMessage, parse_http_stream_detailed, parse_http_stream_with_spans, extract_fields, body_skip_reason,
                            MAX_MESSAGES, MAX_FIELDS)
 from .http_evidence import evidence_for_fields
@@ -45,7 +46,8 @@ GIB = 1024 * MIB
 class AnalysisLimits:
     """Validated retention/work budgets; profiles never change Standard defaults.
 
-    RSS is a sampled process-lifetime high-water guard, not an OS reservation.
+    RSS is a sampled process guard, not an OS reservation. Historical peaks
+    alone do not reject later scans when current RSS is below the same budget.
     Prefer analyze_to_report for large workloads: analyze materializes results.
     """
     max_capture_bytes: int = 128 * MIB
@@ -90,8 +92,36 @@ def _peak_rss_bytes() -> int:
     return int(peak if sys.platform == 'darwin' else peak * 1024)
 
 
-def _check_memory(budget: AnalysisLimits) -> None:
-    if _peak_rss_bytes() > budget.max_memory_bytes:
+class _MemoryGuard:
+    """Per-scan attribution of the lifetime high water, with current RSS checks.
+
+    New process peaks above budget and current excess always fail. An older
+    high water can pass only with a valid current reading within budget.
+    Transient spikes below an older peak between samples may be missed.
+    Process RSS includes the model and other threads; it is not a scan delta.
+    """
+    def __init__(self,budget):
+        self.limit=budget.max_memory_bytes
+        self.start_peak=_peak_rss_bytes()
+
+    def check(self,stage=None):
+        peak=_peak_rss_bytes();current=_current_rss_bytes()
+        if current is not None and current>self.limit:
+            observed,basis=current,'current process RSS'
+        elif peak>self.limit and peak>self.start_peak:
+            observed,basis=peak,'new process peak during analysis'
+        elif peak>self.limit and current is None:
+            observed,basis=peak,'historical peak; current RSS unavailable'
+        else:
+            return
+        raise AnalysisLimitError(f'Analysis exceeded configured process memory budget: {basis} '
+                                 f'{observed//MIB} MiB > {self.limit//MIB} MiB during {stage or "analysis"}')
+
+
+def _check_memory(budget: AnalysisLimits, guard=None, stage=None) -> None:
+    if guard is not None:
+        guard.check(stage)
+    elif _peak_rss_bytes() > budget.max_memory_bytes:
         raise AnalysisLimitError('Analysis exceeded configured process memory budget')
 
 
@@ -214,14 +244,15 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             ml_detector: ContextualPIIDetector | None = None,
             ml_budget: 'MLWorkBudget | str | None' = None,
             ml_work_budget: 'LegacyMLWorkBudget | None' = None,
-            field_observer=None, disposition_observer=None) -> dict:
+            field_observer=None, disposition_observer=None, _memory_guard=None) -> dict:
     if not 0 <= threshold <= 1:
         raise ValueError('Confidence threshold must be in [0,1]')
     selected = AnalysisLimits.for_profile(profile)
     budget = limits if limits is not None else selected
     if not isinstance(budget, AnalysisLimits):
         raise TypeError('limits must be AnalysisLimits')
-    _check_memory(budget)
+    guard = _memory_guard if _memory_guard is not None else _MemoryGuard(budget)
+    _check_memory(budget, guard, "start")
     if ml_work_budget is not None:
         if ml_budget is not None:
             raise ValueError('Choose ml_budget or ml_work_budget, not both')
@@ -248,16 +279,17 @@ def _analyze(path: str | Path, threshold: float = 0.8,
     started = time.monotonic()
     stages = timings if timings is not None else {}
     for stage in ('read_decode_group','session_segmentation','reassembly','http_parse',
-                  'field_extraction','rule_detection','ml_inference','result_aggregation'):
+                  'field_extraction','field_http_evidence','rule_detection','ml_inference','result_aggregation'):
         stages[stage] = 0.0
     def emit(stage, **counts):
-        _check_memory(budget)
+        _check_memory(budget, guard)
         if progress is not None:
             progress(dict(stage=stage, elapsed_seconds=time.monotonic()-started, **counts))
     emit('reading', packets=0, endpoint_pairs=0)
     read_started = time.perf_counter()
     diagnostics = CaptureDiagnostics()
     flow_packets: dict[tuple, list[TcpPacket]] = defaultdict(list)
+    canonical_endpoints = {}
     decoder = TcpDecoder()
     evidence_rows = {name: [] if _rows is None else getattr(_rows, name) for name in EVIDENCE_ARRAYS}
     result_bytes = 0
@@ -286,9 +318,10 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             if len(packet.payload) > budget.max_tcp_payload_bytes - buffered_tcp_bytes:
                 raise AnalysisLimitError('Capture exceeds configured buffered TCP payload limit')
             buffered_tcp_bytes += len(packet.payload)
-            # Intern endpoint strings at the pair level while retaining source metadata.
+            # Reuse the retained pair, not newly decoded equal strings.
+            key = canonical_endpoints.setdefault(key, key)
             direction = int((packet.src,packet.sport) != key[0])
-            packet = replace(packet, src=key[direction][0], dst=key[1-direction][0])
+            packet = with_endpoints(packet, key[direction][0], key[1-direction][0])
             flow_packets[key].append(packet)
         else:
             ignored += 1
@@ -365,7 +398,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             ml_findings += entry['detector'] == 'bilstm'
             findings.append(entry)
             if len(findings) % 1024 == 0:
-                _check_memory(budget)
+                _check_memory(budget, guard)
         stages['result_aggregation'] += time.perf_counter()-tick
 
     def drain():
@@ -539,6 +572,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                     raise AnalysisLimitError('HTTP field limits prevent complete detection')
                 stages['field_extraction'] += time.perf_counter()-tick
                 fields_extracted += len(fields)
+                tick = time.perf_counter()
                 source_fields = (http2_evidence_for_fields(record.span, fields) if record.protocol == 'h2'
                                  else evidence_for_fields(record.stream, record.span, fields))
                 field_rows, field_map = field_metadata(record.message_id, record.stream_id, fields, source_fields,
@@ -563,6 +597,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                                             body_framing=record.span.body_framing, contiguous=True)
                 message_evidence.update(message_metadata(record, session_index))
                 append_evidence('http_evidence', message_evidence)
+                stages['field_http_evidence'] += time.perf_counter()-tick
                 tick = time.perf_counter()
                 detections = detect_fields(fields, threshold, include_values)
                 if len(detections) >= 10000:
@@ -801,18 +836,23 @@ def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = Fal
             field_observer=None, disposition_observer=None) -> dict:
     """Compatible in-memory report API; use analyze_to_report for large outputs."""
     from .reporting import ReportLimitError
+    budget = limits if limits is not None else AnalysisLimits.for_profile(profile)
+    if not isinstance(budget, AnalysisLimits):
+        raise TypeError("limits must be AnalysisLimits")
+    guard = _MemoryGuard(budget)
     try:
         report = _analyze(path, threshold, include_values, limits=limits, profile=profile,
                           progress=progress, timings=timings, ml_detector=ml_detector, ml_budget=ml_budget, ml_work_budget=ml_work_budget,
-                          field_observer=field_observer, disposition_observer=disposition_observer)
+                          field_observer=field_observer, disposition_observer=disposition_observer, _memory_guard=guard)
         budget = limits if limits is not None else AnalysisLimits.for_profile(profile)
-        _check_memory(budget)
+        _check_memory(budget, guard, "report_budget")
         # Include containers, metadata and UTF-8 encoding without a giant string.
         total = 0
         for chunk in json.JSONEncoder(ensure_ascii=False,allow_nan=False).iterencode(report):
             total += len(chunk.encode('utf-8'))
             if total > budget.max_report_bytes:
                 raise ReportLimitError('Complete report exceeds configured byte budget')
+        _check_memory(budget, guard, 'report_complete')
         if progress is not None:
             progress(dict(stage='complete', **report['summary']))
         return report
@@ -823,7 +863,7 @@ def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = Fal
 def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0.8,
                       include_values: bool = False, *, limits: AnalysisLimits | None = None,
                       profile: str = 'standard', overwrite: bool = False,
-                      progress=None, timings=None, row_observer=None,
+                      progress=None, timings=None, row_observer=None, encoded_row_observer=None,
                       ml_detector: ContextualPIIDetector | None = None,
                       ml_budget: 'MLWorkBudget | str | None' = None,
             ml_work_budget: 'LegacyMLWorkBudget | None' = None,
@@ -834,6 +874,8 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
     failure. The receipt omits findings/flows; the complete arrays are in target.
     Progress callbacks are synchronous and contain no payload. Raise to cancel
     before publication; complete is a non-cancellable notification.
+    ``encoded_row_observer(kind, row, json_text)`` may reuse the exact spooled
+    representation for indexing. Observers must not mutate rows.
     """
     from .reporting import ReportSpool, ReportLimitError, write_private_report
     source, output = Path(path), Path(target)
@@ -845,22 +887,25 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
     budget = limits if limits is not None else selected
     if not isinstance(budget,AnalysisLimits):
         raise TypeError('limits must be AnalysisLimits')
+    guard = _MemoryGuard(budget)
     clock=time.monotonic()
     try:
-        with ReportSpool(output.parent,budget.max_report_bytes,row_observer=row_observer) as rows:
+        with ReportSpool(output.parent,budget.max_report_bytes,row_observer=row_observer,
+                         encoded_row_observer=encoded_row_observer) as rows:
             report = _analyze(source,threshold,include_values,limits=budget,profile=profile,
                               progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,ml_budget=ml_budget, ml_work_budget=ml_work_budget,
-                              field_observer=field_observer,disposition_observer=disposition_observer)
+                              field_observer=field_observer,disposition_observer=disposition_observer,_memory_guard=guard)
             row_names = ('flows', 'findings', 'ml_field_coverage') + EVIDENCE_ARRAYS
             for name in row_names:
                 report[name] = []
-            _check_memory(budget)
+            _check_memory(budget, guard, "writing_report")
             if progress is not None:
                 progress(dict(stage='writing_report',elapsed_seconds=time.monotonic()-clock,
                               **report['summary']))
             tick=time.perf_counter()
             write_private_report(report,output,overwrite=overwrite,max_bytes=budget.max_report_bytes,
-                                 row_sources={name: getattr(rows, name).iter_json() for name in row_names})
+                                 row_sources={name: getattr(rows, name).iter_json() for name in row_names},
+                                 before_publish=lambda: guard.check('report_publication'))
             if timings is not None:
                 timings['report_write']=time.perf_counter()-tick
         receipt={k:v for k,v in report.items() if k not in row_names}
