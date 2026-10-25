@@ -35,7 +35,7 @@ class RawFrame:
     truncated: bool = False
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)  # one or more per buffered packet: slots save ~48 B each (Python 3.13)
 class PacketSourceRange:
     """Half-open TCP payload and original captured frame byte ranges.
 
@@ -71,16 +71,22 @@ def _source_range(frame: RawFrame, start: int, end: int,
 
 
 def clip_packet_source(source: PacketSourceRange, start: int,
-                       end: int) -> PacketSourceRange:
-    """Clip using TCP payload coordinates, preserving original byte offsets."""
+                       end: int, shift: int = 0) -> PacketSourceRange:
+    """Clip using TCP payload coordinates, preserving original byte offsets.
+
+    ``shift`` is subtracted from the clipped payload coordinates (re-basing after a header is removed); frame offsets
+    are unaffected. Constructed directly rather than via ``dataclasses.replace``, which dominated decode profiles.
+    """
     if not source.payload_start <= start <= end <= source.payload_end:
         raise ValueError('source clip outside range')
-    return replace(source, payload_start=start, payload_end=end,
-                   frame_start=source.frame_start + start - source.payload_start,
-                   frame_end=source.frame_start + end - source.payload_start)
+    base = source.frame_start - source.payload_start
+    return PacketSourceRange(start - shift, end - shift, source.frame_index, base + start, base + end,
+                             source.record_offset, source.data_offset, source.captured_length, source.wire_length,
+                             source.timestamp, source.timestamp_resolution, source.linktype, source.interface_id,
+                             source.section_index)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)  # every TCP packet is buffered until EOF: slots save ~56 B each (Python 3.13)
 class TcpPacket:
     timestamp: float
     src: str
@@ -101,6 +107,15 @@ class TcpPacket:
     # Fragmented packets have multiple source frames and no single payload offset.
     reassembled_fragments: bool = False
     fragment_evidence: FragmentEvidence | None = None
+
+
+def with_endpoints(packet: TcpPacket, src: str, dst: str) -> TcpPacket:
+    """``dataclasses.replace(packet, src=src, dst=dst)`` without per-call field introspection (hot path: once per
+    TCP packet, used to share interned endpoint strings across a flow)."""
+    p = packet
+    return TcpPacket(p.timestamp, src, dst, p.sport, p.dport, p.seq, p.flags, p.payload, p.ack, p.network_protocol,
+                     p.network_offset, p.payload_offset, p.ipv4_checksum, p.tcp_checksum, p.source_ranges,
+                     p.frame_index, p.reassembled_fragments, p.fragment_evidence)
 
 
 class CaptureFormatError(ValueError):
@@ -350,12 +365,14 @@ _IPV6_EXTENSION_HEADERS = frozenset({0, 43, 44, 50, 51, 60, 135, 139, 140})
 
 
 def _checksum(data: bytes) -> int:
+    """RFC 1071 Internet checksum. Because 2**16 = 1 (mod 0xffff), the folded ones'-complement sum of the 16-bit
+    words equals the big-endian integer modulo 0xffff, except that a non-zero sum folds to 0xffff rather than 0 and an
+    all-zero input folds to 0 - handled explicitly. Equivalent to the word-by-word loop (fuzz-tested), in C speed."""
     if len(data) & 1:
         data += b'\0'
-    total = sum(struct.unpack('!' + 'H' * (len(data) // 2), data))
-    while total >> 16:
-        total = (total & 0xffff) + (total >> 16)
-    return (~total) & 0xffff
+    value = int.from_bytes(data, 'big')
+    folded = 0 if value == 0 else (value % 0xffff or 0xffff)
+    return (~folded) & 0xffff
 
 
 def _link_network(frame: RawFrame) -> tuple[int | None, int, str | None]:
@@ -409,7 +426,8 @@ def _tcp_packet(frame: RawFrame, transport: bytes, src: str, dst: str,
                 version: int, ip_checksum: str,
                 sources: tuple[PacketSourceRange, ...] = (),
                 fragmented: bool = False,
-                fragment_evidence: FragmentEvidence | None = None) -> tuple[TcpPacket | None, str | None]:
+                fragment_evidence: FragmentEvidence | None = None,
+                address_bytes: bytes | None = None) -> tuple[TcpPacket | None, str | None]:
     if len(transport) < 20:
         return None, SKIP_MALFORMED
     sport, dport, seq, ack = struct.unpack_from('!HHII', transport)
@@ -425,10 +443,11 @@ def _tcp_packet(frame: RawFrame, transport: bytes, src: str, dst: str,
         for source in sources:
             start, end = max(thl, source.payload_start), min(len(transport), source.payload_end)
             if start < end:
-                piece = clip_packet_source(source, start, end)
-                payload_sources.append(replace(piece, payload_start=start-thl, payload_end=end-thl))
+                payload_sources.append(clip_packet_source(source, start, end, thl))
         payload_sources = tuple(payload_sources)
-    packed = ipaddress.ip_address(src).packed + ipaddress.ip_address(dst).packed
+    # The decoder passes the raw source+destination address bytes; re-parsing the strings is only a fallback.
+    packed = (address_bytes if address_bytes is not None
+              else ipaddress.ip_address(src).packed + ipaddress.ip_address(dst).packed)
     pseudo = packed + (struct.pack('!BBH', 0, 6, len(transport)) if version == 4 else
                        struct.pack('!I3xB', len(transport), 6))
     tcp_checksum = 'valid' if _checksum(pseudo + transport) == 0 else 'mismatch_offload_possible'
@@ -455,7 +474,7 @@ def _decode_tcp(frame: RawFrame, fragments=None) -> tuple[TcpPacket | None, str 
                 return None, SKIP_NON_TCP
             if len(data) < total:
                 return None, SKIP_TRUNCATED
-            src, dst = str(ipaddress.IPv4Address(data[12:16])), str(ipaddress.IPv4Address(data[16:20]))
+            src, dst = '%d.%d.%d.%d' % tuple(data[12:16]), '%d.%d.%d.%d' % tuple(data[16:20])  # == str(IPv4Address)
             ip_checksum = 'valid' if _checksum(data[:ihl]) == 0 else 'mismatch_offload_possible'
             frag = int.from_bytes(data[6:8], 'big')
             if frag & 0x8000 or (frag & 0x4000 and frag & 0x3fff):
@@ -472,8 +491,10 @@ def _decode_tcp(frame: RawFrame, fragments=None) -> tuple[TcpPacket | None, str 
                 if transport is None:
                     return None, reason
                 return _tcp_packet(frame, transport, src, dst, network_at, None, 4,
-                                   'fragment_headers_not_aggregated', sources, True, fragments.last_evidence)
-            return _tcp_packet(frame, data[ihl:total], src, dst, network_at, network_at + ihl, 4, ip_checksum)
+                                   'fragment_headers_not_aggregated', sources, True, fragments.last_evidence,
+                                   address_bytes=data[12:20])
+            return _tcp_packet(frame, data[ihl:total], src, dst, network_at, network_at + ihl, 4, ip_checksum,
+                               address_bytes=data[12:20])
         if proto == 0x86DD:
             if len(data) < 40 or data[0] >> 4 != 6:
                 return None, SKIP_MALFORMED
@@ -539,8 +560,7 @@ def _decode_tcp(frame: RawFrame, fragments=None) -> tuple[TcpPacket | None, str 
                     for source in sources:
                         start, end = max(skip, source.payload_start), source.payload_end
                         if start < end:
-                            piece = clip_packet_source(source, start, end)
-                            clipped.append(replace(piece, payload_start=start-skip, payload_end=end-skip))
+                            clipped.append(clip_packet_source(source, start, end, skip))
                     sources = tuple(clipped)
                     transport = transport[skip:]
                     if transport_at is not None:
@@ -551,7 +571,7 @@ def _decode_tcp(frame: RawFrame, fragments=None) -> tuple[TcpPacket | None, str 
                 return None, SKIP_NON_TCP
             return _tcp_packet(frame, transport, src, dst, network_at, transport_at, 6,
                                'not_applicable', sources, fragmented,
-                               fragments.last_evidence if fragmented else None)
+                               fragments.last_evidence if fragmented else None, address_bytes=data[8:40])
         return None, SKIP_NON_TCP
     except (ValueError, struct.error, IndexError):
         return None, SKIP_MALFORMED

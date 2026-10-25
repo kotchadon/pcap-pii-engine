@@ -167,22 +167,42 @@ def test_showcase_strings_are_absent_from_v2_training_data():
 
 # ---------------------------------------------------------------- provenance, masking, leakage
 RULE_KEYS = {"pii_type", "location", "confidence", "value", "detector", "flow_id", "http_message_id", "http_request_id", "http_message_type",
-             "timestamp", "source_ip", "source_port", "destination_ip", "destination_port", "http_start_line"}
+             "timestamp", "source_ip", "source_port", "destination_ip", "destination_port", "http_start_line", "evidence"}
 ML_EXTRA = {"confidence_type", "model_version", "span_start", "span_end", "field_index"}
 
 
-def test_provenance_fields_and_detector_separation(run):
-    for f in run["hybrid"]["findings"]:
+def _assert_finding_provenance(report, model_version):
+    fields = {row["field_id"]: row for row in report["field_evidence"]}
+    assert report["findings"]
+    for f in report["findings"]:
         if f["detector"] == "bilstm":
             assert set(f) == RULE_KEYS | ML_EXTRA
-            assert f["confidence_type"] == "uncalibrated_model_score" and f["model_version"] == run["det"].model_version
+            assert f["confidence_type"] == "uncalibrated_model_score" and f["model_version"] == model_version
             assert 0 <= f["span_start"] < f["span_end"] and 0.0 <= f["confidence"] <= 1.0
         else:
             assert f["detector"] == "rule" and set(f) == RULE_KEYS            # no model fields on rule findings
             assert "confidence_type" not in f and "span_start" not in f
+        evidence = f['evidence']
+        assert evidence['http_message_id'] == f['http_message_id']
+        assert evidence['raw_detection_span'] == 'unavailable'
+        assert evidence['field_ids']
+        assert all(fields[key]['http_message_id'] == f['http_message_id'] for key in evidence['field_ids'])
+        if f['detector'] == 'bilstm':
+            assert evidence['decoded_text_span'] == {'start': f['span_start'], 'end': f['span_end']}
+            assert evidence['field_ids'] == [f"{f['http_message_id']}_field_{f['field_index']}"]
+        else:
+            assert evidence['scope'] == 'candidate_fields' and 'decoded_text_span' not in evidence
         assert f["flow_id"].startswith("flow_") and f["http_message_id"].startswith(f["flow_id"])
         assert f["source_ip"].startswith(("192.0.2.", "198.51.100.")) and f["destination_ip"].startswith(("192.0.2.", "198.51.100."))
         assert f["http_message_type"] in ("request", "response") and f["http_request_id"]
+
+
+def test_provenance_fields_and_detector_separation(run):
+    _assert_finding_provenance(run['hybrid'], run['det'].model_version)
+
+
+def test_rules_provenance_contract_without_optional_model(tmp_path):
+    _assert_finding_provenance(analyze(showcase_pcap(tmp_path)), None)
 
 
 def test_ml_and_rule_confidence_are_never_merged(run):

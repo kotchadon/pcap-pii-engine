@@ -14,6 +14,7 @@ from __future__ import annotations
 from collections import Counter, OrderedDict, deque
 from dataclasses import dataclass
 import hashlib
+import sys
 import time
 from typing import Callable, Mapping, Sequence
 
@@ -28,16 +29,22 @@ from .ml.schema import DEFAULT_MAX_FIELD_CHARS, DEFAULT_MAX_FIELDS, MAX_LOCATION
 # (long free-text values rarely repeat, so they are not worth hashing or holding).
 PREDICTION_CACHE_ENABLED = True
 PREDICTION_CACHE_MAX_ENTRIES = 65_536
+PREDICTION_CACHE_MAX_BYTES = 16 * 2 ** 20
 PREDICTION_CACHE_MAX_FIELD_CHARS = 4_096
 
 
 def _cache_key(location: str, text: str) -> bytes:
-    """128-bit BLAKE2b digest of the exact model input; the cache never retains field text or locations."""
+    """Independent digests of exact input; a primary collision must also pass SHA-256 verification.
+
+    Neither digest retains raw text. This is cryptographic collision resistance, not an exact-text identity proof.
+    """
     digest = hashlib.blake2b(digest_size=16)
-    digest.update(str(len(location)).encode('ascii') + b':')
-    digest.update(location.encode('utf-8', 'surrogatepass'))
-    digest.update(text.encode('utf-8', 'surrogatepass'))
-    return digest.digest()
+    verifier = hashlib.sha256()
+    for part in (str(len(location)).encode('ascii') + b':', location.encode('utf-8', 'surrogatepass'),
+                 text.encode('utf-8', 'surrogatepass')):
+        digest.update(part)
+        verifier.update(part)
+    return digest.digest() + verifier.digest()
 
 SKIP_REASONS = ('location_too_long', 'field_too_large', 'invalid_field', 'time_budget', 'field_budget', 'character_budget')
 COVERAGE_STATES = ('not_requested', 'unavailable', 'no_eligible_fields', 'complete', 'partial', 'failed')
@@ -123,8 +130,8 @@ class MLBatchRunner:
 
     Prediction cache: when the detector declares ``prediction_cache_safe = True`` (its output depends only on the field
     location and text), an identical ``(location, text)`` pair seen again in this scan reuses the earlier *neural
-    prediction* (span offsets, label, raw score) instead of running the model again; inputs are keyed by a 128-bit
-    BLAKE2b digest of the exact location and text, so the cache retains no field text. Only predictions are reused: every
+    prediction* (span offsets, label, raw score) instead of running the model again; inputs are keyed by independent
+    BLAKE2b/SHA-256 digests of the exact location and text, so the cache retains no field text. Only predictions are reused: every
     occurrence still gets its own finding, message provenance, field index and quality flags, and still counts as an
     evaluated field against the field and character budgets exactly as before. The cache lives only as long as this
     runner (one scan), is bounded (``PREDICTION_CACHE_*``, least-recently-used eviction), is never logged or serialised,
@@ -153,6 +160,7 @@ class MLBatchRunner:
         self.skip_reasons: Counter = Counter()
         self.labels: Counter = Counter()
         self.model_evaluations = self.cache_hits = self.cache_evictions = 0
+        self._cache_value_bytes = 0
         enabled = PREDICTION_CACHE_ENABLED if prediction_cache is None else prediction_cache
         entries = PREDICTION_CACHE_MAX_ENTRIES if prediction_cache_entries is None else prediction_cache_entries
         if type(entries) is not int or entries < 0:
@@ -169,6 +177,7 @@ class MLBatchRunner:
     def add(self, key, fields: Sequence[tuple[str, str]], quality: Mapping[str, str] | None = None) -> None:
         """Register one message's extracted fields. ``key`` identifies the message when results are released."""
         ticket = _Ticket(key)
+        ticket.outstanding = 1  # admission sentinel: checkpoints cannot release a partly admitted message
         self._order.append(ticket)
         flags = {k: v for k, v in (quality or {}).items() if k in QUALITY_FLAGS}
         budget = self.budget
@@ -185,6 +194,11 @@ class MLBatchRunner:
                 self.excluded += 1
                 self._note(key, index, 'excluded_by_policy')
                 continue
+            # Finish the previous character-bounded batch before admitting another field. Keeping at most one
+            # batch pending also bounds time-budget overshoot to that single detector call, even for huge messages.
+            if (self._pending and len(text) <= budget.max_field_chars
+                    and self._pending_chars + len(text) > budget.batch_characters):
+                self.flush()
             self.eligible += 1
             reason = None
             if not location:
@@ -214,10 +228,11 @@ class MLBatchRunner:
             self.characters += len(text)
             ticket.outstanding += 1
             self._note(key, index, 'evaluated')
+            if len(self._pending) >= budget.batch_fields or self._pending_chars >= budget.batch_characters:
+                self.flush()
+        ticket.outstanding -= 1
         if len(self._order) >= self._max_pending_messages:
             self.flush()  # bound on queued messages: drain everything
-        elif len(self._pending) >= budget.batch_fields or self._pending_chars >= budget.batch_characters:
-            self.flush(final=False)
 
     def _note(self, key, index: int, status: str) -> None:
         if self._disposition is not None:
@@ -335,14 +350,34 @@ class MLBatchRunner:
         self.model_evaluations += len(to_model)
         self.cache_hits += len(batch) - len(to_model)
 
+    @staticmethod
+    def _entry_bytes(key: bytes, spans: tuple) -> int:
+        """Conservative retained Python-object size; shared scalar/string objects are counted again.
+
+        The mapping's own allocation is counted separately. This is not RSS or native allocator accounting.
+        """
+        return (sys.getsizeof(key) + sys.getsizeof(spans)
+                + sum(sys.getsizeof(span) + sum(sys.getsizeof(value) for value in span) for span in spans))
+
+    @property
+    def cache_bytes(self) -> int:
+        return 0 if self._cache is None else sys.getsizeof(self._cache) + self._cache_value_bytes
+
     def _remember(self, key: bytes, spans: tuple) -> None:
         cache = self._cache
         if key in cache:
             return
-        cache[key] = spans or ()  # shared empty tuple for the common no-prediction case
-        while len(cache) > self._cache_limit:
-            cache.popitem(last=False)
+        size = self._entry_bytes(key, spans)
+        if size + sys.getsizeof(OrderedDict()) > PREDICTION_CACHE_MAX_BYTES:
+            return
+        cache[key] = spans or ()
+        self._cache_value_bytes += size
+        while cache and (len(cache) > self._cache_limit or self.cache_bytes > PREDICTION_CACHE_MAX_BYTES):
+            evicted_key, evicted = cache.popitem(last=False)
+            self._cache_value_bytes -= self._entry_bytes(evicted_key, evicted)
             self.cache_evictions += 1
+        if not cache:
+            cache.clear()  # release the hash table's historical capacity, not only its entries
 
     # ------------------------------------------------------------------ release
     def take_ready(self) -> list[tuple[object, list[dict]]]:
@@ -363,6 +398,11 @@ class MLBatchRunner:
         if self.eligible == 0:
             return 'no_eligible_fields'
         return 'partial' if self.skipped else 'complete'
+
+    @property
+    def time_budget_overshoot_seconds(self) -> float:
+        """Admitted work finishes; excess cumulative model time is at most one bounded detector call."""
+        return round(max(0.0, self.seconds - self.budget.max_seconds), 6)
 
     @property
     def coverage_ratio(self) -> float | None:

@@ -232,13 +232,13 @@ class JobManager:
             observers=[o for o in (None if collector is None else collector.observe_message,None if sampler is None else sampler.observe_message) if o]
             def observe_fields(info):
                 for o in observers:o(info)
-            def observe(kind,row):
+            def observe(kind,row,encoded):
                 if job.cancel.is_set():raise JobCancelled()
                 if collector is not None:collector.observe_finding(kind,row)
                 counts[kind]+=1
                 conn.execute('INSERT INTO rows VALUES(?,?,?,?,?,?)',
                     (kind,counts[kind]-1,row.get('pii_type',''),row.get('location',''),row.get('value',''),
-                     json.dumps(row,ensure_ascii=False,separators=(',',':'),allow_nan=False)))
+                     encoded))
                 investigation.index_row(conn,kind,row,counts[kind]-1)
                 if kind=='findings':job.types[row['pii_type']]+=1
                 if sum(counts.values())%1000==0:conn.commit()
@@ -252,7 +252,7 @@ class JobManager:
                 ml_detector=self.detector if job.mode=='hybrid' else None,
                 ml_budget=None if job.use_legacy_budget else job.ml_profile or 'standard',
                 ml_work_budget=job.ml_work_budget if job.use_legacy_budget else None,
-                progress=progress,row_observer=observe,
+                progress=progress,encoded_row_observer=observe,
                 field_observer=observe_fields if observers else None,
                 disposition_observer=None if collector is None else collector.observe_disposition)
             conn.commit();conn.close();conn=None

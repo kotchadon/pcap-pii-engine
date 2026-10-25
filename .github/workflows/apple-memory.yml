@@ -1,0 +1,23 @@
+name: Apple Silicon acceptance (manual, billing opt-in)
+on:
+  workflow_dispatch:
+    inputs:
+      approve_runner_cost:
+        description: 'I approve any macOS Actions charges for this run (M1 runner, not M3)'
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  native:
+    if: ${{ inputs.approve_runner_cost }}
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e '.[ml,http2]' pytest psutil
+      - run: python scripts/validation/accept_apple_silicon.py

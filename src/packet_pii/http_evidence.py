@@ -55,7 +55,9 @@ def _json_sources(body: bytes) -> dict[str, list[tuple[int, int, bool]]]:
                 key, _, _ = token()
                 if not key.startswith(b'"') or token()[0] != b':':
                     raise ValueError
-                name = json.loads(key.decode('utf-8'))
+                # Escape-free keys decode to their bytes between the quotes (control characters are excluded by
+                # the token pattern); only escaped keys need the JSON decoder.
+                name = key[1:-1].decode('utf-8') if b'\\' not in key else json.loads(key.decode('utf-8'))
                 value(f'{path}.{name}', depth + 1)
                 delim = token()[0]
                 if delim == b'}':

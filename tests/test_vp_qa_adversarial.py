@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import sys
 
 import pytest
 
@@ -261,9 +262,21 @@ def test_decodable_and_empty_bodies_are_not_reported_as_skipped(tmp_path, det):
     assert rules["summary"]["http_bodies_not_inspected"] == 0 and empty["summary"]["http_bodies_not_inspected"] == 0
 
 
-def test_http2_prior_knowledge_preface_is_not_parsed_and_is_disclosed(tmp_path, det):
+@pytest.mark.parametrize('dependency_available', [False, True])
+@pytest.mark.parametrize('mode', ['rules', 'hybrid'])
+def test_http2_control_only_preface_has_no_fabricated_findings(tmp_path, monkeypatch, dependency_available, mode):
+    if dependency_available:
+        pytest.importorskip('hpack')
+    else:
+        monkeypatch.setitem(sys.modules, 'hpack', None)
+    detector = v2_detector() if mode == 'hybrid' else None
     h2 = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" + bytes([0, 0, 18, 4, 0, 0, 0, 0, 0]) + b"\x00" * 18
-    _, hyb = _both(tmp_path, h2, det, name="h2.pcap", response=b"")
-    assert hyb["summary"]["http_messages"] == 0 and hyb["findings"] == []
-    assert hyb["summary"]["http2_streams_not_decoded"] == 1 and hyb["summary"]["analysis_incomplete"] is True   # F-09: counted, not silent
-    assert "HTTP/2 and HTTP/3 not decoded; incomplete streams are ignored" in hyb["limitations"]
+    report = analyze(one_request_pcap(tmp_path, h2, name='h2.pcap', response=b''), ml_detector=detector)
+    assert report['summary']['http_messages'] == 0 and report['findings'] == []
+    # Integrated main supports bounded plaintext H2. Valid control-only traffic
+    # contains no request to inspect; missing HPACK must still be disclosed.
+    assert report['summary']['http2_streams_not_decoded'] == int(not dependency_available)
+    assert report['summary']['analysis_incomplete'] is (not dependency_available)
+    assert report['summary']['tcp_capture_completeness'] == 'unknown'
+    assert any('Plaintext HTTP/2 requires a client preface and optional HPACK dependency' in x
+               for x in report['limitations'])

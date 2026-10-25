@@ -64,6 +64,26 @@ def _included(result, threshold):
 
 
 # ------------------------------------------------------------------ predictor: batching equivalence
+def test_frozen_v2_char_compaction_and_microbatching_match_reference(predictors, monkeypatch):
+    """Use real weights and the unchanged dense character path, not two optimized forwards."""
+    import torch
+    legacy, meta, load = predictors
+    fast, _ = load(str(V2_DIR))
+    for model in legacy.models:
+        original = model.forward
+        def dense_reference(*args, original=original):
+            # predict_pairs still has inference_mode enabled, so no graph is
+            # built; this flag selects the preserved dense character path.
+            with torch.enable_grad():
+                return original(*args)
+        monkeypatch.setattr(model, 'forward', dense_reference)
+    old, new = legacy.predict_pairs(FIXED_INPUTS), fast.predict_pairs(FIXED_INPUTS)
+    assert _labels(new) == _labels(old)
+    assert _included(new, meta['min_score']) == _included(old, meta['min_score'])
+    differences = [abs(a[3]-b[3]) for x, y in zip(old, new) for a, b in zip(x, y)]
+    assert differences and max(differences) <= SCORE_TOLERANCE
+
+
 @pytest.mark.parametrize('batch_size,max_tokens', [(64, None), (128, None), (256, None), (512, None), (3, 192), (512, 400)])
 def test_length_bucketed_predictions_match_the_legacy_path(predictors, batch_size, max_tokens):
     legacy, meta, load = predictors
@@ -232,7 +252,7 @@ def test_cache_is_bounded_and_skips_long_fields(monkeypatch):
 
 def test_cache_retains_no_field_text_or_locations():
     runner, _ = _run(CacheableStub(), MESSAGES)
-    assert runner._cache and all(type(k) is bytes and len(k) == 16 for k in runner._cache)
+    assert runner._cache and all(type(k) is bytes and len(k) == 48 for k in runner._cache)
     for spans in runner._cache.values():
         for start, end, label, score, score_type, version in spans:
             assert type(start) is int and type(end) is int and label in ('PERSON_NAME', 'USERNAME')
