@@ -10,7 +10,7 @@ Base: `a74dfcb8819758dfecb7a73a5d4b47272bb5b88e`. Branch:
 | HTTP request/response reconstruction | Existing HTTP/1 FIFO association, interim responses, limited cleartext HTTP/2 | Reused parser; indexed conversation/message navigation added. Backend verified; genuine browser acceptance pending |
 | Client/server, session and time | Present on findings, incomplete on message evidence | Added observed HTTP roles, endpoints, session, ordinal, timestamp and pairing basis to every HTTP evidence row |
 | Packet → stream → field → finding | Existing metadata and bounded Inspector | Indexed clipped source joins; packet selection; whole-field vs transformed/unknown distinction. Independent fixture byte oracle passes |
-| Side-by-side investigation | Finding details below table; manual metadata navigation | New HTTP conversations tab with separately scrollable exchange and finding panels, synchronized field/packet selection and stale-request protection. Layout/keyboard browser gate pending |
+| Side-by-side investigation | Finding details below table; manual metadata navigation | Universal inspector (see `docs/ux/DESIGN_RATIONALE.md`): pane, drawer or sheet beside the list, field/packet selection and stale-request protection. Browser journeys in `tests/test_experience_journeys.py` |
 | Recoverable HTML | No body viewer; original upload deleted | Optional retained-capture, authenticated response-source reveal. Escaped text only; no preview, script execution, external resources or browser-page reconstruction |
 | Identity/demographic rules | Already integrated | Reused unchanged; regression checks included |
 | Wireshark demonstration | Existing synthetic fixtures, no focused walkthrough | Deterministic 11-frame fixture, generator oracle, independent dpkt/h11 verification and Wireshark steps. Wireshark/TShark execution pending |
@@ -169,20 +169,21 @@ commit. Textual compatibility alone is not acceptance.
    `100 Continue`, then final `200` HTML response; locate GET/status and the
    second200. Explain that several packets make one HTTP message. Frame4 arrives
    before5 and6 repeats5; retransmission is not a third request.
-3. **1:30–2:30 — TRACE:** Upload the same capture. Open **PII findings**, choose
-   the EMAIL row `a***@example.invalid` from the request and click **Inspect**.
-   In **HTTP conversations**, explain request/response buttons and endpoints.
-   Selected finding remains beside its field and supporting packet references.
-4. **2:30–3:30 — Verify:** Choose the email field, then frame5 and frame4 source
-   buttons. Compare displayed file/frame ranges with Wireshark's packet bytes
+3. **1:30–2:30 — TRACE:** Upload the same capture. Open **Findings** and select
+   the Email row `a***@example.invalid`. The inspector opens beside the list
+   (a drawer on narrower windows). Click **Open this request** and explain the
+   Request/Response switcher and the client → server endpoints; **Back**
+   returns to the finding without losing the list position.
+4. **2:30–3:30 — Verify:** In the request, select the email field, then the
+   frame5 and frame4 rows under *Packets for field*. Compare displayed file/frame ranges with Wireshark's packet bytes
    and the oracle. The email is split; exact whole-field support is not an
    exact rule-substring claim. Compare the capture SHA recorded by TRACE.
-5. **3:30–4:20 — HTML:** Select the first final200 response, expand response
-   source, acknowledge sensitive content and click **Reveal response source**.
+5. **3:30–4:20 — HTML:** Switch to the final 200 response, acknowledge
+   sensitive content under *Original response* and click **Show response source**.
    Show the HTML as literal text. Its script and remote image must not execute
    or load. Hide source. Say: “This recovers a captured response body, not the
    original interactive webpage.”
-6. **4:20–5:00 — Limits:** Choose the second conversation and gzip/chunked
+6. **4:20–5:00 — Limits:** In **Traffic → Conversations**, choose the second conversation and gzip/chunked
    response field. Explain transformed supporting ranges, missing data and
    encryption. Rules found nine candidates in this fictional fixture; that is
    neither real-capture accuracy nor proof of a leak. Identify pending genuine
