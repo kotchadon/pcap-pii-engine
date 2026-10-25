@@ -3,171 +3,387 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>TRACE — Network Privacy Intelligence</title>
-  <meta name="theme-color" content="#0b1424">
+  <meta name="description" content="Inspect a network capture for potential personal information and review the evidence behind each finding.">
+  <meta name="color-scheme" content="light dark">
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
+<!-- Icons: Lucide (ISC licence), inlined so the page never loads anything external. -->
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-summary" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></symbol>
+  <symbol id="i-findings" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></symbol>
+  <symbol id="i-traffic" viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></symbol>
+  <symbol id="i-lab" viewBox="0 0 24 24"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3l14 9-14 9V3z"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
+  <symbol id="i-local" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-select" viewBox="0 0 24 24"><path d="M14 4.1 12 6"/><path d="m5.1 8-2.9-.8"/><path d="m6 12-1.9 2"/><path d="M7.2 2.2 8 5.1"/><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"/></symbol>
+</svg>
+<a class="skip-link" href="#main">Skip to main content</a>
 <div class="app">
-  <aside class="sidebar">
-    <div class="brand"><div class="brand-glyph" aria-hidden="true"><span></span><span></span><span></span><span></span></div><div><strong>TRACE<span class="brand-point">.</span></strong><small>NETWORK PRIVACY INTELLIGENCE</small></div></div>
-    <div class="workspace">WORKSPACE <span>01 / LOCAL</span></div>
-    <nav class="nav" aria-label="Application sections">
-      <button class="nav-link active" data-tab="overview"><span class="nav-mark" aria-hidden="true">▦</span> Overview <span class="nav-key">01</span></button>
-      <button class="nav-link" data-tab="findings"><span class="nav-mark" aria-hidden="true">◉</span> PII findings <span class="nav-key">02</span></button>
-      <button class="nav-link" data-tab="conversation"><span class="nav-mark" aria-hidden="true">⇄</span> HTTP conversations</button>
-      <button class="nav-link" data-tab="flows"><span class="nav-mark" aria-hidden="true">⤧</span> Network flows <span class="nav-key">03</span></button>
-      <button class="nav-link" data-tab="model"><span class="nav-mark" aria-hidden="true">✧</span> Model laboratory <span class="nav-key">04</span></button>
-    <button class="nav-link" data-tab="how"><span class="nav-mark" aria-hidden="true">⌁</span> How TRACE works <span class="nav-key">05</span></button></nav>
-    <div class="sidebar-bottom"><span class="online-dot"></span><div><b>Local analysis</b><small>127.0.0.1 · No cloud transfer</small></div></div>
+  <aside class="sidebar" id="sidebar" aria-label="TRACE">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7"/><path d="M6.5 18.5 11 10.5l4.5 6 6-9"/><circle cx="6.5" cy="18.5" r="1.6"/><circle cx="21.5" cy="7.5" r="1.6"/></svg>
+      <div><strong>TRACE</strong><small>Network privacy analysis</small></div>
+    </div>
+    <section class="capture-card" aria-label="Current capture">
+      <span class="capture-label">Current capture</span>
+      <strong class="capture-name" id="ctx-capture">None yet</strong>
+      <span class="status-pill" id="ctx-status" data-state="none">Not analysed</span>
+      <span class="capture-meta" id="ctx-meta">Choose a capture to begin.</span>
+    </section>
+    <nav class="nav" aria-label="Main">
+      <button class="nav-link active" type="button" data-tab="overview" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span>New analysis</span></button>
+      <button class="nav-link" type="button" data-tab="summary"><svg class="icon" aria-hidden="true"><use href="#i-summary"/></svg><span>Summary</span></button>
+      <button class="nav-link" type="button" data-tab="findings"><svg class="icon" aria-hidden="true"><use href="#i-findings"/></svg><span>Findings</span><span class="nav-count hidden" id="nav-count-findings"></span></button>
+      <button class="nav-link" type="button" data-tab="flows"><svg class="icon" aria-hidden="true"><use href="#i-traffic"/></svg><span>Traffic</span></button>
+      <span class="nav-group" role="presentation">More</span>
+      <button class="nav-link" type="button" data-tab="model"><svg class="icon" aria-hidden="true"><use href="#i-lab"/></svg><span>Model laboratory</span></button>
+      <button class="nav-link" type="button" data-tab="how"><svg class="icon" aria-hidden="true"><use href="#i-help"/></svg><span>How TRACE works</span></button>
+    </nav>
+    <div class="sidebar-bottom"><svg class="icon" aria-hidden="true"><use href="#i-local"/></svg><p><b>Runs on this computer</b>Captures are analysed locally and not sent anywhere.</p></div>
   </aside>
+  <div class="scrim hidden" id="nav-scrim"></div>
   <div class="stage">
-    <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong id="crumb">Overview</strong></div><div class="top-actions"><span class="mode-badge" id="mode">RULES-ONLY ACTIVE</span><span class="privacy-indicator"><span class="online-dot"></span> DEVICE-LOCAL</span></div></header>
-    <main>
-      <section class="title-section"><div><div class="eyebrow">NETWORK PRIVACY INTELLIGENCE</div><h1 id="page-title">Network privacy, made visible<span>.</span></h1><p id="page-description">Decode plaintext HTTP traffic, identify potential exposure and inspect the exact network evidence.</p></div><button id="export" class="btn btn-outline" disabled>↓ &nbsp;Export JSON</button></section>
-      <section class="hero"><div class="hero-intro"><div class="hero-label"><span class="hero-light"></span> ANALYSIS WORKSPACE</div><h2>See what your network<br>reveals<span>.</span></h2><p>Trace reconstructed TCP conversations, decoded HTTP fields, rule-based findings and optional contextual BiLSTM inference. All analysis stays on this device.</p><div class="hero-tags"><span>PCAP / PCAPNG</span><span>HTTP/1.x</span><span>LOCAL-FIRST</span></div></div><div class="upload" id="dropzone" tabindex="0" role="button" aria-label="Upload PCAP or PCAPNG"><div class="upload-icon" aria-hidden="true">⇧</div><strong>Start a network investigation</strong><span>Drop a PCAP or PCAPNG here, or browse your computer</span><input type="file" id="file" accept=".pcap,.pcapng" hidden><button class="btn btn-primary" id="choose" type="button">Choose capture <span aria-hidden="true">↗</span></button>
-        <div id="file-preview" class="file-preview hidden" aria-live="polite">
-          <span class="file-preview-icon" aria-hidden="true">▤</span>
-          <div class="file-preview-text"><strong id="selected-name">—</strong><span id="selected-meta">—</span></div>
-        </div><div class="upload-alt"><span>UPLOAD LIMIT <span id="max-file">128 MiB</span></span><button id="sample" type="button" class="subtle-link">Run 12-conversation showcase →</button></div></div></section>
-      <section class="scan-config" aria-label="Detection configuration">
-        <div class="scan-config-heading"><div class="scan-config-icon" aria-hidden="true">✧</div><div><strong>Detection intelligence</strong><span>Choose the engine used for your next scan</span></div></div>
-        <div class="scan-modes" role="radiogroup" aria-label="Detection mode">
-          <label class="scan-option"><input type="radio" name="scan-mode" value="rules" checked><span><b>Rules engine</b><small>Structured patterns &amp; credentials</small></span></label>
-          <label class="scan-option" id="ai-option"><input type="radio" name="scan-mode" value="hybrid" disabled><span><b><span class="ai-sparkle">✧</span> AI-assisted hybrid</b><small>Rules + contextual BiLSTM V2</small></span><em id="ai-ready">NOT LOADED</em></label>
+    <header class="topbar">
+      <button class="icon-btn nav-toggle" id="nav-toggle" type="button" aria-label="Show navigation" aria-controls="sidebar" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <nav class="breadcrumb" aria-label="Breadcrumb"><span class="crumb-root">TRACE</span><span class="crumb-sep" aria-hidden="true">/</span><strong id="crumb" aria-current="page">New analysis</strong></nav>
+      <span class="method-chip" title="Detection method"><span class="visually-hidden">Detection method: </span><span id="mode">Rules only</span></span>
+      <button id="export" class="btn btn-secondary btn-sm" type="button" disabled><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span>Export report</span></button>
+    </header>
+    <div class="workspace" id="workspace">
+    <main id="main" tabindex="-1">
+      <div class="page-head hidden" id="page-head">
+        <h1 id="page-title">New analysis</h1>
+        <p id="page-description">Choose a packet capture to inspect.</p>
+      </div>
+
+      <section id="statusbar" class="progress-card statusbar hidden" role="status" aria-live="polite">
+        <div class="progress-top">
+          <span class="spinner" aria-hidden="true"></span>
+          <div class="status-detail"><strong id="status">Analysing capture…</strong><small id="status-stage">Processing locally.</small></div>
+          <span class="status-elapsed" id="status-elapsed" aria-label="Elapsed time">00:00</span>
+          <button class="btn btn-secondary btn-sm hidden" id="cancel-job" type="button">Cancel</button>
         </div>
-        <label class="profile-control" for="analysis-profile">Analysis profile <select id="analysis-profile"><option value="standard">Standard</option><option value="large">Large</option><option value="stress">Stress</option></select><span id="profile-caption">Limits are supplied by the local server.</span></label><label class="profile-control hidden" id="ml-profile-row" for="ml-profile">ML coverage <select id="ml-profile"><option value="standard">Standard · up to 10,000 fields</option><option value="extended">Extended · up to 100,000 fields</option><option value="complete">Complete · up to 1,000,000 fields</option></select><span id="ml-profile-caption">Bounded work budget for contextual inference. Partial coverage is always reported.</span></label><p class="scan-caption" id="scan-caption">Structured PII detection is ready. To enable AI inference, launch with a V2 checkpoint.</p>
+        <ol class="progress-steps" id="progress-steps" aria-label="Analysis steps"></ol>
+        <p class="hint">Steps appear as the server reports them. TRACE does not estimate time remaining.</p>
       </section>
-      <div id="statusbar" class="statusbar hidden" role="status"><span class="spinner"></span><div class="status-detail"><strong id="status">Analysing capture...</strong><small id="status-stage">Processing locally; elapsed time shown below.</small></div><span class="status-elapsed" id="status-elapsed">00:00</span><button class="btn btn-outline hidden" id="cancel-job" type="button">Cancel</button></div>
-      <div id="job-recovery" class="statusbar hidden"><span>Polling paused. The server may still be working.</span><button class="btn btn-outline" id="resume-job" type="button">Resume status</button></div><div id="errorbar" class="errorbar hidden" role="alert"></div>
-      <div id="previous-results" class="live-disclosure hidden" role="status"></div>
-      <section class="section view" id="view-overview">
-        <div class="section-head"><div><div class="kicker">ANALYSIS SUMMARY</div><h3>Capture overview <span class="mini-status" id="capture-name">NO CAPTURE LOADED</span></h3></div><div class="section-meta" id="analysis-meta">Awaiting input</div></div>
-        <div class="metric-grid">
-          <article class="metric"><div class="metric-head">POTENTIAL PII FINDINGS <span>↗</span></div><div class="metric-value" id="metric-findings">—</div><div class="metric-foot">Detected candidate exposures, not proof of exfiltration</div></article>
-          <article class="metric"><div class="metric-head">TCP FLOWS <span>⇄</span></div><div class="metric-value" id="metric-flows">—</div><div class="metric-foot">Reconstructed endpoint pairs</div></article>
-          <article class="metric"><div class="metric-head">HTTP MESSAGES <span>◩</span></div><div class="metric-value" id="metric-messages">—</div><div class="metric-foot">Decoded requests and responses</div></article>
-          <article class="metric"><div class="metric-head">CAPTURE PACKETS <span>◫</span></div><div class="metric-value" id="metric-packets">—</div><div class="metric-foot">Processed network frames</div></article>
-        </div>
-        <div class="detector-strip" id="detector-strip" aria-live="polite"><span><i class="detector-dot"></i><b id="analysis-mode">Awaiting first analysis</b></span><span>Rules <strong id="metric-rules">—</strong></span><span>Contextual AI <strong id="metric-ml">—</strong></span><span id="model-stamp">Model: not used</span></div>
-        <div class="scan-observations" id="scan-observations" aria-live="polite">
-          <div class="obs-icon" aria-hidden="true">✧</div>
-          <div><strong id="obs-title">No capture analysed yet</strong><p id="obs-text">A model can be loaded without producing a finding. Run the showcase or upload a capture to see what actually happened.</p></div>
-        </div>
-        <div class="insight-grid"><article class="panel panel-types"><div class="panel-top"><div><div class="kicker">EVIDENCE BREAKDOWN</div><h4>Detected information types</h4><p id="breakdown-scope" class="section-meta">Current capture</p></div><span class="panel-symbol">◌</span></div><div id="breakdown" class="breakdown"><p class="empty-inline">Analyse a PCAP to see detections from the actual uploaded traffic.</p></div></article><article class="panel verdict"><div class="panel-top"><div><div class="kicker">PROCESSING INTEGRITY</div><h4>Analysis confidence</h4></div><span class="panel-symbol">⌁</span></div><div class="verdict-icon" id="verdict-icon">—</div><h5 id="verdict-title">Ready for inspection</h5><p id="verdict-text">Load a capture to see whether parsing or TCP gaps made the analysis incomplete.</p><div class="verdict-stats"><div><b id="metric-gaps">—</b><span>Stream gaps</span></div><div><b id="metric-transactions">—</b><span>Transactions</span></div><div><b id="metric-time">—</b><span>Analysis time</span></div></div></article></div>
-      </section>
-      <details id="limitations-panel" class="research-details hidden"><summary>Reported analysis limitations</summary><ul id="report-limitations"></ul></details>
-      <section class="section view hidden" id="view-findings"><div class="section-head"><div><div class="kicker">AUDIT TRAIL / FINDINGS</div><h3>Potential exposure events</h3></div><span class="section-meta" id="findings-total">0 findings</span></div><div class="table-panel"><div class="table-tools"><input id="search" type="search" placeholder="Search field, type or masked value..." aria-label="Search findings"><select id="filter-type" aria-label="Filter by PII type"><option value="">All PII types</option></select></div><div class="table-scroll"><table><thead><tr><th>PII TYPE</th><th>MASKED VALUE</th><th>FIELD LOCATION</th><th>FLOW</th><th>SCORE*</th><th>DETECTOR</th><th>DETAILS</th></tr></thead><tbody id="findings-body"><tr><td colspan="7" class="table-empty">No capture loaded. Run the showcase or upload your own PCAP.</td></tr></tbody></table></div><div class="table-foot">* Rules: heuristic scores · BiLSTM: uncalibrated raw model scores. Not accuracy. Click Inspect for detector evidence. <span id="findings-shown">—</span></div></div>
-        <div class="pagination"><button id="findings-prev" class="btn btn-outline" disabled>← Previous</button><span id="findings-page">No capture</span><button id="findings-next" class="btn btn-outline" disabled>Next →</button></div><article class="finding-inspector" id="finding-inspector" aria-live="polite">
-          <div class="inspector-heading"><span class="kicker">FINDING EXPLANATION / LIVE EVIDENCE</span><strong id="inspect-title">Choose a finding to investigate</strong></div>
-          <p id="inspect-reason">TRACE will show the actual field location, detector type, associated HTTP message, network endpoints and the detection method. It will never invent the reason an ML model made a prediction.</p>
-          <div class="inspector-grid">
-            <div><span>Field location</span><strong id="inspect-location">—</strong></div>
-            <div><span>Observed in</span><strong id="inspect-message">—</strong></div>
-            <div><span>Network path</span><strong id="inspect-endpoints">—</strong></div>
-            <div><span>Detector / score type</span><strong id="inspect-method">—</strong></div>
-            <div><span>Span in field</span><strong id="inspect-span">—</strong></div>
-            <div><span>Model / field index</span><strong id="inspect-model">—</strong></div>
-            <div><span>Input quality flags</span><strong id="inspect-quality">—</strong></div>
-            <div><span>Scan ML coverage</span><strong id="inspect-coverage">—</strong></div>
+      <div id="job-recovery" class="notice notice-warning hidden" role="status"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg><span>Status updates stopped. The server may still be working on this analysis.</span><button class="btn btn-secondary btn-sm" id="resume-job" type="button">Check again</button></div>
+      <div id="errorbar" class="notice notice-error errorbar hidden" role="alert"></div>
+      <div id="previous-results" class="notice notice-info hidden" role="status"></div>
+
+      <!-- Start -->
+      <section class="view view-start" id="view-overview" aria-labelledby="start-title">
+        <div class="start">
+          <h2 id="start-title" class="start-title">Inspect a network capture</h2>
+          <p class="start-lede">TRACE rebuilds the unencrypted web traffic in a packet capture and shows where personal information may be exposed, with the evidence for each finding.</p>
+          <div class="upload" id="dropzone">
+            <svg class="icon upload-icon" aria-hidden="true"><use href="#i-upload"/></svg>
+            <strong>Drop a .pcap or .pcapng file here</strong>
+            <span class="upload-or">or</span>
+            <input type="file" id="file" accept=".pcap,.pcapng" hidden>
+            <button class="btn btn-primary btn-lg" id="choose" type="button">Choose capture…</button>
+            <p class="upload-note">Analysis starts as soon as you choose a file. Up to <span id="max-file">128 MiB</span>. The file stays on this computer.</p>
           </div>
-          <section id="evidence-provenance" class="evidence-provenance" aria-label="Packet-to-field provenance">
-            <div class="evidence-heading"><strong>Packet → TCP stream → HTTP message → field</strong><span class="evidence-chip">Verified references only</span></div>
-            <p id="evidence-status" role="status">Choose a finding to inspect its available packet-to-field metadata.</p>
-            <div class="evidence-columns">
-              <div class="evidence-column"><h5>HTTP message</h5><div id="evidence-http" class="evidence-facts"></div></div>
-              <div class="evidence-column"><h5>Extracted fields</h5><div id="evidence-fields" class="evidence-facts"></div></div>
-              <div class="evidence-column"><h5>Supporting source frames</h5><div id="evidence-frames" class="evidence-facts"></div></div>
+          <div id="file-preview" class="file-preview hidden" aria-live="polite">
+            <svg class="icon" aria-hidden="true"><use href="#i-file"/></svg>
+            <div class="file-preview-text"><strong id="selected-name">—</strong><span id="selected-meta">—</span></div>
+          </div>
+          <div class="sample-row">
+            <button id="sample" type="button" class="btn btn-secondary"><svg class="icon" aria-hidden="true"><use href="#i-play"/></svg><span>Try the sample capture</span></button>
+            <span class="hint">12 fictional web conversations, generated on this computer.</span>
+          </div>
+
+          <section class="options" aria-labelledby="opt-title">
+            <h3 id="opt-title">Analysis options</h3>
+            <span class="option-label" id="method-label">Detection method</span>
+            <div class="scan-modes" role="radiogroup" aria-labelledby="method-label">
+              <label class="scan-option"><input type="radio" name="scan-mode" value="rules" checked><span class="opt-body"><b>Rules</b><small>Recognises formats and field names such as email addresses, card numbers and credentials.</small></span></label>
+              <label class="scan-option" id="ai-option"><input type="radio" name="scan-mode" value="hybrid" disabled><span class="opt-body"><span class="opt-title"><b>Rules + contextual model</b><em class="chip" id="ai-ready">Not loaded</em></span><small>Also suggests names and usernames from surrounding text. Experimental; scores are uncalibrated.</small></span></label>
             </div>
-            <p class="evidence-disclosure">This viewer displays redacted metadata and supporting packet references, not raw request/response content. Decoded model character spans are not PCAP byte offsets; transformed content cannot be highlighted as an exact raw match. A matching, separately authorised capture is required to inspect original bytes.</p>
-          </section>
-          <p class="inspector-disclosure">Detection signals may overlap. An individual PII finding is not proof of exfiltration or misuse.</p>
-        </article>
-      </section>
-      <section class="section view hidden" id="view-conversation" aria-label="HTTP conversation investigation">
-        <div class="section-head"><div><div class="kicker">PACKETS → STREAM → HTTP → FIELD → FINDING</div><h3>Recorded HTTP conversations</h3></div></div>
-        <p>A packet carries bytes. An HTTP message can span several packets. A transaction associates a request with observed responses; missing halves are never invented.</p>
-        <div id="conversation-list" class="conversation-list" aria-label="Choose a conversation"></div>
-        <div class="pagination"><button id="conversation-prev" class="btn btn-outline" disabled>← Previous</button><span id="conversation-page">No page loaded</span><button id="conversation-next" class="btn btn-outline" disabled>Next →</button></div>
-        <p id="conversation-status" role="status" aria-live="polite">Load a capture to begin.</p>
-        <div class="investigation-layout">
-          <article class="panel investigation-panel" aria-label="Reconstructed exchange">
-            <h4>Request / response</h4><div id="conversation-messages" class="conversation-list"></div>
-            <div id="conversation-meta"></div>
-            <h4>Extracted fields · values withheld</h4><div id="conversation-fields"></div>
-            <details class="source-disclosure"><summary>Recoverable response source · sensitive, optional</summary>
-              <p>Requires explicit capture retention when starting TRACE. This reveals unmasked text locally. HTML stays escaped; no webpage scripts or remote resources run.</p>
-              <label><input type="checkbox" id="content-ack" disabled> I am authorised to view this response and understand it may contain sensitive values.</label>
-              <div><button id="content-reveal" class="btn btn-outline" disabled>Reveal response source</button><button id="content-hide" class="btn btn-outline">Hide source</button></div>
-              <p id="content-status" role="status">Response source is hidden.</p><pre id="conversation-content" tabindex="0" aria-label="Escaped response source"></pre>
+            <p class="hint" id="scan-caption">Rules are ready.</p>
+            <label class="field hidden" id="ml-profile-row" for="ml-profile"><span class="field-label">How many fields the model may read</span>
+              <select id="ml-profile"><option value="standard">Standard · up to 10,000 fields</option><option value="extended">Extended · up to 100,000 fields</option><option value="complete">Complete · up to 1,000,000 fields</option></select>
+              <span class="hint" id="ml-profile-caption">If the limit is reached, TRACE reports exactly how much the model covered.</span></label>
+            <details class="option-more">
+              <summary>Large capture settings</summary>
+              <label class="field" for="analysis-profile"><span class="field-label">Analysis profile</span>
+                <select id="analysis-profile"><option value="standard">Standard · everyday captures</option><option value="large">Large · bigger files, higher limits</option><option value="stress">Stress · highest limits, slowest</option></select>
+                <span class="hint" id="profile-caption">Limits are supplied by the local server.</span></label>
             </details>
-          </article>
-          <aside class="panel investigation-panel" aria-label="Selected finding and evidence">
-            <h4>Selected finding</h4><div id="selected-finding"></div>
-            <h4>Findings in this message</h4><div id="conversation-findings"></div>
-            <h4>Supporting packet evidence</h4><p id="conversation-mapping" role="status">Select a field.</p>
-            <div id="conversation-sources"></div><div id="conversation-packet" aria-live="polite"></div>
-          </aside>
+          </section>
+
+          <ol class="start-steps" aria-label="How it works">
+            <li><b>Choose a capture</b><span>Or try the sample.</span></li>
+            <li><b>TRACE analyses it</b><span>Locally, on this computer.</span></li>
+            <li><b>Inspect each finding</b><span>See where it appeared and why.</span></li>
+          </ol>
         </div>
       </section>
-      <section class="section view hidden" id="view-flows"><div class="section-head"><div><div class="kicker">TRANSPORT / RECONSTRUCTION</div><h3>Network flow inventory</h3></div><span class="section-meta" id="flows-total">0 flows</span></div><div class="table-panel"><div class="table-scroll"><table><thead><tr><th>FLOW ID</th><th>ENDPOINT A</th><th>ENDPOINT B</th><th>PACKETS</th><th>HTTP MESSAGES</th><th>TRANSACTIONS</th><th>GAPS</th></tr></thead><tbody id="flows-body"><tr><td colspan="7" class="table-empty">No traffic to display yet.</td></tr></tbody></table></div><div class="table-foot">A flow represents an endpoint pair, not necessarily a separately isolated TCP session.</div></div><div class="pagination"><button id="flows-prev" class="btn btn-outline" disabled>← Previous</button><span id="flows-page">No capture</span><button id="flows-next" class="btn btn-outline" disabled>Next →</button></div></section>
-      <section class="section view hidden" id="view-model"><div class="section-head"><div><div class="kicker">EXPERIMENTAL / MODEL LAB</div><h3>Contextual identity detection · BiLSTM V2</h3></div><span class="research-badge" id="model-active">RESEARCH · RULES-ONLY</span></div>
-        <div class="lab-section" id="lab-live" aria-labelledby="lab-live-title">
-          <div class="lab-heading"><span class="kicker">SECTION 1 · THIS CAPTURE</span><h4 id="lab-live-title">Live Capture Analysis</h4><p>What TRACE actually did with the capture you analysed: how much of it the model examined, and what was found. This is not an accuracy measurement.</p></div>
-          <div id="coverage-banner" class="coverage-banner hidden" role="alert"></div>
-          <div class="model-lead"><div class="eyebrow">LIVE INFERENCE / THIS CAPTURE</div><h4>Did the AI actually detect anything?</h4><p><span id="model-live-text">No scan has been run yet. Having a model ready does not mean the model has made a finding.</span></p></div>
+
+      <!-- Summary -->
+      <section class="view hidden" id="view-summary" aria-labelledby="page-title">
+        <section class="answer card" aria-labelledby="answer-title">
+          <span class="eyebrow" id="capture-name">No capture analysed yet</span>
+          <h2 id="answer-title">No results yet</h2>
+          <p id="answer-text" class="answer-text">Analyse a capture to see what TRACE found.</p>
+          <div class="completeness" id="completeness">
+            <span class="status-pill" id="verdict-icon" data-state="none">Not run</span>
+            <div><strong id="verdict-title">No analysis yet</strong><p id="verdict-text">After a scan, TRACE reports here whether any traffic could not be fully read.</p></div>
+          </div>
+          <div class="answer-actions"><button class="btn btn-primary" type="button" data-go="findings"><span>Review findings</span><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button><button class="btn btn-ghost" type="button" data-go="flows">View traffic</button></div>
+        </section>
+        <div class="summary-grid">
+          <section class="card" aria-labelledby="exposed-title">
+            <div class="card-head"><h3 id="exposed-title">What may be exposed</h3><span class="section-meta" id="breakdown-scope">Current capture</span></div>
+            <div id="breakdown" class="breakdown"><p class="empty-inline">Nothing to show yet.</p></div>
+            <p class="hint card-foot">Select a type to see those findings.</p>
+          </section>
+          <section class="card" aria-labelledby="how-analysed-title">
+            <div class="card-head"><h3 id="how-analysed-title">How this capture was analysed</h3></div>
+            <dl class="kv">
+              <div><dt>Method</dt><dd id="analysis-mode">No analysis yet</dd></div>
+              <div><dt>Rule findings</dt><dd id="metric-rules">—</dd></div>
+              <div><dt>Model findings</dt><dd id="metric-ml">—</dd></div>
+              <div><dt>Model</dt><dd id="model-stamp">Not used</dd></div>
+            </dl>
+            <div class="note" id="scan-observations"><strong id="obs-title">No capture analysed yet</strong><p id="obs-text">Run the sample or choose a capture to see what TRACE found.</p></div>
+          </section>
+        </div>
+        <details class="card disclosure-card" id="tech-summary">
+          <summary><span>Technical details</span><span class="section-meta" id="analysis-meta">Awaiting input</span></summary>
+          <div class="metric-grid">
+            <div class="metric"><span class="metric-head">Potential findings</span><span class="metric-value" id="metric-findings">—</span><span class="metric-foot">Candidates, not confirmed personal information</span></div>
+            <div class="metric"><span class="metric-head">HTTP messages</span><span class="metric-value" id="metric-messages">—</span><span class="metric-foot">Requests and responses decoded</span></div>
+            <div class="metric"><span class="metric-head">Transactions</span><span class="metric-value" id="metric-transactions">—</span><span class="metric-foot">Requests matched to a response</span></div>
+            <div class="metric"><span class="metric-head">TCP connections</span><span class="metric-value" id="metric-flows">—</span><span class="metric-foot">Endpoint pairs that exchanged data</span></div>
+            <div class="metric"><span class="metric-head">Packets</span><span class="metric-value" id="metric-packets">—</span><span class="metric-foot">Frames read from the file</span></div>
+            <div class="metric"><span class="metric-head">Stream gaps</span><span class="metric-value" id="metric-gaps">—</span><span class="metric-foot">Places where captured data was missing</span></div>
+            <div class="metric"><span class="metric-head">Analysis time</span><span class="metric-value" id="metric-time">—</span><span class="metric-foot">Measured on this computer</span></div>
+          </div>
+          <div id="limitations-panel" class="limitations hidden"><h4>Limitations reported for this analysis</h4><ul id="report-limitations"></ul></div>
+        </details>
+      </section>
+
+      <!-- Findings -->
+      <section class="view hidden inspectable" id="view-findings" aria-labelledby="page-title">
+        <div class="list-card card">
+          <div class="toolbar">
+            <label class="search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Search findings" aria-label="Search findings by type, field or masked value" aria-keyshortcuts="/"></label>
+            <select id="filter-type" aria-label="Filter by type of information"><option value="">All types</option></select>
+            <span class="toolbar-count" id="findings-total" aria-live="polite">0 findings</span>
+          </div>
+          <div class="table-scroll"><table class="data-table selectable" aria-describedby="findings-help"><caption class="visually-hidden">Findings</caption><thead><tr><th scope="col">Information</th><th scope="col">Where</th><th scope="col">Detected by</th></tr></thead><tbody id="findings-body"><tr><td colspan="3" class="table-empty">No capture analysed yet.</td></tr></tbody></table></div>
+          <div class="table-foot"><span id="findings-help">Select a row to inspect it; ↑ and ↓ move between findings. Rules: heuristic scores · BiLSTM: uncalibrated raw model scores. Neither is accuracy.</span><span id="findings-shown">—</span></div>
+          <div class="pagination"><button id="findings-prev" class="btn btn-secondary btn-sm" type="button" disabled>Previous</button><span id="findings-page">No capture</span><button id="findings-next" class="btn btn-secondary btn-sm" type="button" disabled>Next</button></div>
+        </div>
+      </section>
+
+      <!-- Traffic -->
+      <section class="view hidden inspectable" id="view-flows" aria-labelledby="page-title">
+        <div class="segmented" role="tablist" aria-label="Traffic views" id="traffic-tabs">
+          <button type="button" role="tab" id="seg-conversations" aria-controls="panel-conversations" aria-selected="true">Conversations <span class="seg-count" id="conv-total"></span></button>
+          <button type="button" role="tab" id="seg-connections" aria-controls="panel-connections" aria-selected="false" tabindex="-1">Connections <span class="seg-count" id="flows-total"></span></button>
+        </div>
+        <div role="tabpanel" id="panel-conversations" aria-labelledby="seg-conversations">
+          <div class="list-card card">
+            <div class="table-scroll"><table class="data-table selectable"><caption class="visually-hidden">HTTP conversations: a request and the responses observed for it</caption><thead><tr><th scope="col">Request</th><th scope="col">Response</th><th scope="col">Between</th></tr></thead><tbody id="conv-body"><tr><td colspan="3" class="table-empty">No capture analysed yet.</td></tr></tbody></table></div>
+            <div class="table-foot"><span>A conversation is a request and the responses observed for it. URL paths are hidden because they can contain personal information. Encrypted traffic is not decoded.</span></div>
+            <div class="pagination"><button id="conv-prev" class="btn btn-secondary btn-sm" type="button" disabled>Previous</button><span id="conv-page">—</span><button id="conv-next" class="btn btn-secondary btn-sm" type="button" disabled>Next</button></div>
+          </div>
+        </div>
+        <div role="tabpanel" id="panel-connections" aria-labelledby="seg-connections" hidden>
+          <div class="list-card card">
+            <div class="table-scroll"><table class="data-table selectable"><caption class="visually-hidden">TCP connections</caption><thead><tr><th scope="col">Endpoints</th><th scope="col" class="num">Packets</th><th scope="col" class="num">HTTP messages</th><th scope="col" class="num">Gaps</th></tr></thead><tbody id="flows-body"><tr><td colspan="4" class="table-empty">No capture analysed yet.</td></tr></tbody></table></div>
+            <div class="table-foot"><span>A connection is all TCP traffic between two endpoints. Which side is the client is shown in each conversation.</span></div>
+            <div class="pagination"><button id="flows-prev" class="btn btn-secondary btn-sm" type="button" disabled>Previous</button><span id="flows-page">No capture</span><button id="flows-next" class="btn btn-secondary btn-sm" type="button" disabled>Next</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Model laboratory -->
+      <section class="view hidden" id="view-model" aria-labelledby="page-title">
+        <div class="lab-intro card">
+          <div><h2>Four separate kinds of result</h2><p>Each section answers a different question. Numbers from one section never describe another.</p></div>
+          <span class="chip" id="model-active">Model not used in the last scan</span>
+          <ol class="lab-index">
+            <li><a href="#lab-live">What the model examined in this capture</a></li>
+            <li><a href="#lab-assessment">Synthetic probe assessment</a></li>
+            <li><a href="#lab-groundtruth">Accuracy against verified labels</a></li>
+            <li><a href="#lab-benchmark">Offline research benchmark</a></li>
+          </ol>
+        </div>
+        <div class="lab-section card" id="lab-live" aria-labelledby="lab-live-title">
+          <div class="lab-heading"><span class="eyebrow">Section 1 · This capture</span><h3 id="lab-live-title">Live Capture Analysis</h3><p>What TRACE did with the capture you analysed: how much of it the model examined, and what it found. This is not an accuracy measurement.</p></div>
+          <div id="coverage-banner" class="notice notice-warning coverage-banner hidden" role="alert"></div>
+          <div class="model-lead"><h4>Did the model detect anything?</h4><p><span id="model-live-text">No scan has been run yet. A loaded model does not produce findings until a scan uses it.</span></p></div>
           <div class="coverage-panel" id="coverage-panel" aria-live="polite">
-            <div class="coverage-top"><span class="coverage-chip" id="coverage-chip" data-state="none">NO SCAN YET</span><strong id="coverage-headline">ML coverage appears here after a scan.</strong></div>
+            <div class="coverage-top"><span class="coverage-chip" id="coverage-chip" data-state="none">NO SCAN YET</span><strong id="coverage-headline">Model coverage appears here after a scan.</strong></div>
             <div class="coverage-bar" aria-hidden="true"><span id="coverage-fill"></span></div>
             <p class="coverage-detail" id="coverage-detail">Coverage is the share of eligible extracted fields that the model examined. Headers and credential fields are excluded by policy and are not counted as eligible.</p>
             <dl class="coverage-grid" id="coverage-grid"></dl>
           </div>
-          <div class="metric-grid model-grid live-model-grid">
-            <article class="metric"><div class="metric-head">INFERENCE INVOKED</div><div class="metric-value metric-word" id="live-model-state">—</div><div class="metric-foot">Was inference invoked for the last scan?</div></article>
-            <article class="metric"><div class="metric-head">FIELDS EXAMINED BY ML</div><div class="metric-value" id="live-fields-evaluated">—</div><div class="metric-foot">Actual eligible HTTP fields examined</div></article>
-            <article class="metric"><div class="metric-head">CONTEXTUAL FINDINGS</div><div class="metric-value" id="live-ml-findings">—</div><div class="metric-foot">Real model predictions on this file</div></article>
-            <article class="metric"><div class="metric-head">RULE FINDINGS</div><div class="metric-value" id="live-rule-findings">—</div><div class="metric-foot">Pattern/field-based detections on this file</div></article>
+          <div class="metric-grid">
+            <div class="metric"><span class="metric-head">Model invoked</span><span class="metric-value metric-word" id="live-model-state">—</span><span class="metric-foot">Did the last scan run the model?</span></div>
+            <div class="metric"><span class="metric-head">Fields examined by the model</span><span class="metric-value" id="live-fields-evaluated">—</span><span class="metric-foot">Eligible HTTP fields it read</span></div>
+            <div class="metric"><span class="metric-head">Model findings</span><span class="metric-value" id="live-ml-findings">—</span><span class="metric-foot">Predictions made on this file</span></div>
+            <div class="metric"><span class="metric-head">Rule findings</span><span class="metric-value" id="live-rule-findings">—</span><span class="metric-foot">Pattern and field-name matches on this file</span></div>
           </div>
-          <div class="detector-strip" aria-live="polite"><span>Checkpoint <strong id="live-model-loaded">NOT LOADED</strong></span><span>Version <strong id="live-model-version">—</strong></span><span>Inference status <strong id="live-inference-status">No scan yet</strong></span></div><dl class="telemetry-grid" id="live-telemetry"></dl><div class="live-disclosure" id="live-disclosure">Live-file precision, recall and F1 are NOT measured. Those metrics require independently labelled ground truth for this particular capture.</div>
+          <dl class="kv kv-inline"><div><dt>Checkpoint</dt><dd id="live-model-loaded">NOT LOADED</dd></div><div><dt>Version</dt><dd id="live-model-version">—</dd></div><div><dt>Inference status</dt><dd id="live-inference-status">No scan yet</dd></div></dl>
+          <dl class="coverage-grid" id="live-telemetry"></dl>
+          <div class="notice notice-info live-disclosure" id="live-disclosure">Live-file precision, recall and F1 are NOT measured. Those metrics require independently labelled ground truth for this particular capture.</div>
         </div>
-        <div class="lab-section" id="lab-assessment" aria-labelledby="lab-qa-title">
-          <div class="lab-heading"><span class="kicker">SECTION 2 · AUTOMATIC · SYNTHETIC PROBES</span><h4 id="lab-qa-title">Automated Model Quality Assessment</h4><p>After an AI-assisted scan TRACE automatically tests the same V2 model on fictional, labelled probes built to resemble this capture's field structure. It never uses values from your capture, and it is not an accuracy measurement of your capture.</p></div>
-          <div class="coverage-banner" id="qa-disclosure" data-kind="warning">These metrics are measured on automatically generated, labelled synthetic probes matched to aspects of this capture's structure. They are not precision, recall or F1 measured on the original uploaded traffic.</div>
+        <div class="lab-section card" id="lab-assessment" aria-labelledby="lab-qa-title">
+          <div class="lab-heading"><span class="eyebrow">Section 2 · Automatic · Synthetic probes</span><h3 id="lab-qa-title">Automated Model Quality Assessment</h3><p>After a scan that uses the model, TRACE tests the same V2 model on fictional, labelled probes built to resemble this capture's field structure. It never uses values from your capture, and it is not an accuracy measurement of your capture.</p></div>
+          <div class="notice notice-warning coverage-banner" id="qa-disclosure" data-kind="warning">These metrics are measured on automatically generated, labelled synthetic probes matched to aspects of this capture's structure. They are not precision, recall or F1 measured on the original uploaded traffic.</div>
           <div class="coverage-panel" id="qa-panel" aria-live="polite">
-            <div class="coverage-top"><span class="coverage-chip" id="qa-chip" data-state="none">NO ASSESSMENT</span><strong id="qa-headline">An assessment appears here after an AI-assisted scan completes.</strong><button type="button" class="btn btn-outline hidden" id="qa-cancel">Cancel assessment</button></div>
-            <p class="coverage-detail" id="qa-detail">The original capture's ML coverage (Section 1) and this probe assessment are measured separately.</p>
-            <div id="qa-banner" class="coverage-banner hidden" role="status"></div>
+            <div class="coverage-top"><span class="coverage-chip" id="qa-chip" data-state="none">NO ASSESSMENT</span><strong id="qa-headline">An assessment appears here after a scan that uses the model.</strong><button type="button" class="btn btn-secondary btn-sm hidden" id="qa-cancel">Cancel assessment</button></div>
+            <p class="coverage-detail" id="qa-detail">The original capture's model coverage (Section 1) and this probe assessment are measured separately.</p>
+            <div id="qa-banner" class="notice notice-warning coverage-banner hidden" role="status"></div>
             <div id="qa-body" class="hidden">
-              <div class="table-panel"><div class="table-scroll"><table><thead><tr><th>CONTEXT-MATCHED SYNTHETIC PROBE METRIC</th><th>PROBES SCORED</th><th>TP</th><th>FP</th><th>FN</th><th>PRECISION</th><th>RECALL</th><th>F1</th></tr></thead><tbody id="qa-table"></tbody></table></div><div class="table-foot"><span id="qa-foot">Exact-span scoring on synthetic probes only. n/a = undefined (zero denominator).</span></div></div>
+              <div class="table-panel"><div class="table-scroll"><table class="data-table"><thead><tr><th class="th-sentence">CONTEXT-MATCHED SYNTHETIC PROBE METRIC</th><th class="num">Probes scored</th><th class="num">TP</th><th class="num">FP</th><th class="num">FN</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th></tr></thead><tbody id="qa-table"></tbody></table></div><div class="table-foot"><span id="qa-foot">Exact-span scoring on synthetic probes only. n/a = undefined (zero denominator).</span></div></div>
               <dl class="coverage-grid" id="qa-grid"></dl>
               <div class="gt-detail"><div><strong>Boundary diagnostics</strong><ul id="qa-boundary"></ul></div><div><strong>False positives on negative probes</strong><ul id="qa-negatives"></ul></div><div><strong>Prediction stability (diagnostic)</strong><ul id="qa-stability"></ul></div><div><strong>Independent-detector diagnostic</strong><ul id="qa-detector"></ul></div><div><strong>Capture-context applicability</strong><ul id="qa-applicability"></ul></div><div><strong>Reproducibility</strong><ul id="qa-repro"></ul></div></div>
               <div class="model-note"><strong>Scientific limitations</strong><span id="qa-limits"></span></div>
             </div>
           </div>
         </div>
-        <div class="lab-section" id="lab-groundtruth" aria-labelledby="lab-gt-title">
-          <div class="lab-heading"><span class="kicker">SECTION 3 · THIS CAPTURE, WITH VERIFIED LABELS</span><h4 id="lab-gt-title">Ground-Truth Evaluation</h4><p>Precision, recall and F1 for <em>this</em> file, computed by exact-span comparison against independent annotations bound to the capture by SHA-256. Without a verified manifest, no accuracy is shown.</p></div>
+        <div class="lab-section card" id="lab-groundtruth" aria-labelledby="lab-gt-title">
+          <div class="lab-heading"><span class="eyebrow">Section 3 · This capture, with verified labels</span><h3 id="lab-gt-title">Ground-Truth Evaluation</h3><p>Precision, recall and F1 for <em>this</em> file, computed by exact-span comparison against independent annotations bound to the capture by SHA-256. Without a verified manifest, no accuracy is shown.</p></div>
           <div class="gt-controls">
-            <label class="btn btn-outline gt-upload" for="gt-file">Choose manifest (.json)</label><input type="file" id="gt-file" accept=".json,application/json" class="visually-hidden">
-            <button type="button" class="btn btn-outline" id="gt-demo">Use showcase demonstration annotations</button>
-            <button type="button" class="btn btn-outline hidden" id="gt-clear">Remove manifest</button>
+            <label class="btn btn-secondary gt-upload" for="gt-file">Choose manifest (.json)</label><input type="file" id="gt-file" accept=".json,application/json" class="visually-hidden">
+            <button type="button" class="btn btn-secondary" id="gt-demo">Use sample demonstration annotations</button>
+            <button type="button" class="btn btn-ghost hidden" id="gt-clear">Remove manifest</button>
             <span class="section-meta" id="gt-manifest-info">No manifest selected. The manifest is applied to the next scan of the matching capture.</span>
           </div>
-          <div class="live-disclosure" id="gt-unavailable">File-specific accuracy unavailable: no verified ground-truth annotations provided.</div>
+          <div class="notice notice-info live-disclosure" id="gt-unavailable">File-specific accuracy unavailable: no verified ground-truth annotations provided.</div>
           <div id="gt-results" class="gt-results hidden">
-            <div class="coverage-banner" id="gt-status" role="status"></div>
-            <div class="table-panel"><div class="table-scroll"><table><thead><tr><th>SYSTEM</th><th>FIELDS SCORED</th><th>TP</th><th>FP</th><th>FN</th><th>PRECISION</th><th>RECALL</th><th>F1</th></tr></thead><tbody id="gt-body"></tbody></table></div><div class="table-foot"><span id="gt-foot">Exact-span micro averages for this capture only. n/a = undefined (zero denominator).</span></div></div>
+            <div class="notice coverage-banner" id="gt-status" role="status"></div>
+            <div class="table-panel"><div class="table-scroll"><table class="data-table"><thead><tr><th>System</th><th class="num">Fields scored</th><th class="num">TP</th><th class="num">FP</th><th class="num">FN</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th></tr></thead><tbody id="gt-body"></tbody></table></div><div class="table-foot"><span id="gt-foot">Exact-span micro averages for this capture only. n/a = undefined (zero denominator).</span></div></div>
             <div class="gt-detail"><div><strong>Per label</strong><ul id="gt-labels"></ul></div><div><strong>Errors (model only)</strong><ul id="gt-errors"></ul></div><div><strong>Alignment</strong><ul id="gt-alignment"></ul></div></div>
-            <div class="gt-actions"><button type="button" class="btn btn-outline" id="gt-download">↓ Download evaluation JSON</button><span class="section-meta" id="gt-provenance"></span></div>
+            <div class="gt-actions"><button type="button" class="btn btn-secondary" id="gt-download"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span>Download evaluation JSON</span></button><span class="section-meta" id="gt-provenance"></span></div>
           </div>
         </div>
-        <div class="lab-section" id="lab-benchmark">
-          <div class="lab-heading"><span class="kicker">SECTION 4 · SEPARATE, OFFLINE</span><h4>Published synthetic benchmark</h4><p>A frozen 1,058-field synthetic challenge set. It is a different dataset from your capture and is never presented as its accuracy.</p></div>
-          <details class="research-details"><summary>View published synthetic benchmark — not this file’s accuracy</summary><div class="benchmark-separator"><div><div class="kicker">OFFLINE RESEARCH REFERENCE · NOT LIVE FILE ACCURACY</div><h4 id="benchmark-title">Model benchmark</h4></div><span id="benchmark-source">Loading research reference…</span></div><div class="metric-grid model-grid"><article class="metric"><div class="metric-head">OFFLINE PRECISION</div><div class="metric-value" id="benchmark-precision">—</div><div class="metric-foot">Labelled benchmark only</div></article><article class="metric"><div class="metric-head">OFFLINE RECALL</div><div class="metric-value" id="benchmark-recall">—</div><div class="metric-foot">Labelled benchmark only</div></article><article class="metric"><div class="metric-head">OFFLINE BILSTM F1</div><div class="metric-value" id="benchmark-f1">—</div><div class="metric-foot" id="benchmark-ci">Confidence interval unavailable</div></article><article class="metric"><div class="metric-head">SOURCE MODEL</div><div class="metric-value metric-word" id="benchmark-version">—</div><div class="metric-foot">Results apply to this version only</div></article></div><div class="model-note"><strong>Comparators on the same synthetic set</strong><span id="benchmark-comparators">Comparator rows load with the benchmark.</span></div><div class="model-note"><strong>Interpretation</strong><span id="benchmark-note">No verified benchmark has been loaded. Live-file precision, recall and F1 require independently labelled ground truth. Model scores are uncalibrated.</span></div></details>
+        <div class="lab-section card" id="lab-benchmark" aria-labelledby="lab-bm-title">
+          <div class="lab-heading"><span class="eyebrow">Section 4 · Separate, offline</span><h3 id="lab-bm-title">Published synthetic benchmark</h3><p>A frozen 1,058-field synthetic challenge set. It is a different dataset from your capture and is never presented as its accuracy.</p></div>
+          <details class="disclosure research-details"><summary>View published synthetic benchmark — not this file’s accuracy</summary><div class="benchmark-separator"><div><span class="eyebrow">Offline research reference · Not live file accuracy</span><h4 id="benchmark-title">Model benchmark</h4></div><span class="section-meta" id="benchmark-source">Loading research reference…</span></div><div class="metric-grid"><div class="metric"><span class="metric-head">Offline precision</span><span class="metric-value" id="benchmark-precision">—</span><span class="metric-foot">Labelled benchmark only</span></div><div class="metric"><span class="metric-head">Offline recall</span><span class="metric-value" id="benchmark-recall">—</span><span class="metric-foot">Labelled benchmark only</span></div><div class="metric"><span class="metric-head">Offline BiLSTM F1</span><span class="metric-value" id="benchmark-f1">—</span><span class="metric-foot" id="benchmark-ci">Confidence interval unavailable</span></div><div class="metric"><span class="metric-head">Source model</span><span class="metric-value metric-word" id="benchmark-version">—</span><span class="metric-foot">Results apply to this version only</span></div></div><div class="model-note"><strong>Comparators on the same synthetic set</strong><span id="benchmark-comparators">Comparator rows load with the benchmark.</span></div><div class="model-note"><strong>Interpretation</strong><span id="benchmark-note">No verified benchmark has been loaded. Live-file precision, recall and F1 require independently labelled ground truth. Model scores are uncalibrated.</span></div></details>
         </div>
       </section>
-      <section class="section view hidden" id="view-how"><div class="section-head"><div><div class="kicker">FROM CAPTURE TO EVIDENCE</div><h3>How TRACE works</h3></div></div><div class="how-grid"><article class="panel"><div class="kicker">SIMPLE VIEW</div><h4>Follow the data, inspect the finding.</h4><ol><li>Choose a capture and a detection mode. Rules are selected by default; contextual AI requires a loaded checkpoint and your selection.</li><li>TRACE reads captured packets, groups TCP traffic and reconstructs available plaintext HTTP messages.</li><li>It extracts HTTP text fields and checks them for potential personal data. Optional BiLSTM inference adds contextual identity predictions.</li><li>Review masked findings and their network evidence. Missing findings do not prove a capture is safe.</li></ol></article><article class="panel"><div class="kicker">TECHNICAL VIEW</div><h4>Scope and limits are part of the result.</h4><p>PCAP and PCAPNG input → TCP stream reconstruction → HTTP/1.x parsing → field extraction → deterministic rules and optional BiLSTM → masked findings and JSON report.</p><p>Rules recognise structured patterns and sensitive field names. Contextual inference reports predicted identity spans with raw, uncalibrated scores. The inspector shows field location, HTTP message, endpoints and detector; it does not explain the model’s internal reasoning.</p><p>TRACE does not decrypt TLS. Unsupported protocols, capture truncation, stream gaps, processing limits and incomplete model inference can hide evidence. Review report limitations and integrity indicators. Findings are candidates, not proof of identity, misuse or exfiltration.</p></article></div></section>
-      <footer class="footer"><span>TRACE / LOCAL PRIVACY AUDIT</span><span>No external services · Sensitive values masked by default</span><span>RESEARCH PROTOTYPE · BILSTM V2 EXPERIMENTAL</span></footer>
+
+      <!-- Help -->
+      <section class="view hidden" id="view-how" aria-labelledby="page-title">
+        <div class="how-grid">
+          <article class="card">
+            <h2>Getting started</h2>
+            <ol class="how-steps">
+              <li><b>Choose a capture.</b> Drop a .pcap or .pcapng file on New analysis, or try the sample. Analysis starts straight away and can be cancelled.</li>
+              <li><b>Read the summary.</b> It says how many potential findings there are, what kinds of information they involve and whether the analysis was complete.</li>
+              <li><b>Inspect a finding.</b> Select it in Findings. The inspector opens beside the list and shows where it appeared, why TRACE flagged it and the evidence. Use ↑ and ↓ to move between findings.</li>
+              <li><b>Follow the evidence.</b> Open the HTTP message to see the request, the response, the fields and the packets behind it. Back returns you to the finding.</li>
+              <li><b>Export.</b> Export report downloads the JSON report. Values stay masked.</li>
+            </ol>
+          </article>
+          <article class="card">
+            <h2>Limits to keep in mind</h2>
+            <ul class="how-list">
+              <li><b>Encrypted traffic is not read.</b> TRACE does not decrypt HTTPS (TLS), so its contents are not inspected.</li>
+              <li><b>No finding does not mean no personal data.</b> Unsupported protocols, gaps in the capture and processing limits can hide evidence. The summary says when this happened.</li>
+              <li><b>Findings are candidates.</b> A finding does not prove identity, misuse or exfiltration.</li>
+              <li><b>Scores are not accuracy.</b> Rule scores are heuristics. Model scores are uncalibrated.</li>
+              <li><b>Evidence points to bytes, not guesses.</b> Packet ranges support a whole field or message. TRACE never invents the exact byte position of a detected value.</li>
+            </ul>
+          </article>
+        </div>
+        <article class="card">
+          <h2>Terms used in TRACE</h2>
+          <dl class="glossary">
+            <div><dt>Packet</dt><dd>One frame recorded in the capture file. A single web request can span many packets.</dd></div>
+            <div><dt>Connection</dt><dd>All TCP traffic between two endpoints, for example <span class="mono">10.0.0.5:51344</span> and <span class="mono">93.184.216.34:80</span>.</dd></div>
+            <div><dt>Conversation</dt><dd>An HTTP request and the responses observed for it, such as <span class="mono">POST /login</span> answered by <span class="mono">HTTP/1.1 200</span>.</dd></div>
+            <div><dt>Field</dt><dd>A value TRACE extracted from a message: a header, query parameter, form value, JSON value or text body.</dd></div>
+            <div><dt>Finding</dt><dd>A field, or part of one, that looks like personal information, such as an email address in a form field.</dd></div>
+            <div><dt>Rules and model</dt><dd>Rules match known formats and field names. The optional contextual model suggests names and usernames from surrounding text.</dd></div>
+            <div><dt>Masking</dt><dd>Detected values are partly hidden, for example <span class="mono">j***@example.com</span>, on screen and in the report.</dd></div>
+            <div><dt>Incomplete analysis</dt><dd>Some packets were missing or a processing limit was reached, so part of the traffic could not be fully read.</dd></div>
+          </dl>
+        </article>
+        <article class="card">
+          <h2>How the analysis runs</h2>
+          <p class="prose">PCAP and PCAPNG input → TCP stream reconstruction → HTTP/1.x and supported HTTP/2 parsing → field extraction → deterministic rules and optional BiLSTM → masked findings and JSON report.</p>
+          <p class="prose">The inspector shows field location, HTTP message, endpoints and detector. It does not explain the model’s internal reasoning. Review the completeness note and limitations in the summary before relying on a result.</p>
+        </article>
+      </section>
+      <footer class="footer"><span>TRACE · Local privacy analysis</span><span>Values are masked by default</span><span>Research prototype · the contextual model is experimental</span></footer>
     </main>
+
+    <!-- Universal inspector: one component for findings, conversations and connections.
+         Persistent pane on wide windows, modal drawer on laptops and tablets, sheet on phones. -->
+    <aside class="inspector" id="inspector" aria-labelledby="insp-title" data-mode="pane" data-open="false" tabindex="-1">
+      <div class="insp-resize" id="insp-resize" role="separator" aria-orientation="vertical" aria-label="Resize inspector" aria-valuemin="340" aria-valuemax="720" aria-valuenow="420" tabindex="0"></div>
+      <header class="insp-bar">
+        <button class="icon-btn icon-btn-quiet" id="insp-back" type="button" aria-label="Back" hidden><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg></button>
+        <div class="insp-titles"><span class="insp-kicker" id="insp-kicker">Inspector</span><h2 id="insp-title" tabindex="-1">Nothing selected</h2></div>
+        <button class="icon-btn icon-btn-quiet" id="insp-close" type="button" aria-label="Close inspector"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </header>
+      <div class="insp-body" id="insp-body">
+        <div class="insp-empty" id="insp-empty">
+          <svg class="icon empty-icon" aria-hidden="true"><use href="#i-select"/></svg>
+          <p class="empty-title">Select an item to inspect it</p>
+          <p class="hint">Details appear here: what was found, where it appeared, why TRACE flagged it and the evidence behind it.</p>
+        </div>
+
+        <div class="insp-view hidden" id="insp-finding">
+          <section class="iv-hero">
+            <span class="eyebrow">Potential personal information</span>
+            <p class="iv-type" id="inspect-title">—</p>
+            <p class="iv-value"><span class="mono" id="inspect-sub">—</span><span class="chip">Masked</span></p>
+            <p class="iv-detector" id="fi-detector"></p>
+          </section>
+          <section class="iv-section"><h3>Where it appeared</h3><p id="fi-where" class="prose">—</p></section>
+          <section class="iv-section"><h3>Why TRACE flagged it</h3><p id="inspect-reason" class="prose">—</p></section>
+          <section class="iv-section"><h3>Supporting evidence</h3><div id="fi-support" aria-live="polite"></div></section>
+          <details class="iv-more">
+            <summary>Technical details</summary>
+            <dl class="facts">
+              <div><dt>Field location</dt><dd id="inspect-location">—</dd></div>
+              <div><dt>HTTP message</dt><dd id="inspect-message">—</dd></div>
+              <div><dt>Sender → receiver</dt><dd id="inspect-endpoints" class="mono">—</dd></div>
+              <div><dt>Detector and score type</dt><dd id="inspect-method">—</dd></div>
+              <div><dt>Span in field</dt><dd id="inspect-span">—</dd></div>
+              <div><dt>Model and field index</dt><dd id="inspect-model">—</dd></div>
+              <div><dt>Input quality flags</dt><dd id="inspect-quality">—</dd></div>
+              <div><dt>Model coverage in this scan</dt><dd id="inspect-coverage">—</dd></div>
+            </dl>
+          </details>
+          <details class="iv-more" id="provenance-details">
+            <summary>Packet-to-field references</summary>
+            <section id="evidence-provenance" class="evidence-provenance" aria-label="Packet-to-field provenance">
+              <p id="evidence-status" class="hint" role="status">Open this section to check verified packet references.</p>
+              <h4>HTTP message</h4><div id="evidence-http" class="evidence-facts"></div>
+              <h4>Extracted fields</h4><div id="evidence-fields" class="evidence-facts"></div>
+              <h4>Supporting source frames</h4><div id="evidence-frames" class="evidence-facts"></div>
+              <p class="hint">This viewer displays redacted metadata and supporting packet references, not raw request/response content. Decoded model character spans are not PCAP byte offsets; transformed content cannot be highlighted as an exact raw match. A matching, separately authorised capture is required to inspect original bytes.</p>
+            </section>
+          </details>
+          <p class="iv-foot">Detection signals may overlap. An individual PII finding is not proof of exfiltration or misuse.</p>
+        </div>
+
+        <div class="insp-view hidden" id="insp-dynamic"></div>
+      </div>
+      <p class="visually-hidden" id="insp-live" aria-live="polite"></p>
+    </aside>
+    </div>
+    <div class="insp-scrim hidden" id="insp-scrim"></div>
   </div>
-</div><script src="/lab.js" defer></script><script src="/investigation.js" defer></script><script src="/app.js" defer></script>
+</div><script src="/lab.js" defer></script><script src="/inspector.js" defer></script><script src="/app.js" defer></script>
 </body></html>

@@ -60,7 +60,7 @@ const TraceLab=(()=>{
   }else if(status==='no_eligible_fields'){
    paint('no_eligible_fields','The model was requested but no extracted field was eligible for it.','Headers, credential-named fields, empty fields and unreadable text are excluded by policy. Zero model findings here is not a clean result.',0,entries,null);
   }else{
-   paint('not_requested','Contextual inference was not requested for this scan.','Only the deterministic rules ran. Select AI-assisted hybrid to request the model.',0,entries,null);
+   paint('not_requested','Contextual inference was not requested for this scan.','Only the deterministic rules ran. Choose the hybrid method on the Overview page to use the model.',0,entries,null);
   }
  }
  function onAttempt(status,message){
@@ -83,7 +83,7 @@ const TraceLab=(()=>{
  function qaBanner(text,kind){const b=q('qa-banner');if(!text){b.classList.add('hidden');b.textContent='';return}b.textContent=text;b.dataset.kind=kind||'warning';b.classList.remove('hidden')}
  function qaClear(headline,detail,stateName){
   clearTimeout(qa.timer);qa.job=null;qa.token++;
-  qaPaint(stateName||'none',headline||'An assessment appears here after an AI-assisted scan completes.',detail||'The original capture\'s ML coverage (Section 1) and this probe assessment are measured separately.');
+  qaPaint(stateName||'none',headline||'An assessment appears here after a hybrid scan completes.',detail||'The original capture\'s ML coverage (Section 1) and this probe assessment are measured separately.');
   qaBanner(null);q('qa-body').classList.add('hidden');
  }
  function qaList(id,lines){const ul=q(id);ul.replaceChildren();for(const line of lines)item(ul,line);if(!lines.length)item(ul,'none')}
@@ -205,7 +205,7 @@ const TraceLab=(()=>{
  function onResult(payload){
   const report=payload.report||{};
   renderCoverage(report.summary||{},report.metadata||{},{profile:payload.ml_profile});
-  if(payload.job_id&&payload.assessment_status)qaStart(payload.job_id);else qaClear('No assessment for this scan.','This result did not come from an AI-assisted job scan.','unavailable');
+  if(payload.job_id&&payload.assessment_status)qaStart(payload.job_id);else qaClear('No assessment for this scan.','This result did not come from a hybrid scan.','unavailable');
   if(payload.evaluation_requested&&payload.job_id)fetchEvaluation(payload.job_id);else clearEvaluation(st.manifestId?'The last scan did not use the selected manifest. Run a scan of the matching capture to evaluate it.':null);
  }
  function onBenchmark(b){

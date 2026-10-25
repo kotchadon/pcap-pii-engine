@@ -5,7 +5,7 @@ This is a presentation outline with diagrams, not a rendered slide deck.
 
 ## Slide1 — What TRACE can show
 
-**Visual:** Open the HTTP conversations tab alongside the EMAIL finding.
+**Visual:** Findings with the Email finding selected and its request open in the inspector.
 
 **Say:** “TRACE follows a recorded request and reply, then connects a possible
 personal-data finding to the captured bytes supporting it. Missing or uncertain
