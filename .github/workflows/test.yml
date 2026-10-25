@@ -139,7 +139,7 @@ jobs:
           python -m pip install -e '.[ml,http2]' psutil dpkt jsonschema
       - name: Run bounded real-checkpoint end-to-end indexed scan
         run: |
-          python scripts/validation/bench_performance_memory.py --source-root . --capture /tmp/trace-hybrid-2mib.pcap --output /tmp/trace-hybrid-smoke.json --mib 2 --profile standard --indexed --checkpoint src/packet_pii/ml/artifacts/bilstm_v2 --repeat 1
+          python scripts/validation/bench_performance_memory.py --source-root . --capture /tmp/trace-hybrid-2mib.pcap --output /tmp/trace-hybrid-smoke.json --mib 2 --profile standard --indexed --checkpoint src/packet_pii/ml/artifacts/bilstm_v2 --ml-profile extended --repeat 1
       - name: Validate result status and report resource observations
         run: |
           python - <<'PY'
@@ -152,6 +152,10 @@ jobs:
           assert result['status']=='completed',result
           summary=result['summary']
           assert summary.get('ml_fields_evaluated',0)>0, 'real model evaluated no fields'
+          assert report['ml_profile']=='extended', 'non-default Hybrid work profile not applied'
+          assert summary.get('ml_coverage_status')=='complete', 'ML skipped eligible fields: '+str(summary.get('ml_fields_skipped_by_reason'))
+          assert summary.get('ml_fields_skipped',0)==0, 'ML skipped eligible fields'
+          assert not summary.get('analysis_incomplete'), 'analysis remains incomplete'
           assert result['current_rss_after_analysis']<=report['memory_budget_bytes'], 'scan over RSS budget'
           print(json.dumps({'status':result['status'],'seconds':result['seconds'],
                 'model_seconds':result.get('model_seconds'),'peak_rss':result['lifetime_peak_rss'],
