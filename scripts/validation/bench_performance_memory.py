@@ -56,11 +56,15 @@ def main():
     p.add_argument('--repeat',type=int,default=1)
     p.add_argument('--instrument',action='store_true')
     p.add_argument('--checkpoint',type=Path,help='Genuine checkpoint; omission explicitly selects Rules')
+    p.add_argument('--ml-profile',choices=('standard','extended','complete'),default='standard',
+                   help='Explicit bounded ML work profile for Hybrid; default Standard is unchanged')
     p.add_argument('--no-cache',action='store_true')
     p.add_argument('--threads',type=int,default=2)
     p.add_argument('--indexed',action='store_true',help='Use actual JobManager, including SQLite index and cleanup')
     p.add_argument('--historical-peak',action='store_true')
     args=p.parse_args();root=args.source_root.resolve()
+    if args.ml_profile != 'standard' and args.checkpoint is None:
+        p.error('--ml-profile extended/complete requires a genuine --checkpoint')
     if not 1<=args.repeat<=3:p.error('repeat must be1..3')
     if args.output.exists():p.error('output exists')
     sys.path.insert(0,str(root/'src'))
@@ -121,7 +125,8 @@ def main():
                     return result
                 jobs.analyze_to_report=indexed_analysis
                 job,_=manager.reserve(str(n),filename='fictional.pcap',source='synthetic',
-                    size=args.capture.stat().st_size,mode='hybrid' if detector else 'rules',profile=args.profile)
+                    size=args.capture.stat().st_size,mode='hybrid' if detector else 'rules',profile=args.profile,
+                    ml_profile=args.ml_profile)
                 job.limits=bounds
                 shutil.copyfile(args.capture,job.capture)
                 start=time.perf_counter()
@@ -133,7 +138,9 @@ def main():
                 stages['index_bytes']=job.index.stat().st_size
                 jobs.analyze_to_report=original
             else:
-                receipt=analyze_to_report(args.capture,target,limits=bounds,profile=args.profile,timings=stages,progress=progress,ml_detector=detector)
+                receipt=analyze_to_report(args.capture,target,limits=bounds,profile=args.profile,timings=stages,
+                                          progress=progress,ml_detector=detector,
+                                          ml_budget=args.ml_profile if detector else None)
         except Exception as exc:
             if profiler:profiler.disable()
             runs.append({'status':'failed','error_type':type(exc).__name__,'error':str(exc),
@@ -155,7 +162,8 @@ def main():
             'source_root':str(root),'capture_sha256':capture_sha,'capture_bytes':args.capture.stat().st_size,
             'profile':args.profile,'memory_budget_bytes':bounds.max_memory_bytes,'rss_before':before,
             'scope':'JobManager + SQLite index + atomic report' if args.indexed else 'engine + atomic report; excludes dashboard SQLite indexing',
-            'mode':'hybrid' if detector else 'rules','model_load_seconds':load_seconds,'rss_after_model_load':loaded_rss,
+            'mode':'hybrid' if detector else 'rules','ml_profile':args.ml_profile if detector else None,
+            'model_load_seconds':load_seconds,'rss_after_model_load':loaded_rss,
             'cache_enabled':bool(detector) and not args.no_cache,'threads':args.threads if detector else None,
             'instrumented':args.instrument,'historical_peak_reproduction':historical,'runs':runs}
     if args.instrument:
