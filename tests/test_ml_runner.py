@@ -60,7 +60,7 @@ def test_invalid_budgets_are_rejected(kwargs):
 
 def test_profiles_are_bounded_and_ordered():
     budgets = [MLWorkBudget.for_profile(p) for p in ML_PROFILES]
-    assert [b.name for b in budgets] == ['standard', 'extended', 'complete']
+    assert [b.name for b in budgets] == ['standard', 'extended', 'complete', 'high_capacity']
     assert budgets[0].max_fields == 10_000 and budgets[0].max_characters == 2_000_000          # the safe default is unchanged
     assert all(a.max_fields < b.max_fields and a.max_seconds < b.max_seconds for a, b in zip(budgets, budgets[1:]))
     assert all(b.max_fields <= MLWorkBudget.CEILING_FIELDS and b.max_seconds <= MLWorkBudget.CEILING_SECONDS for b in budgets)
