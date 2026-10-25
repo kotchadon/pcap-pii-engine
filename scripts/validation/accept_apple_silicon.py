@@ -59,16 +59,28 @@ def main():
     if not cases or any(case.find('skipped') is not None for case in cases):
         raise SystemExit('BLOCKED: required native acceptance tests skipped')
     bench = root/'scripts/validation/bench_performance_memory.py'
-    for name, options in [('rules', []), ('hybrid-cache', ['--checkpoint', str(checkpoint)]),
-                          ('hybrid-no-cache', ['--checkpoint', str(checkpoint), '--no-cache'])]:
+    for name, options in [('rules', []),
+                          ('hybrid-cache', ['--checkpoint', str(checkpoint), '--ml-profile', 'extended']),
+                          ('hybrid-no-cache', ['--checkpoint', str(checkpoint), '--ml-profile', 'extended', '--no-cache'])]:
         destination = output/(name+'.json')
         subprocess.run([sys.executable, str(bench), '--source-root', str(root), '--capture',
                         str(output/'fictional2.pcap'), '--output', str(destination), '--repeat', '2', *options],
                        env=env, check=True)
         result = json.loads(destination.read_text())
         for run in result['runs']:
-            if run['status'] != 'completed' or run['summary']['analysis_incomplete']:
-                raise SystemExit('FAIL: scan failed or partial: '+name)
+            if run['status'] != 'completed':
+                raise SystemExit('FAIL: scan did not complete: '+name+': '+str(run.get('error', run['status'])))
+            summary=run['summary']
+            if summary['analysis_incomplete'] or summary.get('ml_fields_skipped', 0):
+                raise SystemExit('FAIL: scan incomplete, refusing to claim full coverage: '+name+
+                                 ' (ML coverage='+str(summary.get('ml_coverage_status'))+
+                                 ', evaluated='+str(summary.get('ml_fields_evaluated'))+
+                                 ', skipped='+str(summary.get('ml_fields_skipped'))+
+                                 ', reasons='+str(summary.get('ml_fields_skipped_by_reason'))+')')
+            if name.startswith('hybrid') and (result.get('ml_profile')!='extended' or
+                                               summary.get('ml_coverage_status')!='complete' or
+                                               summary.get('ml_fields_evaluated', 0)<=0):
+                raise SystemExit('FAIL: expected full, genuine-model Hybrid coverage: '+name)
             if run['current_rss_after_analysis'] > result['memory_budget_bytes']:
                 raise SystemExit('FAIL: Standard RSS budget exceeded: '+name)
         if len(result['runs']) != 2:
@@ -81,7 +93,7 @@ def main():
     (output/'platform.json').write_text(json.dumps({'platform': platform.platform(), 'chip': chip,
         'memory_bytes': psutil.virtual_memory().total, 'torch': torch.__version__,
         'rss': measured, 'independent_rss': independent, 'peak': peak_rss_bytes(),
-        'mps_evaluated': False, 'coverage': '2 MiB fictional capture; full observed coverage required'}, indent=2))
+        'mps_evaluated': False, 'coverage': '2 MiB fictional capture; explicitly bounded extended Hybrid profile; full observed coverage required'}, indent=2))
     print('PASS: scoped native acceptance; artifacts: '+str(output))
 
 
