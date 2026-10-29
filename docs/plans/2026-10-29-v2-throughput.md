@@ -15,3 +15,9 @@ No M3 hardware is available in this environment. Linux results cannot satisfy th
 - Existing bucketing, tensor caps, cache, eval/inference mode and character CNN improvements are baseline features.
 - User already authorizes isolated implementation, CI and draft PR; no redundant plan or branch approval requested.
 - Production changes pending genuine profile. No M3 speedup, accuracy or checkpoint-dependent test result claimed.
+- Genuine weights restored through a supported private Actions artifact and verified against every original Git blob SHA; binary-access blocker resolved.
+- Selected and implemented only bulk collation and immutable grouped BIO predecessor selection. TDD failures observed; exact reference tensors/RNG/decoding and genuine scores verified.
+- Frozen 4,314-field comparison: zero score/label/span/threshold drift. Indexed complete 2/8 MiB reports have equal full event digests; measured reductions 3.61%/8.64% respectively. No M3 target claim.
+- Full local suite: 1,104 passed, 16 browser availability skips. Final safety-guard targeted suite: 24 passed. Exact-head remote CI is the final suite evidence.
+- One read-only Astra review complete; explicit configured-threshold equality added. Preflight/report capture identity and digest-failure cleanup tests added and fixed.
+- Report, raw bounded measurements and exact-M3 acceptance command: `docs/performance/2026-10-29-v2/README.md`. M3/MPS/110 MiB/1 GiB hardware gates remain unexecuted.

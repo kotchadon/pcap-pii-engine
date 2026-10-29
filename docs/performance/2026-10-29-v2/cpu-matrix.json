@@ -1,0 +1,322 @@
+[
+  {
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "torch": "2.6.0+cpu",
+    "threads": 2,
+    "batch_size": 64,
+    "max_batch_tokens": 4096,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "source_sha256": {
+      "bilstm.py": "03a3b174f7d5d175dbf6aef5f841926c6df9121dfa153bdcc71d4cee6b3be06e",
+      "spans.py": "c9e9352239b32a8840a33188682aa2f38311193cbbbbf8c9730c623f58b60e7a",
+      "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+    },
+    "weights_sha256": {
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "fields": 256,
+    "model_load_seconds": 0.05622308600004544,
+    "cold_seconds": 0.46003156599999784,
+    "warm_seconds": [
+      0.4134867430000213,
+      0.4808555530000831,
+      0.39884492900000623
+    ],
+    "warm_median_seconds": 0.4134867430000213,
+    "lifetime_peak_rss_bytes_by_iteration": [
+      276828160,
+      277065728,
+      277196800,
+      277352448
+    ],
+    "same_labels_spans_field_order": true,
+    "same_threshold_decisions": true,
+    "max_raw_score_difference": 0.0
+  },
+  {
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "torch": "2.6.0+cpu",
+    "threads": 1,
+    "batch_size": 64,
+    "max_batch_tokens": 4096,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "source_sha256": {
+      "bilstm.py": "03a3b174f7d5d175dbf6aef5f841926c6df9121dfa153bdcc71d4cee6b3be06e",
+      "spans.py": "c9e9352239b32a8840a33188682aa2f38311193cbbbbf8c9730c623f58b60e7a",
+      "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+    },
+    "weights_sha256": {
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "fields": 256,
+    "model_load_seconds": 0.04262386200002766,
+    "cold_seconds": 0.48477457099988897,
+    "warm_seconds": [
+      0.4607976229999622,
+      0.5061105380000299,
+      0.4730601209998895
+    ],
+    "warm_median_seconds": 0.4730601209998895,
+    "lifetime_peak_rss_bytes_by_iteration": [
+      274452480,
+      274690048,
+      274788352,
+      274911232
+    ],
+    "same_labels_spans_field_order": true,
+    "same_threshold_decisions": true,
+    "max_raw_score_difference": 2.8996185452712098e-08
+  },
+  {
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "torch": "2.6.0+cpu",
+    "threads": 4,
+    "batch_size": 64,
+    "max_batch_tokens": 4096,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "source_sha256": {
+      "bilstm.py": "03a3b174f7d5d175dbf6aef5f841926c6df9121dfa153bdcc71d4cee6b3be06e",
+      "spans.py": "c9e9352239b32a8840a33188682aa2f38311193cbbbbf8c9730c623f58b60e7a",
+      "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+    },
+    "weights_sha256": {
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "fields": 256,
+    "model_load_seconds": 0.04477475399994546,
+    "cold_seconds": 0.37277225399998315,
+    "warm_seconds": [
+      0.3807784740001807,
+      0.4084819309998693,
+      0.3942237210001167
+    ],
+    "warm_median_seconds": 0.3942237210001167,
+    "lifetime_peak_rss_bytes_by_iteration": [
+      274939904,
+      274939904,
+      274939904,
+      274939904
+    ],
+    "same_labels_spans_field_order": true,
+    "same_threshold_decisions": true,
+    "max_raw_score_difference": 2.8996185452712098e-08
+  },
+  {
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "torch": "2.6.0+cpu",
+    "threads": 6,
+    "batch_size": 64,
+    "max_batch_tokens": 4096,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "source_sha256": {
+      "bilstm.py": "03a3b174f7d5d175dbf6aef5f841926c6df9121dfa153bdcc71d4cee6b3be06e",
+      "spans.py": "c9e9352239b32a8840a33188682aa2f38311193cbbbbf8c9730c623f58b60e7a",
+      "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+    },
+    "weights_sha256": {
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "fields": 256,
+    "model_load_seconds": 0.09754692999990766,
+    "cold_seconds": 0.3463612209998246,
+    "warm_seconds": [
+      0.4042605619999904,
+      0.4675667889998749,
+      0.3433040129998517
+    ],
+    "warm_median_seconds": 0.4042605619999904,
+    "lifetime_peak_rss_bytes_by_iteration": [
+      275984384,
+      276131840,
+      276606976,
+      276606976
+    ],
+    "same_labels_spans_field_order": true,
+    "same_threshold_decisions": true,
+    "max_raw_score_difference": 0.0
+  },
+  {
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "torch": "2.6.0+cpu",
+    "threads": 8,
+    "batch_size": 64,
+    "max_batch_tokens": 4096,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "source_sha256": {
+      "bilstm.py": "03a3b174f7d5d175dbf6aef5f841926c6df9121dfa153bdcc71d4cee6b3be06e",
+      "spans.py": "c9e9352239b32a8840a33188682aa2f38311193cbbbbf8c9730c623f58b60e7a",
+      "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+    },
+    "weights_sha256": {
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "fields": 256,
+    "model_load_seconds": 0.0838803359999929,
+    "cold_seconds": 0.3772816440000497,
+    "warm_seconds": [
+      0.38702291200002037,
+      0.506827777999888,
+      0.43718148599987217
+    ],
+    "warm_median_seconds": 0.43718148599987217,
+    "lifetime_peak_rss_bytes_by_iteration": [
+      279973888,
+      280199168,
+      280457216,
+      280780800
+    ],
+    "same_labels_spans_field_order": true,
+    "same_threshold_decisions": true,
+    "max_raw_score_difference": 0.0
+  },
+  {
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "torch": "2.6.0+cpu",
+    "threads": 2,
+    "batch_size": 64,
+    "max_batch_tokens": 2048,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "source_sha256": {
+      "bilstm.py": "03a3b174f7d5d175dbf6aef5f841926c6df9121dfa153bdcc71d4cee6b3be06e",
+      "spans.py": "c9e9352239b32a8840a33188682aa2f38311193cbbbbf8c9730c623f58b60e7a",
+      "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+    },
+    "weights_sha256": {
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "fields": 256,
+    "model_load_seconds": 0.04584335499998815,
+    "cold_seconds": 0.5322856689999753,
+    "warm_seconds": [
+      0.6062494820000666,
+      0.572363199999927,
+      0.5690023779998228
+    ],
+    "warm_median_seconds": 0.572363199999927,
+    "lifetime_peak_rss_bytes_by_iteration": [
+      264634368,
+      264634368,
+      265076736,
+      265076736
+    ],
+    "same_labels_spans_field_order": true,
+    "same_threshold_decisions": true,
+    "max_raw_score_difference": 2.1124364091296144e-07
+  },
+  {
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "torch": "2.6.0+cpu",
+    "threads": 2,
+    "batch_size": 64,
+    "max_batch_tokens": 6144,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "source_sha256": {
+      "bilstm.py": "03a3b174f7d5d175dbf6aef5f841926c6df9121dfa153bdcc71d4cee6b3be06e",
+      "spans.py": "c9e9352239b32a8840a33188682aa2f38311193cbbbbf8c9730c623f58b60e7a",
+      "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+    },
+    "weights_sha256": {
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "fields": 256,
+    "model_load_seconds": 0.0472865509998428,
+    "cold_seconds": 0.4470332599998983,
+    "warm_seconds": [
+      0.4614434190000338,
+      0.5337835010000163,
+      0.46825935199990454
+    ],
+    "warm_median_seconds": 0.46825935199990454,
+    "lifetime_peak_rss_bytes_by_iteration": [
+      289771520,
+      290074624,
+      290197504,
+      290353152
+    ],
+    "same_labels_spans_field_order": true,
+    "same_threshold_decisions": true,
+    "max_raw_score_difference": 1.8496338105578047e-07
+  },
+  {
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "torch": "2.6.0+cpu",
+    "threads": 2,
+    "batch_size": 64,
+    "max_batch_tokens": 8192,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "source_sha256": {
+      "bilstm.py": "03a3b174f7d5d175dbf6aef5f841926c6df9121dfa153bdcc71d4cee6b3be06e",
+      "spans.py": "c9e9352239b32a8840a33188682aa2f38311193cbbbbf8c9730c623f58b60e7a",
+      "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+    },
+    "weights_sha256": {
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "fields": 256,
+    "model_load_seconds": 0.04595217000019147,
+    "cold_seconds": 0.42894050499990044,
+    "warm_seconds": [
+      0.49519511099992997,
+      0.44938111800001934,
+      0.4319650630000069
+    ],
+    "warm_median_seconds": 0.44938111800001934,
+    "lifetime_peak_rss_bytes_by_iteration": [
+      300118016,
+      300118016,
+      300118016,
+      300118016
+    ],
+    "same_labels_spans_field_order": true,
+    "same_threshold_decisions": true,
+    "max_raw_score_difference": 1.3454777736399137e-07
+  }
+]
