@@ -1,0 +1,35 @@
+name: bounded frozen V2 profile
+on:
+  push:
+    branches: [perf/astra-v2-inference-throughput]
+    paths:
+      - scripts/validation/profile_frozen_v2.py
+      - .github/workflows/v2-profile.yml
+      - src/packet_pii/ml/bilstm.py
+      - src/packet_pii/ml/spans.py
+permissions:
+  contents: read
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: python -m pip install -e .
+      - run: python scripts/validation/profile_frozen_v2.py --output /tmp/v2-profile.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frozen-v2-diagnostics
+          retention-days: 1
+          path: |
+            /tmp/v2-profile.json
+            src/packet_pii/ml/artifacts/bilstm_v1/model.pt
+            src/packet_pii/ml/artifacts/bilstm_v2/*/model.pt
+            src/packet_pii/ml/datasets/v2/train.jsonl.gz
