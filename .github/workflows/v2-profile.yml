@@ -4,6 +4,7 @@ on:
     branches: [perf/astra-v2-inference-throughput]
     paths:
       - scripts/validation/profile_frozen_v2.py
+      - scripts/validation/compare_frozen_v2.py
       - .github/workflows/v2-profile.yml
       - src/packet_pii/ml/bilstm.py
       - src/packet_pii/ml/spans.py
@@ -24,12 +25,15 @@ jobs:
       - run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
       - run: python -m pip install -e .
       - run: python scripts/validation/profile_frozen_v2.py --output /tmp/v2-profile.json
+      - name: Compare every frozen validation and challenge field against c17abe7
+        run: |
+          git fetch --no-tags --depth=1 origin c17abe7f176116629d726a982f49df1f30b052bc
+          git worktree add --detach /tmp/trace-v2-baseline c17abe7f176116629d726a982f49df1f30b052bc
+          python scripts/validation/compare_frozen_v2.py --baseline-root /tmp/trace-v2-baseline --include-frozen --repeat 1 --output /tmp/v2-equivalence.json
       - uses: actions/upload-artifact@v4
         with:
           name: frozen-v2-diagnostics
           retention-days: 1
           path: |
             /tmp/v2-profile.json
-            src/packet_pii/ml/artifacts/bilstm_v1/model.pt
-            src/packet_pii/ml/artifacts/bilstm_v2/*/model.pt
-            src/packet_pii/ml/datasets/v2/train.jsonl.gz
+            /tmp/v2-equivalence.json

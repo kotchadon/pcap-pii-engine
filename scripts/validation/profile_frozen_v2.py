@@ -50,6 +50,31 @@ def main():
             reference = result
         elif result != reference:
             raise AssertionError('non-repeatable predictions')
+    from packet_pii.ml import bilstm
+    stages = {}
+    originals = {}
+    padding = {'actual_positions': 0, 'padded_positions': 0, 'batches': 0}
+    def timer(name, function):
+        def measured(*a, **kw):
+            tick = time.perf_counter()
+            value = function(*a, **kw)
+            stages[name] = stages.get(name, 0.) + time.perf_counter() - tick
+            if name == 'collate':
+                padding['actual_positions'] += sum(len(e) for e in a[0])
+                padding['padded_positions'] += value['word'].numel()
+                padding['batches'] += 1
+            return value
+        return measured
+    try:
+        for name in ('tokenize', 'encode', 'collate', '_forward', 'viterbi_decode', 'tags_to_spans'):
+            originals[name] = getattr(bilstm, name)
+            setattr(bilstm, name, timer(name, originals[name]))
+        tick = time.perf_counter()
+        assert predictor.predict_pairs(pairs) == reference
+        stages['whole_invocation'] = time.perf_counter() - tick
+    finally:
+        for name, function in originals.items():
+            setattr(bilstm, name, function)
     prof = cProfile.Profile()
     prof.enable()
     profiled = predictor.predict_pairs(pairs)
@@ -73,6 +98,7 @@ def main():
                   prediction_sha256=hashlib.sha256(json.dumps(reference).encode()).hexdigest(),
                   model_load_seconds=load_seconds, cold_seconds=timings[0], warm_seconds=timings[1:],
                   warm_median_seconds=statistics.median(timings[1:]),
+                  timed_stages_seconds=stages, padding=padding,
                   lifetime_peak_rss_includes_profiler_bytes=int(peak if sys.platform == 'darwin' else peak * 1024),
                   cprofile_total_seconds=stats.total_tt,
                   cprofile_top=sorted(rows, key=lambda r: r['cumulative_seconds'], reverse=True)[:70],
