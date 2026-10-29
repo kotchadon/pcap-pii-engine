@@ -17,7 +17,7 @@ from typing import Any
 
 def write_private_report(report: dict[str, Any], target: str | Path,
                          *, overwrite: bool = False, max_bytes: int | None = None,
-                         row_sources=None) -> None:
+                         row_sources=None, before_publish=None) -> None:
     """Safely write a complete report with 0600 permissions.
 
     By default, output is created exclusively: a pre-existing file or symlink
@@ -69,6 +69,8 @@ def write_private_report(report: dict[str, Any], target: str | Path,
                 sink.close()
             raw.flush()
             os.fsync(raw.fileno())
+        if before_publish is not None:
+            before_publish()
         if overwrite:
             os.replace(temp_name, path)
         else:
@@ -99,6 +101,11 @@ class _BudgetWriter:
         return self.stream.write(text)
 
 
+# One configured encoder per row format: json.dumps with non-default arguments builds a new encoder on every call,
+# which dominated spooling of hundreds of thousands of evidence rows. Output is byte-identical.
+_ROW_ENCODER = json.JSONEncoder(ensure_ascii=False, separators=(',', ':'), allow_nan=False)
+
+
 class _Rows:
     def __init__(self, stream, owner, kind):
         self.stream, self.owner, self.kind, self.count = stream, owner, kind, 0
@@ -107,12 +114,15 @@ class _Rows:
         return self.count
 
     def append(self, row):
-        text = json.dumps(row,ensure_ascii=False,separators=(',',':'),allow_nan=False)+'\n'
+        encoded = _ROW_ENCODER.encode(row)
+        text = encoded+'\n'
         size = len(text.encode('utf-8'))
         if size > self.owner.maximum-self.owner.written:
             raise ReportLimitError('Report spool exceeds configured byte budget')
         self.stream.write(text)
         self.owner.written += size
+        if self.owner.encoded_row_observer is not None:
+            self.owner.encoded_row_observer(self.kind, row, encoded)
         if self.owner.row_observer is not None:
             self.owner.row_observer(self.kind, row)
         self.count += 1
@@ -125,9 +135,10 @@ class _Rows:
 
 class ReportSpool:
     """Private temporary row storage, bounded by encoded bytes, no pickle."""
-    def __init__(self,directory,maximum,*,row_observer=None):
+    def __init__(self,directory,maximum,*,row_observer=None,encoded_row_observer=None):
         self.directory,self.maximum,self.written = directory,maximum,0
         self.row_observer = row_observer
+        self.encoded_row_observer = encoded_row_observer
         self.stack=ExitStack()
 
     def __enter__(self):

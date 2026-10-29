@@ -117,14 +117,35 @@ class BiLSTMTagger(nn.Module):
         B, T = word_ids.shape
         feats = [self.word(word_ids), self.shape(shape_ids), self.ctx(ctx_ids)]
         if self.cfg.char_filters:
-            ce = self.char(char_ids.reshape(B * T, -1)).transpose(1, 2)           # [BT, cd, C]
-            mask = (char_ids.reshape(B * T, -1) != 0).unsqueeze(1)
+            flat_chars = char_ids.reshape(B * T, -1)
+            compact = not torch.is_grad_enabled()
+            rows = None
+            if compact:
+                # Empty character rows always pool to zero. Do not allocate embeddings/convolution workspaces
+                # for padding (or empty separator tokens); leave the training/autograd calculation unchanged.
+                nonempty = flat_chars.ne(0).any(dim=1).nonzero(as_tuple=True)[0]
+                if nonempty.numel() < B * T:
+                    rows = nonempty
+                    flat_chars = flat_chars.index_select(0, rows)
             convs = [self.conv] + (list(self.conv_extra) if self.cfg.char_widths[1:] else [])
-            for cv in convs:
-                h = torch.relu(cv(ce))[:, :, :ce.shape[2]]                         # [BT, F, C]
-                h = h.masked_fill(~mask, float("-inf")).amax(dim=2)
-                h = torch.where(torch.isfinite(h), h, torch.zeros_like(h))         # all-pad tokens -> 0
-                feats.append(h.reshape(B, T, -1))
+            if flat_chars.shape[0]:
+                ce = self.char(flat_chars).transpose(1, 2)                         # [real tokens, cd, C]
+                mask = (flat_chars != 0).unsqueeze(1)
+                for cv in convs:
+                    if compact:
+                        # These intermediates are private to inference; in-place operations avoid two BT*F*C copies.
+                        h = cv(ce).relu_()[:, :, :ce.shape[2]]
+                        h.masked_fill_(~mask, float("-inf"))
+                        h = h.amax(dim=2)
+                    else:
+                        h = torch.relu(cv(ce))[:, :, :ce.shape[2]]
+                        h = h.masked_fill(~mask, float("-inf")).amax(dim=2)
+                    h = torch.where(torch.isfinite(h), h, torch.zeros_like(h))
+                    if rows is not None:
+                        h = h.new_zeros(B * T, self.cfg.char_filters).index_copy_(0, rows, h)
+                    feats.append(h.reshape(B, T, -1))
+            else:
+                feats.extend(feats[0].new_zeros(B, T, self.cfg.char_filters) for _ in convs)
         x = torch.cat(feats, dim=-1)
         if self.cfg.key_broadcast:  # masked mean of key/<sep> positions -> broadcast to all positions
             valid = (torch.arange(T).unsqueeze(0) < lengths.unsqueeze(1))
@@ -183,12 +204,13 @@ class SpanPredictor:
     Inference batching (output-preserving): encoded chunks are grouped by sequence length so a batch carries little
     padding, then decoded per chunk and reassembled in the original ``(pair, chunk)`` order. Each batch holds at most
     ``batch_size`` chunks AND at most ``max_batch_tokens`` padded positions (``batch rows x longest chunk``), so peak
-    activation memory is bounded independently of ``batch_size``; the default token cap equals the legacy worst case
-    (64 chunks x ``max_seq``). ``length_bucketing=False`` reproduces the legacy batching exactly (input order, no token
-    cap) and exists for equivalence testing and benchmarking.
+    activation work is bounded independently of ``batch_size``. The default 4,096-position cap is one third of the
+    legacy 64 x 192 worst case; it is a tensor-work bound, not an RSS reservation. ``length_bucketing=False`` reproduces
+    the legacy batching exactly (input order, no token cap) and exists for equivalence testing and benchmarking.
     """
 
     DEFAULT_BATCH_SIZE = 64
+    DEFAULT_MAX_BATCH_TOKENS = 4096
 
     def __init__(self, model, vocab: Vocab, batch_size: int = DEFAULT_BATCH_SIZE, *, length_bucketing: bool = True,
                  max_batch_tokens: int | None = None):
@@ -200,7 +222,7 @@ class SpanPredictor:
             raise ValueError("batch_size must be a positive int")
         self.model, self.vocab, self.batch_size = self.models[0], vocab, batch_size
         self.length_bucketing = bool(length_bucketing)
-        cap = self.DEFAULT_BATCH_SIZE * self.model.cfg.max_seq if max_batch_tokens is None else max_batch_tokens
+        cap = max(self.DEFAULT_MAX_BATCH_TOKENS, self.model.cfg.max_seq) if max_batch_tokens is None else max_batch_tokens
         if type(cap) is not int or cap < self.model.cfg.max_seq:
             raise ValueError("max_batch_tokens must be an int >= max_seq")
         self.max_batch_tokens = cap

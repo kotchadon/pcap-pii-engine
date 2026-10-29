@@ -1,14 +1,33 @@
 name: tests
 on: [push, pull_request]
+concurrency:
+  group: trace-tests-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 jobs:
   pytest:
+    name: ${{ matrix.dependencies }} tests
     runs-on: ubuntu-latest
+    env:
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+    strategy:
+      fail-fast: false
+      matrix:
+        dependencies: [core, ml]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - run: python -m pip install -e . pytest
+      - if: matrix.dependencies == 'ml'
+        name: Install CPU-only ML test dependencies
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e '.[ml,http2]' psutil jsonschema dpkt
+      - if: matrix.dependencies == 'ml'
+        name: Require frozen V2 weights before ML tests
+        run: python -c "from packet_pii.ml.bilstm import load_predictor; load_predictor('src/packet_pii/ml/artifacts/bilstm_v2')"
       # This generated capture is intentionally gitignored. Regenerate from
       # independent, frozen scenario definitions and verify its committed
       # manifest hash before tests; never weaken or bypass SHA-256 binding.
@@ -44,7 +63,7 @@ jobs:
               shutil.copyfile(capture, destination / capture.name)
               print(f"Verified and generated {capture.name}: SHA-256 {digest}")
           PY
-      - run: python -m pytest -q
+      - run: python -m pytest -q -ra
 
   browser:
     name: real Chromium UI journeys
@@ -70,5 +89,85 @@ jobs:
         with:
           name: trace-real-browser-screenshots
           path: artifacts/trace-ui/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  mentor-demo:
+    name: Nishant packet-to-HTTP demo through real APIs
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install narrow fixture verifier dependencies
+        run: python -m pip install -e . dpkt==1.9.8 h11==0.16.0
+      - name: Execute authenticated capture / HTTP / source-evidence demonstration
+        run: python scripts/validation/run_mentor_demo.py --output /tmp/trace-mentor-ci
+      - name: Require complete original-byte and HTML verification
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('/tmp/trace-mentor-ci')
+          v=json.loads((root/'verification.json').read_text())
+          assert (root/'mentor-demo.pcap').is_file()
+          assert (root/'captured-response.html.txt').is_file()
+          assert (root/'captured-page.static.html').is_file()
+          assert (root/'EVIDENCE.md').is_file()
+          assert v['exact_email_source_intervals'], 'no original packet ranges'
+          print('Mentor demo artifacts and captured evidence verified; TShark:',
+                v.get('tshark',{}).get('status','unavailable'))
+          PY
+
+  hybrid-smoke:
+    name: Actual V2 Hybrid 2MiB smoke (not M3 benchmark)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU-only PyTorch and TRACE ML dependencies
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e '.[ml,http2]' psutil dpkt jsonschema
+      - name: Run bounded real-checkpoint end-to-end indexed scan
+        run: |
+          python scripts/validation/bench_performance_memory.py --source-root . --capture /tmp/trace-hybrid-2mib.pcap --output /tmp/trace-hybrid-smoke.json --mib 2 --profile standard --indexed --checkpoint src/packet_pii/ml/artifacts/bilstm_v2 --ml-profile extended --repeat 1
+      - name: Validate result status and report resource observations
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path('/tmp/trace-hybrid-smoke.json').read_text())
+          assert report['mode']=='hybrid' and report['scope']=='JobManager + SQLite index + atomic report'
+          assert len(report['runs'])==1
+          result=report['runs'][0]
+          assert result['status']=='completed',result
+          summary=result['summary']
+          assert summary.get('ml_fields_evaluated',0)>0, 'real model evaluated no fields'
+          assert report['ml_profile']=='extended', 'non-default Hybrid work profile not applied'
+          assert summary.get('ml_coverage_status')=='complete', 'ML skipped eligible fields: '+str(summary.get('ml_fields_skipped_by_reason'))
+          assert summary.get('ml_fields_skipped',0)==0, 'ML skipped eligible fields'
+          assert not summary.get('analysis_incomplete'), 'analysis remains incomplete'
+          assert result['current_rss_after_analysis']<=report['memory_budget_bytes'], 'scan over RSS budget'
+          print(json.dumps({'status':result['status'],'seconds':result['seconds'],
+                'model_seconds':result.get('model_seconds'),'peak_rss':result['lifetime_peak_rss'],
+                'evaluated':summary.get('ml_fields_evaluated'),
+                'ml_coverage':summary.get('ml_coverage_status'),
+                'analysis_incomplete':summary.get('analysis_incomplete')},sort_keys=True))
+          PY
+      - name: Upload benchmark diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trace-hybrid-2mib-smoke
+          path: /tmp/trace-hybrid-smoke.json
           if-no-files-found: ignore
           retention-days: 7
