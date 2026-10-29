@@ -1,6 +1,8 @@
 # Frozen V2 CPU throughput — 29 October 2026
 
-**READY FOR REVIEW — MEASURABLE IMPROVEMENT, TARGET NOT MET.**
+**NOT READY — CORRECTNESS OR RESOURCE GATE FAILED.**
+
+The ML performance/equivalence gates passed, but exact-head Chromium acceptance has two unresolved mobile Inspector failures. The draft PR is blocked; this does not assert a model-output regression.
 
 Starting remote main: `c17abe7f176116629d726a982f49df1f30b052bc`, tree `3c1045cb6e767ede5373ea90cf2a336bbe8b0c31`. Branch: `perf/astra-v2-inference-throughput`. Initial genuine diagnostic commit: `d63695a91457307287418f14a1e54bdf8e54f884`. The PR records the final immutable commit and CI results. Local snapshot commits have different identities; the base **tree**, every restored source blob and restored binary blob were verified against GitHub. Model comparison JSON records exact inference-source SHA-256 hashes.
 
@@ -154,3 +156,23 @@ PY
 ```
 
 A report hash mismatch is a failed correctness gate, not permission to relax score or provenance comparison. An unchanged report schema needs no migration: integrate through the existing `BiLSTMDetector`/`MLBatchRunner` interface after review. No merge or model reconfiguration is part of this delivery.
+
+
+## Final exact-code CI disposition
+
+Tested code commit: `0dae8900c7145ce6bd594f3880b8ef98913fa3f4`. The final documentation-only commit changes no executable code, tests, dependencies or workflow configuration; `[skip ci]` avoids rerunning those unchanged jobs. Check results remain explicitly tied to the tested code commit, not presented as a new-head run.
+
+| Gate | Executed result |
+|---|---|
+| Full core suite | 888 passed / 175 optional-dependency skips / 0 failed |
+| Full ML suite | 1,102 passed / 20 skipped / 0 failed |
+| Real Chromium | **15 passed / 0 skipped / 2 failed** |
+| Frozen 4,314-field comparison, PyTorch 2.15 CPU | Passed; all 4,175 spans/raw scores identical; thresholds and weight identity equal |
+| Genuine indexed 2 MiB smoke | Passed; 22,088 evaluated, zero skipped, complete analysis |
+| Nishant authenticated packet/HTTP/Inspector demonstration | Required assertions passed; optional TShark cross-check blocked (not installed) |
+
+ML-job skips comprise 16 browser-availability cases and four h11-dependent cases; the separate browser and mentor jobs install those dependencies. Local full tests exercised the h11 cases. Do not combine test totals across overlapping jobs into a unique-test count.
+
+The failures are both `tests/test_experience_journeys.py::test_journey_b_drawer_and_sheet_open_in_place_and_return`, parameters `[390-844-sheet]` and `[375-667-sheet]`, at line 174. Opening the mobile Inspector changes `scrollY` from 260 to 0. These UI/test files are unchanged by this PR. The initial diagnostic-base browser run passed 17 tests on the same Playwright 1.64.1 / Chromium 156.0.8078.4 versions; this is not proof of the failure's cause. No rerun or assertion weakening was used to hide the failures, and the separate Inspector workstream was not modified. Resolve or reproducibly explain this gate before accepting integration.
+
+Evidence: [exact-code test run](https://github.com/kotchadon/pcap-pii-engine/actions/runs/40892544246), [failed Chromium job](https://github.com/kotchadon/pcap-pii-engine/actions/runs/40892544246/job/123512957626), [genuine profile/equivalence run](https://github.com/kotchadon/pcap-pii-engine/actions/runs/40892535636), [initial diagnostic-base run](https://github.com/kotchadon/pcap-pii-engine/actions/runs/40886770808). The CI model-only single warm comparison measured 19.0% less time, but is not promoted over the three-repeat local result or described as end-to-end/M3 acceptance.

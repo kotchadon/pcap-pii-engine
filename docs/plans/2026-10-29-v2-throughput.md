@@ -21,3 +21,4 @@ No M3 hardware is available in this environment. Linux results cannot satisfy th
 - Full local suite: 1,104 passed, 16 browser availability skips. Final safety-guard targeted suite: 24 passed. Exact-head remote CI is the final suite evidence.
 - One read-only Astra review complete; explicit configured-threshold equality added. Preflight/report capture identity and digest-failure cleanup tests added and fixed.
 - Report, raw bounded measurements and exact-M3 acceptance command: `docs/performance/2026-10-29-v2/README.md`. M3/MPS/110 MiB/1 GiB hardware gates remain unexecuted.
+- Exact-code CI: core 888/175/0, ML 1102/20/0; Chromium 15/0/2. Failed mobile Inspector scroll-preservation gate is recorded, not retried or changed outside scope. Draft PR #46 remains blocked. Final follow-up is documentation only and skips redundant CI; all execution results name code commit 0dae8900c7145ce6bd594f3880b8ef98913fa3f4.
