@@ -113,8 +113,8 @@
             </div>
             <p class="hint" id="scan-caption">Rules are ready.</p>
             <label class="field hidden" id="ml-profile-row" for="ml-profile"><span class="field-label">How many fields the model may read</span>
-              <select id="ml-profile"><option value="standard">Standard · up to 10,000 fields</option><option value="extended">Extended · up to 100,000 fields</option><option value="complete">Complete · up to 1,000,000 fields</option></select>
-              <span class="hint" id="ml-profile-caption">If the limit is reached, TRACE reports exactly how much the model covered.</span></label>
+              <select id="ml-profile"><option value="standard">Standard · up to 10,000 fields</option><option value="extended">Extended · up to 100,000 fields</option><option value="complete">Complete · up to 1,000,000 fields</option><option value="high_capacity">High capacity · up to 2,500,000 fields (slow, opt-in)</option></select>
+              <span class="hint" id="ml-profile-caption">A larger budget increases evaluation work and runtime, not model accuracy. Analysis may remain incomplete if any field, character, time or capture limit is reached; TRACE reports the skipped fields.</span></label>
             <details class="option-more">
               <summary>Large capture settings</summary>
               <label class="field" for="analysis-profile"><span class="field-label">Analysis profile</span>

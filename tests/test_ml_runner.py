@@ -60,7 +60,7 @@ def test_invalid_budgets_are_rejected(kwargs):
 
 def test_profiles_are_bounded_and_ordered():
     budgets = [MLWorkBudget.for_profile(p) for p in ML_PROFILES]
-    assert [b.name for b in budgets] == ['standard', 'extended', 'complete']
+    assert [b.name for b in budgets] == ['standard', 'extended', 'complete', 'high_capacity']
     assert budgets[0].max_fields == 10_000 and budgets[0].max_characters == 2_000_000          # the safe default is unchanged
     assert all(a.max_fields < b.max_fields and a.max_seconds < b.max_seconds for a, b in zip(budgets, budgets[1:]))
     assert all(b.max_fields <= MLWorkBudget.CEILING_FIELDS and b.max_seconds <= MLWorkBudget.CEILING_SECONDS for b in budgets)
@@ -73,6 +73,14 @@ def test_engine_rejects_a_bad_budget_argument(tmp_path):
         analyze(capture(tmp_path), ml_detector=Stub(), ml_budget='unlimited')
     with pytest.raises(TypeError):
         analyze(capture(tmp_path), ml_detector=Stub(), ml_budget=10_000)
+
+
+def test_engine_runs_with_opt_in_high_capacity_and_reports_selected_limits(tmp_path):
+    report = analyze(capture(tmp_path), ml_detector=Stub(), ml_budget='high_capacity')
+    assert report['metadata']['ml_work_limits']['profile'] == 'high_capacity'
+    assert report['metadata']['ml_work_limits']['max_fields'] == 2_500_000
+    assert report['summary']['ml_fields_skipped'] == 0
+    assert report['summary']['ml_coverage_status'] in ('complete', 'no_eligible_fields')
 
 
 # ------------------------------------------------------------------ coverage states
