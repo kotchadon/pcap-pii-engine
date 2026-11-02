@@ -189,12 +189,13 @@ const TraceInspector=(()=>{
    host.append(card);
    // Nothing raw is stored in a result row or export. Explicit reveal retrieves
    // exactly one SHA-verified field from the retained local capture on request.
-   const exact=data.content_available===true && fieldId && data.selected_field &&
+   const isProtected=(f.pii_type==='CREDENTIAL_OR_TOKEN'||String(f.value||'').includes('***')||String(f.value||'')==='[REDACTED]'||String(f.value||'')==='****');
+   const exact=isProtected && data.content_available===true && fieldId && data.selected_field &&
      data.selected_field.granularity==='exact_stream_range' &&
      Array.isArray(data.selected_field.transformations) && data.selected_field.transformations.length===0;
    if(exact){
     const revealBox=el('div','iv-reveal');
-    const intro=el('p','prose','Want to see the actual value? It may contain private information. TRACE will check the original recording before showing just this field.');
+    const intro=el('p','prose','View the original password or token from this local recording. This works when the original field can be verified.');
     const controls=el('div','iv-reveal-actions');
     const reveal=button('Show original value','btn btn-secondary btn-sm');
     const hide=button('Hide value','btn btn-ghost btn-sm');hide.hidden=true;
