@@ -81,7 +81,7 @@ class Job:
 class JobManager:
     def __init__(self, analysis_lock, detector=None, *, disk_quota_bytes=12*2**30,
                  max_retained=3, ttl_seconds=3600, ml_work_budget=None, assessment_budget='default',
-                 retain_capture_for_inspection=False):
+                 retain_capture_for_inspection=False, display_nonsecret_values=False):
         if type(disk_quota_bytes) is not int or disk_quota_bytes < 32*MIB:
             raise ValueError('Job disk quota must be at least 32 MiB')
         self.analysis_lock, self.detector = analysis_lock, shared(detector)
@@ -94,6 +94,7 @@ class JobManager:
         if not isinstance(self.ml_work_budget, LegacyMLWorkBudget):
             raise TypeError('ml_work_budget must be hybrid.MLWorkBudget')
         self.retain_capture_for_inspection = bool(retain_capture_for_inspection)
+        self.display_nonsecret_values = bool(display_nonsecret_values)
         self.disk_quota = disk_quota_bytes
         self.max_retained, self.ttl = max_retained, ttl_seconds
         self.root = Path(tempfile.mkdtemp(prefix='trace_jobs_'));self.root.chmod(0o700)
@@ -249,6 +250,7 @@ class JobManager:
                 with self.lock:
                     job.progress=dict(event);job.updated=time.monotonic()
             receipt=analyze_to_report(job.capture,job.report,profile=job.profile,limits=job.limits,
+                display_nonsecret_values=self.display_nonsecret_values,
                 ml_detector=self.detector if job.mode=='hybrid' else None,
                 ml_budget=None if job.use_legacy_budget else job.ml_profile or 'standard',
                 ml_work_budget=job.ml_work_budget if job.use_legacy_budget else None,
