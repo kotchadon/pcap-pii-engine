@@ -195,13 +195,14 @@ def test_journey_c_technical_evidence_and_back(browser, server):
     finding_type = page.inner_text('#inspect-title')
     page.click('#fi-support .msg-card .btn')
     page.wait_for_selector('#insp-dynamic .switch-btn')
-    assert page.inner_text('#insp-kicker').startswith('HTTP')
+    assert page.inner_text('#insp-kicker') == 'Web conversation'
     assert page.is_visible('#insp-back')
     assert page.locator('#insp-dynamic .switch-btn').count() >= 2
+    page.click('#insp-dynamic .iv-more > summary')  # packet references live under Technical evidence
     assert 'frame_' in page.inner_text('#insp-dynamic .x-table')
     assert 'original recording' in page.inner_text('#insp-dynamic') or 'recorded data below' in page.inner_text('#insp-dynamic')
     page.locator('#insp-dynamic .switch-btn').nth(1).click()
-    page.wait_for_function('() => document.getElementById("insp-title").textContent.startsWith("HTTP/")')
+    page.wait_for_function('() => document.getElementById("insp-title").textContent.startsWith("Reply")')
     page.click('#insp-back')
     page.wait_for_selector('#insp-finding:not(.hidden)')
     assert page.inner_text('#inspect-title') == finding_type
@@ -318,7 +319,7 @@ def test_journey_e_slow_and_failed_evidence_never_shows_stale_details(browser, s
     rows.nth(2).click()              # fast: a different message
     expected = rows.nth(2).locator('.row-loc').inner_text()
     page.wait_for_timeout(2000)
-    assert expected.split('.')[-1].replace('_',' ') in page.inner_text('#fi-where').lower(), 'a slow earlier response replaced the newer selection'
+    assert expected.split('.')[-1].replace('_',' ').lower() in page.inner_text('#fi-where').lower(), 'a slow earlier response replaced the newer selection'
     assert 'flow_0001' not in page.inner_text('#fi-where')
     page.unroute('**/investigation?*')
     # An expired job: the panel says so and keeps no stale evidence.
@@ -468,8 +469,8 @@ def test_cancel_shows_reported_steps_and_never_claims_results(browser, server):
     page.route(re.compile(r'.*/api/jobs/[0-9a-f]{32}/cancel$'), lambda r: (state.update(cancelled=True), r.fulfill(status=200, content_type='application/json', body='{"status":"cancelled"}')))
     page.click('#sample')
     # The first step shows immediately; the reported stage replaces it at the first status poll.
-    page.wait_for_function('() => (document.querySelector("#progress-steps li.current")||{}).textContent === "Reading packets"')
-    assert page.locator('#progress-steps li.done').first.inner_text() == 'Preparing the capture'
+    page.wait_for_function('() => (document.querySelector("#progress-steps li.current")||{}).textContent === "Reading network activity"')
+    assert page.locator('#progress-steps li.done').first.inner_text() == 'Opening the recording'
     assert '4,096 packets' in page.inner_text('#status-stage')
     assert page.inner_text('#ctx-status') == 'Analysing'
     page.click('#cancel-job')
@@ -506,5 +507,5 @@ def test_rapid_drawer_toggling_settles_on_the_last_choice(browser, server):
     page.wait_for_timeout(600)
     assert page.get_attribute('#inspector', 'data-open') == 'true'
     assert page.inner_text('#inspect-sub') == rows.nth(7).locator('.row-sub').inner_text()
-    assert rows.nth(7).locator('.row-loc').inner_text().split('.')[-1].replace('_',' ') in page.inner_text('#fi-where').lower()
+    assert rows.nth(7).locator('.row-loc').inner_text().split('.')[-1].replace('_',' ').lower() in page.inner_text('#fi-where').lower()
     assert problems == []

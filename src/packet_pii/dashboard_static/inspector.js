@@ -31,7 +31,16 @@ const TraceInspector=(()=>{
  const typeName=t=>typeof typeLabel==='function'?typeLabel(t):String(t||'Unknown');
  const interval=(a,b)=>Number.isInteger(a)&&Number.isInteger(b)&&b>=a?'['+nf(a)+', '+nf(b)+')':'unavailable';
  const endpoint=ep=>ep&&ep.ip?ep.ip+':'+ep.port:'unknown';
- const friendlyFieldName=location=>{const leaf=String(location||'').split('.').pop().replace(/\\[\\d+\\]/g,'').replaceAll('_',' ').replaceAll('-',' ').trim();return leaf?leaf.replace(/\\b\\w/g,c=>c.toUpperCase()):'a web form field'};
+ const friendlyFieldName=location=>{if(typeof friendlyField==='function')return friendlyField(location);const leaf=String(location||'').split('.').pop().replace(/\[\d+\]/g,'').replaceAll('_',' ').replaceAll('-',' ').trim();return leaf?leaf.charAt(0).toUpperCase()+leaf.slice(1):'a web form field'};
+ const STATUS={200:'OK',201:'Created',202:'Accepted',204:'No content',301:'Moved',302:'Redirected',304:'Not changed',400:'Bad request',401:'Sign-in needed',403:'Not allowed',404:'Not found',500:'Server error',502:'Bad gateway',503:'Unavailable'};
+ const statusText=c=>c?String(c)+(STATUS[c]?' '+STATUS[c]:''):'';
+ const statusOf=m=>{if(m&&Number.isInteger(m.status))return m.status;const x=/^HTTP\/\S+\s+(\d{3})/.exec(String(m&&m.start_line||''));return x?Number(x[1]):null};
+ const ACTION={GET:'Asked for a page or data',POST:'Sent information',PUT:'Updated information',PATCH:'Updated information',DELETE:'Asked to delete something',HEAD:'Checked a page',OPTIONS:'Checked what’s allowed'};
+ const actionText=m=>ACTION[String(m||'').toUpperCase()]||(m?'Made a '+m+' request':'Made a web request');
+ const when=ts=>{const d=new Date(typeof ts==='number'?ts*1000:ts);return isNaN(d)?null:d.toLocaleString([],{day:'numeric',month:'short',hour:'numeric',minute:'2-digit',second:'2-digit'})};
+ function useIcon(id,cls){const ns='http://www.w3.org/2000/svg';if(typeof document.createElementNS!=='function')return el('span',cls);const svg=document.createElementNS(ns,'svg'),u=document.createElementNS(ns,'use');svg.setAttribute('class',cls||'icon');svg.setAttribute('aria-hidden','true');u.setAttribute('href','#'+id);svg.appendChild(u);return svg}
+ function tile(id,tone){const t=el('span','cat-tile');t.setAttribute('aria-hidden','true');if(tone)t.dataset.tone=tone;t.append(useIcon(id,'icon'));return t}
+ function catTileFor(type){return typeof catTile==='function'?catTile(type):tile('c-tag')}
  const kindOf=m=>m.message_type==='request'?'HTTP request':m.interim_response?'Interim HTTP response':'HTTP response';
  const messageOf=f=>f&&(f.evidence&&f.evidence.http_message_id||f.http_message_id)||null;
  const BASIS={directional_fifo_best_effort:'Matched to its partner by message order (best effort)',http2_stream_id:'Matched to its partner by HTTP/2 stream ID'};
@@ -100,9 +109,9 @@ const TraceInspector=(()=>{
   ws.dataset.pane=st.mode==='pane'&&shown?'open':'closed';
   if(modal){insp.setAttribute('role','dialog');insp.setAttribute('aria-modal','true')}
   else{insp.removeAttribute('aria-modal');if(st.mode==='pane')insp.setAttribute('role','complementary');else insp.removeAttribute('role')}
-  for(const node of [$i('sidebar'),document.querySelector('.topbar'),$i('main')])if(node)node.inert=modal;
+  for(const node of [document.querySelector('.skip-link'),$i('sidebar'),document.querySelector('.topbar'),$i('main')])if(node)node.inert=modal;
   $i('insp-scrim').classList.toggle('hidden',!modal);
-  $i('insp-close').setAttribute('aria-label',st.mode==='pane'?'Hide inspector':'Close inspector');
+  $i('insp-close').setAttribute('aria-label',st.mode==='pane'?'Hide details':'Close details');
   $i('insp-resize').hidden=st.mode!=='pane';
  }
  function selectedRowButton(){
@@ -115,6 +124,8 @@ const TraceInspector=(()=>{
   if(!st.open){const a=document.activeElement;st.returnFocus=a&&a!==document.body?a:selectedRowButton()}
   st.open=true;applyLayout();
   const title=$i('insp-title');if(title&&title.focus)title.focus({preventScroll:true});
+  // If the drawer was still hidden for a frame, focus once it is visible.
+  if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>{const ins=$i('inspector');if(st.open&&title&&ins&&!ins.contains(document.activeElement))title.focus({preventScroll:true})});
  }
  function close(restore=true){
   const wasOpen=st.open;st.open=false;if(st.mode==='pane')st.collapsed=true;
@@ -131,13 +142,13 @@ const TraceInspector=(()=>{
   const s=stack(),top=s[s.length-1];
   $i('insp-back').hidden=s.length<2;
   $i('insp-body').scrollTop=0;
-  if(!top){setHeader('Inspector','Nothing selected');showOnly('insp-empty');return}
+  if(!top){setHeader('Details','Nothing selected');showOnly('insp-empty');return}
   if(top.kind==='finding'){
    if(st.filled!==top.f&&typeof inspectFinding==='function'){inspectFinding(top.f,{restore:true});return}
    renderFinding(top);
   }else if(top.kind==='message')renderMessage(top);
   else if(top.kind==='connection')renderConnection(top);
-  announce('Inspector: '+$i('insp-kicker').textContent+', '+$i('insp-title').textContent);
+  announce('Details: '+$i('insp-kicker').textContent+', '+$i('insp-title').textContent);
  }
  function push(entry){stack().push(entry);show();const t=$i('insp-title');if(t&&t.focus)t.focus({preventScroll:true})}
  function replaceTop(entry){const s=stack();s[s.length-1]=entry;show()}
@@ -158,7 +169,7 @@ const TraceInspector=(()=>{
    :f.granularity==='exact_stream_range'?'We found this field in the original recording. You can open the web message below.'
    :f.granularity==='transformed_source_range'?'TRACE read this field from the recorded web message and converted it into readable text.'
    :'The original recording supports this web message. Select another field to explore more closely.';
-  const coverage=v.coverage_complete?'The supporting part of the recording was found.':'Only part of the supporting recording could be matched.';
+  const coverage=v.coverage_complete?'TRACE found this in the original recording.':'Only part of this could be matched to the original recording.';
   return [scope,coverage,!!v.coverage_complete];
  }
  function packetChips(sources,limit){
@@ -167,26 +178,25 @@ const TraceInspector=(()=>{
   return ul;
  }
  async function renderFinding(entry){
-  const f=entry.f;setHeader('Inspector','Finding');showOnly('insp-finding');
-  const host=$i('fi-support');host.replaceChildren();
+  const f=entry.f;setHeader('Details','Finding');showOnly('insp-finding');
+  const host=$i('fi-support'),evidence=$i('fi-evidence');host.replaceChildren();evidence.replaceChildren();
   const mid=messageOf(f);
-  if(!mid||!job()){host.append(note(!job()?'Evidence details are available for analyses run in this session.':'This finding is not linked to an HTTP message, so no message evidence is available.'));return}
+  if(!mid||!job()){host.append(note(!job()?'The web conversation behind a finding is available for scans run in this session.':'This finding isn’t linked to a web conversation.'));return}
   const ids=(f.evidence&&Array.isArray(f.evidence.field_ids))?f.evidence.field_ids:[];
   const fieldId=ids.length===1?ids[0]:'';
-  host.append(loadingBox('Loading the message and packets behind this finding…'));
+  host.append(loadingBox('Finding the web conversation…'));
   const seq=st.seq,epoch=st.epoch;
   try{
    const data=await request('investigation?'+new URLSearchParams({message_id:mid,field_id:fieldId,limit:String(PAGE)}));
    if(!alive(seq,epoch))return;
    const m=data.message;host.replaceChildren();
-   const roleText=m.message_type==='request'?'sent from one device to another':'sent back to a device';
-   $i('fi-where').textContent='This appeared in a '+(m.message_type==='request'?'web request':'web reply')+' '+roleText+'. It was in the “'+friendlyFieldName(f.location)+'” field.';
+   const sent=m.message_type==='request';
+   const at=when(m.timestamp);
+   $i('fi-where').textContent='In the “'+friendlyFieldName(f.location)+'” field of '+(sent?'information a device sent to a web server':'a reply a web server sent back to a device')+(at?', on '+at:'')+'.';
    const card=el('div','msg-card');
-   const head=el('div','msg-card-head');head.append(el('span','msg-kind',kindOf(m)),el('code','msg-line',m.start_line||'Start line unavailable'));
-   card.append(head);
-   if(m.reconstruction_complete===false)card.append(note('Some of this message is missing, so it may be incomplete.','warn'));
-   card.append(button('Open this '+(m.message_type==='request'?'request':'response'),'btn btn-primary btn-sm',()=>push({kind:'message',id:mid,fieldId,from:f})));
-   host.append(card);
+   const head=el('div','msg-card-head');
+   head.append(el('span','msg-kind',sent?'A device sent information':'A web server replied'),el('span','msg-when',[sent?actionText(m.method):statusText(statusOf(m)),at].filter(Boolean).join(' · ')));
+   card.append(tile('i-exchange'),head,button('View web conversation','btn btn-primary btn-sm',()=>push({kind:'message',id:mid,fieldId,from:f})));
    // Nothing raw is stored in a result row or export. Explicit reveal retrieves
    // exactly one SHA-verified field from the retained local capture on request.
    const isProtected=(f.pii_type==='CREDENTIAL_OR_TOKEN'||String(f.value||'').includes('***')||String(f.value||'')==='[REDACTED]'||String(f.value||'')==='****');
@@ -195,7 +205,8 @@ const TraceInspector=(()=>{
      Array.isArray(data.selected_field.transformations) && data.selected_field.transformations.length===0;
    if(exact){
     const revealBox=el('div','iv-reveal');
-    const intro=el('p','prose','View the original password or token from this local recording. This works when the original field can be verified.');
+    const title=el('p','iv-reveal-head');title.append(useIcon('c-key','icon'),el('span',null,'This value is protected'));
+    const intro=el('p','prose','Passwords and tokens are hidden in results and exports. You can view the original from this local recording; TRACE checks it hasn’t changed first.');
     const controls=el('div','iv-reveal-actions');
     const reveal=button('Show original value','btn btn-secondary btn-sm');
     const hide=button('Hide value','btn btn-ghost btn-sm');hide.hidden=true;
@@ -204,7 +215,7 @@ const TraceInspector=(()=>{
     const masked=f.value||'[hidden]';
     hide.addEventListener('click',()=>{
       raw.textContent='';raw.hidden=true;$i('inspect-sub').textContent=masked;
-      st.revealedFieldMasked=null;hide.hidden=true;reveal.hidden=false;
+      st.revealedFieldMasked=null;hide.hidden=true;reveal.hidden=false;reveal.disabled=false;
       status.textContent='The original value is hidden again.';
     });
     reveal.addEventListener('click',async()=>{
@@ -220,79 +231,80 @@ const TraceInspector=(()=>{
        $i('inspect-sub').textContent=value.value;
        raw.textContent=value.value;raw.hidden=false;
        hide.hidden=false;reveal.hidden=true;
-       status.textContent='Verified original field value shown. Hide it before sharing your screen.';
+       status.textContent='Verified original value shown. Hide it before you share your screen.';
       }catch(error){if(alive(requestSeq,requestEpoch)){status.textContent=explain(error);reveal.disabled=false}}
     });
     controls.append(reveal,hide);
-    revealBox.append(intro,controls,status,raw);
+    revealBox.append(title,intro,controls,status,raw);
     host.append(revealBox);
+   }else if(isProtected){
+    const why=!data.content_available?'To see the original, start TRACE with --retain-capture-for-inspection and scan the recording again. TRACE then keeps the recording on this computer until the results expire.'
+     :ids.length>1?'This rule matched more than one field with the same name, so TRACE can’t tell which one to show.'
+     :'This value was encoded or changed in transit, so TRACE can’t show it exactly as it was sent.';
+    const box=el('div','iv-unavailable');const t=el('div');t.append(el('strong',null,'The original value can’t be shown'),el('p',null,why));
+    box.append(useIcon('i-info','icon'),t);host.append(box);
    }
+   // The conversation card follows any credential action, so the primary action for a secret comes first.
+   host.append(card);
+   if(m.reconstruction_complete===false)host.append(note('Part of this conversation was missing from the recording, so it may be incomplete.','warn'));
+   // Technical evidence (collapsed): where in the recording, and how precisely.
    const [scope,coverage,complete]=evidenceStatement(data);
-   host.append(el('p','prose',scope),note(coverage,complete?'ok':'warn'));
-   if(ids.length>1)host.append(note('This rule matched '+ids.length+' fields with the same name, so the evidence covers the whole message.'));
-   if(data.source_ranges&&data.source_ranges.length){host.append(el('p','iv-label','Found in '+nf(data.source_ranges.length)+' part'+(data.source_ranges.length===1?'':'s')+(data.source_ranges_truncated?' (more not shown)':'')),packetChips(data.source_ranges,6))}
-   else host.append(note('We could not locate an exact supporting section for this selection.','warn'));
+   evidence.append(note(coverage,complete?'ok':'warn'),el('p','prose',scope));
+   if(ids.length>1)evidence.append(note('This rule matched '+ids.length+' fields with the same name, so the evidence covers the whole message.'));
+   if(data.source_ranges&&data.source_ranges.length){evidence.append(el('p','iv-label','Found in '+nf(data.source_ranges.length)+' part'+(data.source_ranges.length===1?'':'s')+' of the recording'+(data.source_ranges_truncated?' (more not shown)':'')),packetChips(data.source_ranges,6))}
+   else evidence.append(note('TRACE couldn’t locate an exact supporting section for this selection.','warn'));
   }catch(e){if(alive(seq,epoch)){host.replaceChildren(errorBox(e,()=>show()))}}
  }
 
  // ------------------------------------------------------------------ message view
  async function renderMessage(entry){
-  showOnly('insp-dynamic');const root=$i('insp-dynamic');root.replaceChildren(loadingBox('Loading the HTTP message…'));
-  setHeader('HTTP message','Loading…');
+  showOnly('insp-dynamic');const root=$i('insp-dynamic');root.replaceChildren(loadingBox('Loading the web conversation…'));
+  setHeader('Web conversation','Loading…');
   const seq=st.seq,epoch=st.epoch;
   try{
    const data=await request('investigation?'+new URLSearchParams({message_id:entry.id,field_id:entry.fieldId||'',field_offset:String(entry.fieldOffset||0),finding_offset:String(entry.findingOffset||0),limit:String(PAGE)}));
    if(!alive(seq,epoch))return;
    paintMessage(root,entry,data);
-   announce('Inspector: '+$i('insp-kicker').textContent+', '+$i('insp-title').textContent);
-  }catch(e){if(alive(seq,epoch)){setHeader('HTTP message','Unavailable');root.replaceChildren(errorBox(e,()=>show()))}}
+   announce('Details: '+$i('insp-kicker').textContent+', '+$i('insp-title').textContent);
+  }catch(e){if(alive(seq,epoch)){setHeader('Web conversation','Unavailable');root.replaceChildren(errorBox(e,()=>show()))}}
  }
  function paintMessage(root,entry,data){
   const m=data.message;root.replaceChildren();
-  setHeader(kindOf(m),m.start_line||m.http_message_id);
-  // Request / response switcher: the same conversation, without leaving the inspector.
+  const sent=m.message_type==='request';
+  setHeader('Web conversation',sent?'Sent by a device':m.interim_response?'Interim reply':statusOf(m)?'Reply · '+statusText(statusOf(m)):'Reply');
+  // The two sides of one conversation, without leaving the panel.
   const others=(data.transaction&&data.transaction.messages)||[];
   if(others.length>1){
-   const sw=el('div','switcher');sw.setAttribute('role','group');sw.setAttribute('aria-label','Messages in this conversation');
-   for(const o of others){const label=(o.message_type==='request'?'Request':o.interim_response?'Interim':'Response')+(o.method?' · '+o.method:o.status?' · '+o.status:'');
+   const sw=el('div','switcher');sw.setAttribute('role','group');sw.setAttribute('aria-label','Sides of this conversation');
+   for(const o of others){const label=o.message_type==='request'?'Device sent'+(o.method?' · '+o.method:''):(o.interim_response?'Interim reply':'Server replied')+(o.status?' · '+o.status:'');
     const b=button(label,'switch-btn',()=>{if(o.http_message_id!==m.http_message_id)replaceTop({kind:'message',id:o.http_message_id,fieldId:'',from:entry.from})});
     b.setAttribute('aria-pressed',String(o.http_message_id===m.http_message_id));sw.append(b)}
    root.append(sw);
-  }else root.append(note(m.message_type==='request'?'No response was observed for this request. TRACE does not create one.':'No request was observed for this response.'));
+  }else root.append(note(sent?'No reply to this request was recorded. TRACE doesn’t make one up.':'The request behind this reply wasn’t recorded.'));
   if(data.transaction&&data.transaction.messages_truncated)root.append(note('This conversation has more messages than can be listed here.','warn'));
-  if(m.reconstruction_complete===false)root.append(note('Some of this message is missing, so it may be incomplete.','warn'));
-  root.append(section('Exchange',facts([
-   ['Between','Client '+endpoint(m.client)+' → server '+endpoint(m.server),'mono-soft'],
-   ['This message',m.message_type==='request'?'Sent by the client':'Sent by the server'],
-   ['Captured at',Number.isFinite(m.timestamp)?new Date(m.timestamp*1000).toLocaleString():null],
-   ['Partner',m.pairing_status==='unpaired'?'No matching message observed':BASIS[m.association_basis]||m.pairing_status],
-   ['Protocol',m.protocol==='h2'?'HTTP/2':'HTTP/1.x']])));
-  // Findings in this message
+  if(m.reconstruction_complete===false)root.append(note('Part of this message was missing from the recording, so it may be incomplete.','warn'));
+  const at=when(m.timestamp);
+  const story=el('section','iv-section story-line');
+  story.append(el('h3',null,'What happened'),el('p','prose',sent?'A device '+actionText(m.method).toLowerCase()+' to a web server.':'The web server replied to the device'+(statusOf(m)?' with “'+statusText(statusOf(m))+'”':'')+'.'));
+  const [,coverage,complete]=evidenceStatement(data);
+  story.append(facts([['When',at],[sent?'Request':'Reply',sent?(m.method||null):statusText(statusOf(m))||null],['Matched with',m.pairing_status==='unpaired'?'Nothing recorded':(sent?'The server’s reply':'The device’s request')]]),note(coverage,complete?'ok':'warn'));
+  root.append(story);
+  // Personal details in this message
   const fp=data.findings||{items:[],total:0,offset:0};
   const flist=el('ul','finding-list');
   for(const f of fp.items){const li=el('li'),b=el('button','finding-btn');b.type='button';
-   b.append(el('span','fb-type',typeName(f.pii_type)),el('span','fb-value mono',f.value||'[masked]'),el('span','fb-det',f.detector==='bilstm'?'Model':'Rule'));
-   b.setAttribute('aria-label','Inspect '+typeName(f.pii_type)+' '+(f.value||'masked')+' in '+String(f.location||'field'));
+   const t=el('span','fb-text');t.append(el('span','fb-value',f.value||'[masked]'),el('span','fb-type',typeName(f.pii_type)+' · '+friendlyFieldName(f.location)));
+   b.append(catTileFor(f.pii_type),t,el('span','fb-det',f.detector==='bilstm'?'AI':'Pattern'));
+   b.setAttribute('aria-label','Show '+typeName(f.pii_type)+' '+(f.value||'masked')+' in '+friendlyFieldName(f.location));
    b.addEventListener('click',()=>{if(typeof inspectFinding==='function')inspectFinding(f,{open:true,push:true})});li.append(b);flist.append(li)}
-  root.append(section('Personal information in this message',fp.items.length?flist:note('No findings in this message'+(entry.fieldId?' for the selected field.':'.')),pager(fp,o=>replaceTop({...entry,findingOffset:o}))));
-  // Fields
-  const fields=[...((data.fields&&data.fields.items)||[])];
-  if(data.selected_field&&!fields.some(x=>x.field_id===data.selected_field.field_id))fields.unshift(data.selected_field);
-  const fl=el('ul','field-list');
-  for(const x of fields){const li=el('li'),b=el('button','field-btn');b.type='button';
-   b.append(el('span','fd-index mono','#'+x.field_index),el('span','fd-loc',x.location||x.source_category||'field'),el('span','fd-map',GRANULARITY[x.granularity]||x.granularity||''));
-   b.setAttribute('aria-pressed',String(x.field_id===entry.fieldId));
-   b.addEventListener('click',()=>replaceTop({...entry,fieldId:x.field_id===entry.fieldId?'':x.field_id,findingOffset:0}));li.append(b);fl.append(li)}
-  root.append(section('Fields',el('p','hint','Values stay hidden. Select a field to see the packets that carried it.'),fields.length?fl:note('No fields were extracted from this message.'),pager(data.fields||{items:[],total:0,offset:0},o=>replaceTop({...entry,fieldOffset:o}))));
-  // Packets
-  const [scope,coverage,complete]=evidenceStatement(data);
-  const sel=data.selected_field;
-  root.append(section(sel?'Packets for field #'+sel.field_index:'Packets for this message',el('p','prose',scope),note(coverage,complete?'ok':'warn'),packetTable(data.source_ranges||[]),data.source_ranges_truncated?note('Only the first page of packet ranges is shown.','warn'):null));
-  if(m.message_type==='response')root.append(sourceSection(m,data));
-  // Technical details
-  const more=el('details','iv-more');more.append(el('summary',null,'Technical details'));
+  root.append(section('Personal details in this message',fp.items.length?flist:note('No personal details were found in this message'+(entry.fieldId?' for the selected field.':'.')),pager(fp,o=>replaceTop({...entry,findingOffset:o}))));
+  if(!sent)root.append(sourceSection(m,data));
+  // Technical evidence: endpoints, request line, fields, packets and identifiers.
+  const more=el('details','iv-more');more.append(el('summary',null,'Technical evidence'));
   const s=data.stream||{};
-  more.append(facts([['Message ID',m.http_message_id,'mono'],['Connection',m.flow_id+(m.session!=null?' · session '+m.session:''),'mono'],['Stream',m.stream_id,'mono'],
+  more.append(facts([['Request line',m.start_line,'mono'],['Between','Client '+endpoint(m.client)+' → server '+endpoint(m.server),'mono-soft'],
+   ['Partner',m.pairing_status==='unpaired'?'No matching message observed':BASIS[m.association_basis]||m.pairing_status],['Protocol',m.protocol==='h2'?'HTTP/2':'HTTP/1.x'],
+   ['Message ID',m.http_message_id,'mono'],['Connection',m.flow_id+(m.session!=null?' · session '+m.session:''),'mono'],['Stream',m.stream_id,'mono'],
    ['Stream bytes',interval(m.stream_start,m.stream_end),'mono'],
    ['Headers present',Array.isArray(m.header_names)?(m.header_names.join(', ')||'none recognised')+(m.unknown_header_count?' + '+m.unknown_header_count+' other':'')+' · values withheld':null],
    ['Connection flags seen','start '+(s.syn_observed?'yes':'no')+' · close '+(s.fin_observed?'yes':'no')+' · reset '+(s.rst_observed?'yes':'no')],
@@ -301,6 +313,16 @@ const TraceInspector=(()=>{
    ['Message limitations',(m.limitations||[]).map(humanLimit).join('; ')||null],
    ['Capture SHA-256',data.capture_identity&&data.capture_identity.capture_sha256,'mono'],
    ['Evidence status',(data.verification&&data.verification.status||'').replaceAll('_',' ')]]));
+  const fields=[...((data.fields&&data.fields.items)||[])];
+  if(data.selected_field&&!fields.some(x=>x.field_id===data.selected_field.field_id))fields.unshift(data.selected_field);
+  const fl=el('ul','field-list');
+  for(const x of fields){const li=el('li'),b=el('button','field-btn');b.type='button';
+   b.append(el('span','fd-index mono','#'+x.field_index),el('span','fd-loc',x.location||x.source_category||'field'),el('span','fd-map',GRANULARITY[x.granularity]||x.granularity||''));
+   b.setAttribute('aria-pressed',String(x.field_id===entry.fieldId));
+   b.addEventListener('click',()=>replaceTop({...entry,fieldId:x.field_id===entry.fieldId?'':x.field_id,findingOffset:0}));li.append(b);fl.append(li)}
+  const [scope]=evidenceStatement(data);const sel=data.selected_field;
+  more.append(el('h4',null,'Fields'),el('p','hint','Values stay hidden. Select a field to see the packets that carried it.'),fields.length?fl:note('No fields were extracted from this message.'),pager(data.fields||{items:[],total:0,offset:0},o=>replaceTop({...entry,fieldOffset:o}))||el('span'),
+   el('h4',null,sel?'Packets for field #'+sel.field_index:'Packets for this message'),el('p','prose',scope),packetTable(data.source_ranges||[]),data.source_ranges_truncated?note('Only the first page of packet ranges is shown.','warn'):el('span'));
   const lims=el('ul','plain-list');for(const x of data.limitations||[])lims.append(el('li',null,humanLimit(x)));more.append(lims);
   root.append(more);
  }
@@ -334,10 +356,10 @@ const TraceInspector=(()=>{
   if(st.revealedFieldMasked!==null){$i('inspect-sub').textContent=st.revealedFieldMasked;st.revealedFieldMasked=null}
  }
  function sourceSection(m,data){
-  const sec=el('section','iv-section source-section');sec.append(el('h3',null,'Original response'));
-  if(!data.content_available){sec.append(note('Viewing the original response is turned off. To allow it, start TRACE with --retain-capture-for-inspection; the capture is then kept until this analysis expires.'));return sec}
-  if(m.protocol==='h2'){sec.append(note('Viewing the original text is not supported for HTTP/2 responses yet.'));return sec}
-  sec.append(el('p','prose','The original response can contain unmasked personal information. It is shown as plain text: nothing in it runs, loads or links anywhere. TRACE re-checks the capture’s fingerprint first.'));
+  const sec=el('section','iv-section source-section');sec.append(el('h3',null,'See the original reply'));
+  if(!data.content_available){sec.append(note('Viewing the original reply is turned off. To allow it, start TRACE with --retain-capture-for-inspection; the recording is then kept on this computer until these results expire.'));return sec}
+  if(m.protocol==='h2'){sec.append(note('Viewing the original text isn’t available for HTTP/2 replies yet.'));return sec}
+  sec.append(el('p','prose','The original reply can contain unmasked personal information. TRACE shows it as plain text — nothing in it runs, loads or links anywhere — after checking the recording hasn’t changed.'));
   const id='ack-'+String(m.http_message_id).replace(/[^A-Za-z0-9_-]/g,'');
   const label=el('label','ack'),box=el('input');box.type='checkbox';box.id=id;
   label.append(box,el('span',null,'I am authorised to view this response and understand it may contain sensitive values.'));
@@ -431,8 +453,9 @@ const TraceInspector=(()=>{
  function renderConnection(entry){
   const f=entry.flow,ends=f.endpoints||[];const a=endpoint(ends[0]),b=endpoint(ends[1]);
   setHeader('Connection',a+' ↔ '+b);showOnly('insp-dynamic');const root=$i('insp-dynamic');root.replaceChildren();
-  if(Number(f.stream_gaps)>0)root.append(note('Some packets were missing in this connection, so its conversations may be incomplete.','warn'));
-  root.append(section('Summary',facts([['Endpoints',a+' ↔ '+b,'mono-soft'],['Packets',nf(f.packets)],['HTTP messages',nf(f.http_messages)],['Conversations',nf(f.http_transactions)],
+  root.append(section('What happened',el('p','prose','These two devices exchanged '+nf(f.http_transactions)+' web '+(Number(f.http_transactions)===1?'conversation':'conversations')+' over '+nf(f.packets)+' recorded packets.')));
+  if(Number(f.stream_gaps)>0)root.append(note('Some pieces of this connection were missing from the recording, so its conversations may be incomplete.','warn'));
+  root.append(section('Numbers',facts([['Endpoints',a+' ↔ '+b,'mono-soft'],['Packets',nf(f.packets)],['HTTP messages',nf(f.http_messages)],['Conversations',nf(f.http_transactions)],
    ['Requests without a response',f.unpaired_requests!=null?nf(f.unpaired_requests):null],['Responses without a request',f.unpaired_responses!=null?nf(f.unpaired_responses):null],
    ['Gaps in the captured data',nf(f.stream_gaps)],['Unfinished HTTP messages',f.unterminated_http_messages!=null?nf(f.unterminated_http_messages):null]])),
    el('p','hint','Which endpoint acted as client or server is shown in each conversation under Conversations.'));
@@ -445,9 +468,9 @@ const TraceInspector=(()=>{
  // ------------------------------------------------------------------ conversations list (Traffic)
  function convEmpty(text){const body=$i('conv-body');body.replaceChildren();const tr=el('tr'),td=el('td','table-empty',text);td.colSpan=3;tr.append(td);body.append(tr)}
  async function loadConversations(offset){
-  if(!job()){convEmpty('Conversations are available for analyses run in this session.');return}
+  if(!job()){convEmpty('Web conversations are available for scans run in this session.');return}
   const seq=++st.conv.seq,epoch=st.epoch;st.conv.loaded=true;
-  convEmpty('Loading conversations…');
+  convEmpty('Loading web conversations…');
   try{
    const data=await request('conversations?'+new URLSearchParams({offset:String(offset),limit:String(PAGE)}));
    if(seq!==st.conv.seq||epoch!==st.epoch)return;
@@ -457,24 +480,28 @@ const TraceInspector=(()=>{
  function paintConversations(data){
   const body=$i('conv-body');body.replaceChildren();
   $i('conv-total').textContent=nf(data.total);
-  if(!data.items.length)convEmpty('No HTTP conversations were rebuilt from this capture. Encrypted and unsupported traffic is not decoded.');
-  for(const tx of data.items){
+  if(!data.items.length)convEmpty('No web conversations could be rebuilt from this recording. Encrypted (HTTPS) and other kinds of traffic aren’t readable.');
+  const a=data.offset||0;
+  data.items.forEach((tx,i)=>{
    const msgs=tx.messages||[],req=msgs.find(m=>m.message_type==='request'),resps=msgs.filter(m=>m.message_type==='response');
-   const final=resps.filter(m=>!m.interim_response).pop()||resps[resps.length-1];const target=req||final||msgs[0];if(!target)continue;
+   const final=resps.filter(m=>!m.interim_response).pop()||resps[resps.length-1];const target=req||final||msgs[0];if(!target)return;
    const tr=el('tr');tr.dataset.tx=tx.transaction_id;if(tx.transaction_id===st.conv.selected)tr.classList.add('selected');
    const first=el('td'),main=el('button','row-main');main.type='button';
-   main.append(el('span','row-title mono',req?req.start_line:'No request observed'),el('span','row-sub',tx.flow_id||''));
-   main.setAttribute('aria-label',(req?req.start_line:'Response without an observed request')+', '+(final?'response '+final.status:'no response observed')+'. Inspect.');
+   const t=el('span','row-text');const at=when(target.timestamp);
+   t.append(el('span','row-value',req?actionText(req.method):'Reply without a recorded request'),el('span','row-meta',['#'+nf(a+i+1),req&&req.method,at].filter(Boolean).join(' · ')));
+   main.append(tile('i-exchange'),t);
+   main.setAttribute('aria-label',(req?actionText(req.method):'Reply without a recorded request')+', '+(final?'reply '+statusText(final.status):'no reply recorded')+(at?', '+at:'')+'. Show details.');
    first.append(main);tr.main=main;
-   const resp=el('td');resp.append(el('span',final?'status-code'+(final.status>=400?' status-err':''):'muted',final?String(final.status):'No response'));
-   if(resps.length>1)resp.append(el('span','cell-sub',nf(resps.length)+' responses'));
-   const ep=target.client&&target.server?endpoint(target.client)+' → '+endpoint(target.server):'—';
+   const resp=el('td');
+   if(final)resp.append(el('span','status-code'+(final.status>=400?' status-err':final.status<200||final.status>=300?' status-info':''),statusText(final.status)));else resp.append(el('span','muted','No reply'));
+   if(resps.length>1)resp.append(el('span','cell-sub',nf(resps.length)+' replies'));
+   const ep=target.client&&target.server?(target.client.ip||'?')+' → '+(target.server.ip||'?'):'—';
    tr.append(first,resp,el('td','mono-soft',ep));
    const select=open=>{st.conv.selected=tx.transaction_id;for(const row of body.children){row.classList.toggle('selected',row===tr);if(row.main)row.main.setAttribute('aria-current',String(row===tr))}openMessage(target.http_message_id,{open})};
    tr.select=select;main.addEventListener('click',ev=>{ev.stopPropagation();select(true)});tr.addEventListener('click',()=>select(true));
    body.append(tr);
-  }
-  const a=data.offset||0;$i('conv-page').textContent=data.items.length?nf(a+1)+'–'+nf(a+data.items.length)+' of '+nf(data.total):'0 of '+nf(data.total);
+  });
+  $i('conv-page').textContent=data.items.length?nf(a+1)+'–'+nf(a+data.items.length)+' of '+nf(data.total):'0 of '+nf(data.total);
   $i('conv-prev').disabled=a===0;$i('conv-next').disabled=a+data.items.length>=data.total;
  }
  function setSegment(name,focus){
@@ -526,7 +553,7 @@ const TraceInspector=(()=>{
  function onResult(){
   st.epoch++;st.seq++;st.stacks={findings:[],flows:[]};st.filled=null;st.open=false;clearSource();
   st.conv={offset:0,total:0,loaded:false,seq:st.conv.seq+1,selected:null};
-  $i('conv-total').textContent='';convEmpty('Open Traffic to load conversations.');$i('conv-page').textContent='—';$i('conv-prev').disabled=true;$i('conv-next').disabled=true;
+  $i('conv-total').textContent='';convEmpty('Open Web conversations to load them.');$i('conv-page').textContent='—';$i('conv-prev').disabled=true;$i('conv-next').disabled=true;
   show();applyLayout();
   if(st.view==='flows'&&st.seg==='conversations')loadConversations(0);
  }

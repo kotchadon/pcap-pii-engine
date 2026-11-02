@@ -22,23 +22,24 @@ if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(base)) throw Error('Use the local-only t
     page.on('pageerror', error=>errors.push(error.message));
     page.on('request', request=>{if(!request.url().startsWith(base+'/'))remote.push(request.url());});
     await page.goto(base);
-    await page.waitForFunction(()=>document.getElementById('mode').textContent==='Rules only');
+    await page.waitForFunction(()=>document.getElementById('mode').textContent==='Pattern checks');
     await page.locator('#file').setInputFiles(capture);
     await page.waitForFunction(()=>!document.getElementById('export').disabled);
     await page.locator('.nav-link[data-tab=findings]').click();
     // Inspect opens beside the list; the page does not move.
     const before = await page.evaluate(()=>scrollY);
-    await page.locator('#findings-body tr').filter({hasText:'a***@example.invalid'}).first().locator('.row-main').click();
+    await page.locator('#findings-body tr').filter({hasText:'@example.invalid'}).first().locator('.row-main').click();
     await page.locator('#fi-support .msg-card').waitFor();
     assert.equal(await page.evaluate(()=>scrollY), before);
     assert.match(await page.locator('#inspect-title').innerText(),/Email/);
     // Follow the evidence to the HTTP message and its packets.
     await page.locator('#fi-support .msg-card .btn').click();
+    await page.locator('#insp-dynamic .iv-more > summary').click();  // packets live under Technical evidence
     await page.locator('#insp-dynamic .x-table').filter({hasText:'frame_5'}).waitFor();
     await page.locator('#insp-dynamic .x-table button').filter({hasText:'frame_5'}).click();
     assert.match(await page.locator('#insp-dynamic .x-table').innerText(),/Within frame/);
     // The final response of the same conversation, then opt-in source and the inert page view.
-    await page.locator('#insp-dynamic .switch-btn').filter({hasText:/^Response · 200/}).click();
+    await page.locator('#insp-dynamic .switch-btn').filter({hasText:/^Server replied · 200/}).click();
     await page.getByLabel('I am authorised to view this response and understand it may contain sensitive values.').check();
     await page.getByRole('button',{name:'Show response source',exact:true}).click();
     await page.waitForFunction(()=>(document.querySelector('.src-code')||{}).textContent?.includes('<script>'));
@@ -53,8 +54,8 @@ if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(base)) throw Error('Use the local-only t
     await page.locator('#insp-back').click();
     await page.locator('#insp-finding:not(.hidden)').waitFor();
     await page.locator('#fi-support .msg-card .btn').click();
-    await page.locator('#insp-dynamic .switch-btn').filter({hasText:/^Request/}).press('Enter');
-    await page.waitForFunction(()=>document.getElementById('insp-kicker').textContent==='HTTP request');
+    await page.locator('#insp-dynamic .switch-btn').filter({hasText:/^Device sent/}).press('Enter');
+    await page.waitForFunction(()=>document.getElementById('insp-title').textContent==='Sent by a device');
     assert.deepEqual(errors,[]);
     await page.setViewportSize({width:390,height:844});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
