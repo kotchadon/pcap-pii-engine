@@ -188,7 +188,7 @@
       <section class="view hidden inspectable" id="view-findings" aria-labelledby="page-title">
         <div class="list-card card">
           <div class="toolbar">
-            <label class="search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Search findings" aria-label="Search findings by type, field or masked value" aria-keyshortcuts="/"></label>
+            <label class="search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Search findings" aria-label="Search findings by type, field or shown value" aria-keyshortcuts="/"></label>
             <select id="filter-type" aria-label="Filter by type of information"><option value="">All types</option></select>
             <span class="toolbar-count" id="findings-total" aria-live="polite">0 findings</span>
           </div>
@@ -299,7 +299,7 @@
               <li><b>Read the summary.</b> It says how many potential findings there are, what kinds of information they involve and whether the analysis was complete.</li>
               <li><b>Inspect a finding.</b> Select it in Findings. The inspector opens beside the list and shows where it appeared, why TRACE flagged it and the evidence. Use ↑ and ↓ to move between findings.</li>
               <li><b>Follow the evidence.</b> Open the HTTP message to see the request, the response, the fields and the packets behind it. Back returns you to the finding.</li>
-              <li><b>Export.</b> Export report downloads the JSON report. Values stay masked.</li>
+              <li><b>Export.</b> Export report downloads the findings, including visible personal details. Passwords and tokens stay protected in the report; keep exports private.</li>
             </ol>
           </article>
           <article class="card">
@@ -322,17 +322,17 @@
             <div><dt>Field</dt><dd>A value TRACE extracted from a message: a header, query parameter, form value, JSON value or text body.</dd></div>
             <div><dt>Finding</dt><dd>A field, or part of one, that looks like personal information, such as an email address in a form field.</dd></div>
             <div><dt>Rules and model</dt><dd>Rules match known formats and field names. The optional contextual model suggests names and usernames from surrounding text.</dd></div>
-            <div><dt>Masking</dt><dd>Detected values are partly hidden, for example <span class="mono">j***@example.com</span>, on screen and in the report.</dd></div>
+            <div><dt>Original values</dt><dd>Names, emails, phone numbers and other non-credential findings appear as detected. Passwords and tokens can be inspected using the original recording when available.</dd></div>
             <div><dt>Incomplete analysis</dt><dd>Some packets were missing or a processing limit was reached, so part of the traffic could not be fully read.</dd></div>
           </dl>
         </article>
         <article class="card">
           <h2>How the analysis runs</h2>
-          <p class="prose">PCAP and PCAPNG input → TCP stream reconstruction → HTTP/1.x and supported HTTP/2 parsing → field extraction → deterministic rules and optional BiLSTM → masked findings and JSON report.</p>
+          <p class="prose">PCAP and PCAPNG input → TCP stream reconstruction → HTTP/1.x and supported HTTP/2 parsing → field extraction → deterministic rules and optional BiLSTM → findings with original non-credential values and an exportable JSON report.</p>
           <p class="prose">The inspector shows field location, HTTP message, endpoints and detector. It does not explain the model’s internal reasoning. Review the completeness note and limitations in the summary before relying on a result.</p>
         </article>
       </section>
-      <footer class="footer"><span>TRACE · Local privacy analysis</span><span>Values are masked by default</span><span>Research prototype · the contextual model is experimental</span></footer>
+      <footer class="footer"><span>TRACE · Local privacy analysis</span><span>Original findings visible · protect exported reports</span><span>Research prototype · the contextual model is experimental</span></footer>
     </main>
 
     <!-- Universal inspector: one component for findings, conversations and connections.
@@ -355,7 +355,7 @@
           <section class="iv-hero">
             <span class="eyebrow">A possible personal detail</span>
             <p class="iv-type" id="inspect-title">—</p>
-            <p class="iv-value"><span class="mono" id="inspect-sub">—</span><span class="chip">Preview</span></p>
+            <p class="iv-value"><span class="mono" id="inspect-sub">—</span><span class="chip">Finding</span></p>
             <p class="iv-detector" id="fi-detector"></p>
           </section>
           <section class="iv-section"><h3>Where did it appear?</h3><p id="fi-where" class="prose">—</p></section>

@@ -237,7 +237,8 @@ def test_single_field_reveal_api_requires_permission_ack_and_capture_retention(e
         if retain:
             assert result['value']==oracle['email'] and result['source_scope']=='whole_field'
             assert result['verification']=='capture_sha256_reverified'
-            assert oracle['email'] not in json.dumps(s.jobs.page(job,'findings',limit=100))
+            assert oracle['email'] in json.dumps(s.jobs.page(job,'findings',limit=100))
+            assert 'fictional-demo-only-token' not in json.dumps(s.jobs.page(job,'findings',limit=100))
             assert request(s,'POST',base+'/field-value',
                 json.dumps({'message_id':f['http_message_id'],'field_id':'nonexistent','acknowledge_sensitive_content':True}),headers)[0] in (400,404)
             job.capture.write_bytes(job.capture.read_bytes()+b'x')

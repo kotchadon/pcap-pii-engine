@@ -238,7 +238,7 @@ def _pair_requests(records: list[_Record], fid: str) -> tuple[int, int, int]:
 
 
 def _analyze(path: str | Path, threshold: float = 0.8,
-            include_values: bool = False, *,
+            include_values: bool = False, *, display_nonsecret_values: bool = False,
             limits: AnalysisLimits | None = None, profile: str = 'standard',
             progress=None, _rows=None, timings=None,
             ml_detector: ContextualPIIDetector | None = None,
@@ -374,6 +374,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             if disposition_observer is not None:
                 disposition_observer(contexts[ticket][0]['http_message_id'], index, raw_status)
         runner = MLBatchRunner(ml_detector, ml_budget, include_values=include_values,
+                               display_nonsecret_values=display_nonsecret_values,
                                checkpoint=ml_checkpoint, disposition=observe_disposition,
                                zero_work=bool(ml_work_budget and ml_work_budget.max_total_fields == 0))
 
@@ -599,7 +600,8 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 append_evidence('http_evidence', message_evidence)
                 stages['field_http_evidence'] += time.perf_counter()-tick
                 tick = time.perf_counter()
-                detections = detect_fields(fields, threshold, include_values)
+                detections = detect_fields(fields, threshold, include_values,
+                                           display_nonsecret_values=display_nonsecret_values)
                 if len(detections) >= 10000:
                     raise AnalysisLimitError('Per-message detection limit prevents complete analysis')
                 stages['rule_detection'] += time.perf_counter()-tick
@@ -718,7 +720,9 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'ml_model_loaded': ml_detector is not None,
             'ml_model_version': model_version,
             'ml_work_limits': ml_budget.public() if ml_detector is not None else None,
-            'threshold': threshold, 'raw_values_included': include_values,
+            'threshold': threshold, 'raw_values_included': include_values or display_nonsecret_values,
+            'finding_value_policy': ('all_original' if include_values else
+                'noncredential_original' if display_nonsecret_values else 'masked'),
             'scope': 'unencrypted HTTP/1.x and bounded prior-knowledge HTTP/2 over TCP',
             'analysis_limits': {k:v for k,v in asdict(budget).items() if k in
                                 ('max_capture_bytes','max_packets','max_flows','max_tcp_payload_bytes')},
@@ -829,6 +833,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
 
 def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = False,
             *, limits: AnalysisLimits | None = None, profile: str = 'standard',
+            display_nonsecret_values: bool = False,
             progress=None, timings=None,
             ml_detector: ContextualPIIDetector | None = None,
             ml_budget: 'MLWorkBudget | str | None' = None,
@@ -842,6 +847,7 @@ def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = Fal
     guard = _MemoryGuard(budget)
     try:
         report = _analyze(path, threshold, include_values, limits=limits, profile=profile,
+                          display_nonsecret_values=display_nonsecret_values,
                           progress=progress, timings=timings, ml_detector=ml_detector, ml_budget=ml_budget, ml_work_budget=ml_work_budget,
                           field_observer=field_observer, disposition_observer=disposition_observer, _memory_guard=guard)
         budget = limits if limits is not None else AnalysisLimits.for_profile(profile)
@@ -863,6 +869,7 @@ def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = Fal
 def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0.8,
                       include_values: bool = False, *, limits: AnalysisLimits | None = None,
                       profile: str = 'standard', overwrite: bool = False,
+                      display_nonsecret_values: bool = False,
                       progress=None, timings=None, row_observer=None, encoded_row_observer=None,
                       ml_detector: ContextualPIIDetector | None = None,
                       ml_budget: 'MLWorkBudget | str | None' = None,
@@ -893,6 +900,7 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
         with ReportSpool(output.parent,budget.max_report_bytes,row_observer=row_observer,
                          encoded_row_observer=encoded_row_observer) as rows:
             report = _analyze(source,threshold,include_values,limits=budget,profile=profile,
+                              display_nonsecret_values=display_nonsecret_values,
                               progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,ml_budget=ml_budget, ml_work_budget=ml_work_budget,
                               field_observer=field_observer,disposition_observer=disposition_observer,_memory_guard=guard)
             row_names = ('flows', 'findings', 'ml_field_coverage') + EVIDENCE_ARRAYS

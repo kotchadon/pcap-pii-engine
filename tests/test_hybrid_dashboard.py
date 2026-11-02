@@ -57,10 +57,10 @@ def test_dashboard_reports_selected_model_and_live_evidence():
         assert result['report']['summary']['rules_findings'] == 7
         assert result['report']['summary']['ml_findings'] == 1
         item = next(x for x in result['report']['findings'] if x['detector'] == 'bilstm')
-        assert item['value'] == 'Al***le'
+        assert item['value'] == 'Alex Example'
         assert item['confidence_type'] == 'uncalibrated_model_score'
         assert item['model_version'] == 'synthetic-test-v1'
-        assert 'Alex Example' not in json.dumps(result)
+        assert 'Alex Example' in json.dumps(result)
 
 
 def test_dashboard_default_mode_is_explicitly_rules_only():
