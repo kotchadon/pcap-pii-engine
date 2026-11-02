@@ -157,8 +157,12 @@ def test_journey_b_drawer_and_sheet_open_in_place_and_return(browser, server, wi
     assert page.get_attribute('#inspector', 'data-mode') == mode
     assert page.get_attribute('#inspector', 'data-open') == 'false', 'auto-selection must not cover the list on small screens'
     page.evaluate('window.scrollTo(0, 260)')
-    y0 = page.evaluate('scrollY')
     row = page.locator('#findings-body tr').nth(3)
+    # Playwright may itself scroll a row into view before clicking, especially
+    # at 375px. Measure AFTER that navigation, so the assertion tests whether
+    # opening the Inspector changes scroll position, not whether the click did.
+    row.locator('.row-main').scroll_into_view_if_needed()
+    y0 = page.evaluate('scrollY')
     row.locator('.row-main').click()
     page.wait_for_selector('#fi-support .msg-card')
     page.wait_for_timeout(350)  # let the slide-in finish before measuring
