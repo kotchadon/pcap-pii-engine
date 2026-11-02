@@ -108,7 +108,7 @@ def test_journey_a_first_use_and_b_inspect_in_place_on_desktop(browser, server):
     screenshot_artifact(page, 'summary-1440')
     # The answer leads: count, kinds, completeness.
     assert re.match(r'\d+ potential findings?', page.inner_text('#answer-title'))
-    assert page.inner_text('#verdict-icon') in ('No reported gaps', 'Known limits')
+    assert page.inner_text('#verdict-icon') in ('Scan finished', 'Check details')
     assert page.inner_text('#ctx-status') in ('Complete', 'Incomplete')
     page.click('.answer [data-go=findings]')
     page.wait_for_selector('#fi-support .msg-card')
@@ -194,7 +194,7 @@ def test_journey_c_technical_evidence_and_back(browser, server):
     assert page.is_visible('#insp-back')
     assert page.locator('#insp-dynamic .switch-btn').count() >= 2
     assert 'frame_' in page.inner_text('#insp-dynamic .x-table')
-    assert 'TRACE does not mark the byte position' in page.inner_text('#insp-dynamic') or 'packets below support the whole message' in page.inner_text('#insp-dynamic')
+    assert 'original recording' in page.inner_text('#insp-dynamic') or 'recorded data below' in page.inner_text('#insp-dynamic')
     page.locator('#insp-dynamic .switch-btn').nth(1).click()
     page.wait_for_function('() => document.getElementById("insp-title").textContent.startsWith("HTTP/")')
     page.click('#insp-back')
@@ -287,7 +287,7 @@ def test_journey_e_slow_and_failed_evidence_never_shows_stale_details(browser, s
     rows.nth(2).click()              # fast: a different message
     expected = rows.nth(2).locator('.row-loc').inner_text()
     page.wait_for_timeout(2000)
-    assert expected in page.inner_text('#fi-where'), 'a slow earlier response replaced the newer selection'
+    assert expected.split('.')[-1].replace('_',' ') in page.inner_text('#fi-where').lower(), 'a slow earlier response replaced the newer selection'
     assert 'flow_0001' not in page.inner_text('#fi-where')
     page.unroute('**/investigation?*')
     # An expired job: the panel says so and keeps no stale evidence.
@@ -309,11 +309,13 @@ def test_summary_scope_distinguishes_supported_reconstruction_and_unreadable_con
     page, problems = open_page(browser, server(), 1280, 800)
     run_sample(page)
     assert page.is_visible('#scope-summary')
+    assert not page.locator('#scope-summary').evaluate('(el) => el.open'), 'Advanced scope must be collapsed by default'
+    page.locator('#scope-summary > summary').click()
     examined = page.inner_text('#scope-examined')
-    assert 'supported HTTP messages reconstructed' in examined
-    assert 'captured frames' in examined
+    assert 'readable web messages' in examined
+    assert 'TRACE looked at' in examined
     assert 'encrypted' in page.inner_text('#scope-uninspectable').lower()
-    assert 'not an all-clear' in page.inner_text('#scope-uninspectable').lower()
+    assert 'not part of this scan' in page.inner_text('#scope-uninspectable').lower()
     # Controlled report variations exercise truthful rendering. These values
     # aren't an assertion that the showcase capture itself has missing packets.
     page.evaluate('''() => {
@@ -325,9 +327,9 @@ def test_summary_scope_distinguishes_supported_reconstruction_and_unreadable_con
       state.report.metadata.detection_method='rules_plus_bilstm';
       renderSummary();
     }''')
-    assert '2 reported stream gaps' in page.inner_text('#scope-partial')
-    assert '6 of 10 eligible fields' in page.inner_text('#scope-partial')
-    assert page.inner_text('#verdict-icon') == 'Known limits'
+    assert '2 conversations were missing' in page.inner_text('#scope-partial')
+    assert '6 of 10 eligible pieces of information' in page.inner_text('#scope-partial')
+    assert page.inner_text('#verdict-icon') == 'Check details'
     page.evaluate('''() => {
       state.report.summary.potential_leaks=0;
       state.report.finding_type_counts={};
@@ -473,5 +475,5 @@ def test_rapid_drawer_toggling_settles_on_the_last_choice(browser, server):
     page.wait_for_timeout(600)
     assert page.get_attribute('#inspector', 'data-open') == 'true'
     assert page.inner_text('#inspect-sub') == rows.nth(7).locator('.row-sub').inner_text()
-    assert rows.nth(7).locator('.row-loc').inner_text() in page.inner_text('#fi-where')
+    assert rows.nth(7).locator('.row-loc').inner_text().split('.')[-1].replace('_',' ') in page.inner_text('#fi-where').lower()
     assert problems == []
