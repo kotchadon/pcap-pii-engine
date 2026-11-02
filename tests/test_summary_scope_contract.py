@@ -14,7 +14,7 @@ def test_summary_exposes_three_separate_analysis_scope_explanations():
     html = HTML.read_text(encoding="utf-8")
     for element_id in ("scope-summary", "scope-examined", "scope-partial", "scope-uninspectable"):
         assert f'id="{element_id}"' in html, f"Missing scope explanation {element_id}"
-    for label in ("Examined", "Partly examined", "Cannot inspect"):
+    for label in ("Web conversations checked", "Anything that needs attention", "Other network activity"):
         assert label in html, f"Missing scope category {label}"
 
 
