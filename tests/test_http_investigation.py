@@ -12,7 +12,7 @@ import pytest
 
 from packet_pii.dashboard import DashboardServer
 from packet_pii.engine import analyze
-from packet_pii.investigation import create_index, index_row, conversations, investigation, recover_content
+from packet_pii.investigation import create_index, index_row, conversations, investigation, recover_content, recover_field_value
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = spec_from_file_location('mentor_fixture', ROOT/'examples/generate_mentor_demo.py')
@@ -105,6 +105,32 @@ def test_transformed_field_only_supports_source_not_decoded_span(evidence):
     assert b'reply@example.invalid' not in source
 
 
+def test_single_value_recovery_requires_exact_field_and_verified_capture(evidence):
+    path, oracle, report, conn = evidence
+    finding = next(f for f in report['findings'] if f['pii_type']=='EMAIL' and
+                   f['http_message_id']==report['http_evidence'][0]['http_message_id'])
+    fid = finding['evidence']['field_ids'][0]
+    mid = finding['http_message_id']
+    result = recover_field_value(conn,path,report['capture_evidence'],message_id=mid,field_id=fid)
+    assert result['value'] == oracle['email']
+    assert result['source_scope'] == 'whole_field'
+    assert result['verification'] == 'capture_sha256_reverified'
+    assert result['capture_sha256'] == oracle['sha256']
+    assert oracle['email'] not in json.dumps(investigation(conn,message_id=mid,field_id=fid))
+    with pytest.raises((ValueError,KeyError)):
+        recover_field_value(conn,path,report['capture_evidence'],
+                            message_id=report['http_evidence'][-1]['http_message_id'],field_id=fid)
+    transformed = next(x for x in report['field_evidence'] if x['source_category']=='json_body'
+                       and x['granularity']=='transformed_source_range')
+    with pytest.raises(ValueError,match='direct'):
+        recover_field_value(conn,path,report['capture_evidence'],message_id=transformed['http_message_id'],
+                            field_id=transformed['field_id'])
+    # A matching metadata/index alone never authorises disclosure after capture replacement.
+    raw=bytearray(path.read_bytes());raw[24]^=1;path.write_bytes(raw)
+    with pytest.raises(ValueError,match='identity mismatch'):
+        recover_field_value(conn,path,report['capture_evidence'],message_id=mid,field_id=fid)
+
+
 def test_opt_in_source_is_local_text_with_hash_verification(evidence):
     path, oracle, report, conn = evidence
     html = report['http_evidence'][2]['http_message_id']
@@ -188,6 +214,34 @@ def test_http_auth_ack_job_isolation_retention_and_content(evidence,retain):
             assert request(s,'POST',base+'/content',body,h)[0]==400
             job.updated=time.monotonic()-s.jobs.ttl-1
             assert request(s,'POST',base+'/content',body,h)[0]==404
+
+
+@pytest.mark.parametrize('retain',[False,True])
+def test_single_field_reveal_api_requires_permission_ack_and_capture_retention(evidence,retain):
+    path, oracle, report, _ = evidence
+    f=next(x for x in report['findings'] if x['pii_type']=='EMAIL' and
+           x['http_message_id']==report['http_evidence'][0]['http_message_id'])
+    fid=f['evidence']['field_ids'][0]
+    with server(retain) as s:
+        job=upload(s,path,request_id='single-field-demo-'+str(retain))
+        assert job.status=='completed'
+        base='/api/jobs/'+job.job_id
+        body=json.dumps({'message_id':f['http_message_id'],'field_id':fid,'acknowledge_sensitive_content':True})
+        headers={'Content-Type':'application/json'}
+        assert request(s,'POST',base+'/field-value',body,headers,auth=False)[0]==403
+        assert request(s,'POST',base+'/field-value',body,{**headers,'Origin':'https://bad.example'})[0]==403
+        assert request(s,'POST',base+'/field-value',json.dumps({'message_id':f['http_message_id'],'field_id':fid}),headers)[0]==400
+        code,result,response_headers=request(s,'POST',base+'/field-value',body,headers)
+        assert code==(200 if retain else 400)
+        assert response_headers['Cache-Control']=='no-store'
+        if retain:
+            assert result['value']==oracle['email'] and result['source_scope']=='whole_field'
+            assert result['verification']=='capture_sha256_reverified'
+            assert oracle['email'] not in json.dumps(s.jobs.page(job,'findings',limit=100))
+            assert request(s,'POST',base+'/field-value',
+                json.dumps({'message_id':f['http_message_id'],'field_id':'nonexistent','acknowledge_sensitive_content':True}),headers)[0] in (400,404)
+            job.capture.write_bytes(job.capture.read_bytes()+b'x')
+            assert request(s,'POST',base+'/field-value',body,headers)[0]==400
 
 
 def test_failure_cancel_retained_capture_never_exposed(evidence,monkeypatch):
