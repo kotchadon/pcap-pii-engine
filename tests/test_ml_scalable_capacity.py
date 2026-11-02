@@ -59,6 +59,6 @@ def test_ceiling_enforced_independently_of_selected_profile():
     with pytest.raises(ValueError, match="max_seconds"):
         MLWorkBudget(max_seconds=7_201)
     with pytest.raises(ValueError, match="batch_fields"):
-        MLWorkBudget(batch_fields=257)
+        MLWorkBudget(batch_fields=10_001)
     with pytest.raises(ValueError, match="max_field_chars"):
         MLWorkBudget(max_field_chars=MLWorkBudget().max_field_chars + 1)
