@@ -19,7 +19,7 @@ const TraceInspector=(()=>{
  const PAGE=25,TIMEOUT_MS=20000,MAX_SOURCE_CHARS=512*1024,MAX_LINES=5000,MIN_W=340,MAX_W=720;
  const INSPECTABLE=['findings','flows'];
  const st={epoch:0,seq:0,stacks:{findings:[],flows:[]},view:'overview',open:false,collapsed:false,mode:'pane',
-  returnFocus:null,filled:null,contentSeq:0,sourceHost:null,width:420,seg:'conversations',inited:false,
+  returnFocus:null,filled:null,contentSeq:0,sourceHost:null,revealedFieldMasked:null,width:420,seg:'conversations',inited:false,
   conv:{offset:0,total:0,loaded:false,seq:0,selected:null}};
  const stack=()=>st.stacks[INSPECTABLE.includes(st.view)?st.view:'findings'];
 
@@ -187,6 +187,45 @@ const TraceInspector=(()=>{
    if(m.reconstruction_complete===false)card.append(note('Some of this message is missing, so it may be incomplete.','warn'));
    card.append(button('Open this '+(m.message_type==='request'?'request':'response'),'btn btn-primary btn-sm',()=>push({kind:'message',id:mid,fieldId,from:f})));
    host.append(card);
+   // Nothing raw is stored in a result row or export. Explicit reveal retrieves
+   // exactly one SHA-verified field from the retained local capture on request.
+   const exact=data.content_available===true && fieldId && data.selected_field &&
+     data.selected_field.granularity==='exact_stream_range' &&
+     Array.isArray(data.selected_field.transformations) && data.selected_field.transformations.length===0;
+   if(exact){
+    const revealBox=el('div','iv-reveal');
+    const intro=el('p','prose','Want to see the actual value? It may contain private information. TRACE will check the original recording before showing just this field.');
+    const controls=el('div','iv-reveal-actions');
+    const reveal=button('Show original value','btn btn-secondary btn-sm');
+    const hide=button('Hide value','btn btn-ghost btn-sm');hide.hidden=true;
+    const status=el('p','hint');status.setAttribute('role','status');
+    const raw=el('pre','iv-revealed-value');raw.hidden=true;
+    const masked=f.value||'[hidden]';
+    hide.addEventListener('click',()=>{
+      raw.textContent='';raw.hidden=true;$i('inspect-sub').textContent=masked;
+      st.revealedFieldMasked=null;hide.hidden=true;reveal.hidden=false;
+      status.textContent='The original value is hidden again.';
+    });
+    reveal.addEventListener('click',async()=>{
+      const requestSeq=st.seq,requestEpoch=st.epoch;
+      reveal.disabled=true;status.textContent='Checking the original recording…';
+      try{
+       const value=await request('field-value',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message_id:mid,field_id:fieldId,acknowledge_sensitive_content:true})});
+       if(!alive(requestSeq,requestEpoch))return;
+       if(value.field_id!==fieldId || value.message_id!==mid || value.verification!=='capture_sha256_reverified')
+        throw new Error('Value verification did not match the selected field');
+       st.revealedFieldMasked=masked;
+       $i('inspect-sub').textContent=value.value;
+       raw.textContent=value.value;raw.hidden=false;
+       hide.hidden=false;reveal.hidden=true;
+       status.textContent='Verified original field value shown. Hide it before sharing your screen.';
+      }catch(error){if(alive(requestSeq,requestEpoch)){status.textContent=explain(error);reveal.disabled=false}}
+    });
+    controls.append(reveal,hide);
+    revealBox.append(intro,controls,status,raw);
+    host.append(revealBox);
+   }
    const [scope,coverage,complete]=evidenceStatement(data);
    host.append(el('p','prose',scope),note(coverage,complete?'ok':'warn'));
    if(ids.length>1)host.append(note('This rule matched '+ids.length+' fields with the same name, so the evidence covers the whole message.'));
@@ -288,7 +327,11 @@ const TraceInspector=(()=>{
  }
 
  // ------------------------------------------------------------------ opt-in response source (inert text)
- function clearSource(){st.contentSeq++;if(st.sourceHost){st.sourceHost.replaceChildren();st.sourceHost=null}}
+ function clearSource(){
+  st.contentSeq++;
+  if(st.sourceHost){st.sourceHost.replaceChildren();st.sourceHost=null}
+  if(st.revealedFieldMasked!==null){$i('inspect-sub').textContent=st.revealedFieldMasked;st.revealedFieldMasked=null}
+ }
  function sourceSection(m,data){
   const sec=el('section','iv-section source-section');sec.append(el('h3',null,'Original response'));
   if(!data.content_available){sec.append(note('Viewing the original response is turned off. To allow it, start TRACE with --retain-capture-for-inspection; the capture is then kept until this analysis expires.'));return sec}
