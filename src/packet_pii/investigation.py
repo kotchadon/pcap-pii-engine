@@ -213,6 +213,100 @@ def prepare_content(conn, *, message_id):
     return {'message': message, 'sources': sources}
 
 
+# One-value reveal: returns only one original field, never a report of raw values.
+MAX_FIELD_VALUE_BYTES = 4096
+
+
+def prepare_field_value(conn, *, message_id, field_id):
+    """Select one finding-backed exact field; no user-supplied byte coordinates."""
+    message = _one(conn, 'http_evidence', _id(message_id))
+    field = _one(conn, 'field_evidence', _id(field_id))
+    if field.get('http_message_id') != message_id or field.get('stream_id') != message.get('stream_id'):
+        raise ValueError('Field does not belong to this message')
+    matched = conn.execute('SELECT 1 FROM finding_fields WHERE field_id=? LIMIT 1', (field_id,)).fetchone()
+    if not matched:
+        raise ValueError('Field has no reported finding')
+    if (field.get('granularity') != 'exact_stream_range' or field.get('transformations') or
+            field.get('text_encoding') not in ('utf-8', 'iso-8859-1')):
+        raise ValueError('A direct, untransformed field source is required')
+    ranges = field.get('stream_ranges')
+    if not isinstance(ranges, list) or not 1 <= len(ranges) <= MAX_SOURCE_RANGES:
+        raise ValueError('Invalid field ranges')
+    if not all(type(x.get('start')) is int and type(x.get('end')) is int and
+               0 <= x['start'] < x['end'] for x in ranges):
+        raise ValueError('Invalid field range')
+    total = sum(x['end']-x['start'] for x in ranges)
+    if total > MAX_FIELD_VALUE_BYTES:
+        raise ValueError('Field exceeds safe reveal size')
+    ranges = sorted(ranges, key=lambda x: x['start'])
+    if any(a['end'] != b['start'] for a,b in zip(ranges, ranges[1:])):
+        raise ValueError('Field ranges are not continuous')
+    sources,truncated = source_ranges(conn, message['stream_id'], ranges)
+    if truncated or not sources:
+        raise ValueError('Field source is not complete')
+    sources.sort(key=lambda x: x['stream_start'])
+    pos=ranges[0]['start']
+    for source in sources:
+        if (source['stream_start'] != pos or source.get('file_start') is None or
+                source.get('file_end') is None):
+            raise ValueError('Field source has missing bytes')
+        pos=source['stream_end']
+    if pos != ranges[-1]['end']:
+        raise ValueError('Field source has missing bytes')
+    return {'field_id':field_id,'message_id':message_id,'encoding':field['text_encoding'],
+            'sources':sources,'stream_start':ranges[0]['start'],'stream_end':ranges[-1]['end']}
+
+
+def recover_field_value_stream(stream, identity, prepared, *, checkpoint=None):
+    """Recheck retained capture SHA-256 and return one exact field as inert text.
+
+    No raw values are persisted, written to logs, or added to report/index rows.
+    """
+    before = os.fstat(stream.fileno())
+    if identity.get('identity_status') != 'verified_read' or before.st_size != identity.get('capture_bytes'):
+        raise ValueError('Retained capture identity mismatch')
+    digest=hashlib.sha256()
+    stream.seek(0)
+    remaining=before.st_size
+    while remaining:
+        if checkpoint is not None: checkpoint()
+        block=stream.read(min(256*1024,remaining))
+        if not block: raise ValueError('Retained capture source unavailable')
+        digest.update(block)
+        remaining-=len(block)
+    if digest.hexdigest() != identity.get('capture_sha256'):
+        raise ValueError('Retained capture identity mismatch')
+    raw=[]
+    pos=prepared['stream_start']
+    total=0
+    for source in prepared['sources']:
+        if checkpoint is not None: checkpoint()
+        a,b=source['file_start'],source['file_end']
+        if source['stream_start'] != pos or not 0 <= a < b <= before.st_size or b-a != source['stream_end']-pos:
+            raise ValueError('Field source does not match recorded bytes')
+        total+=b-a
+        if total > MAX_FIELD_VALUE_BYTES: raise ValueError('Field exceeds safe reveal size')
+        stream.seek(a)
+        part=stream.read(b-a)
+        if len(part)!=b-a: raise ValueError('Field source unavailable')
+        raw.append(part)
+        pos=source['stream_end']
+    after=os.fstat(stream.fileno())
+    if pos != prepared['stream_end'] or (before.st_size,before.st_mtime_ns,before.st_ctime_ns) != (after.st_size,after.st_mtime_ns,after.st_ctime_ns):
+        raise ValueError('Retained capture changed during verification')
+    value=b''.join(raw).decode(prepared['encoding'],'strict')
+    return dict(field_id=prepared['field_id'],message_id=prepared['message_id'],
+                value=value,source_scope='whole_field',
+                capture_sha256=digest.hexdigest(),verification='capture_sha256_reverified')
+
+
+def recover_field_value(conn, capture, identity, *, message_id, field_id):
+    prepared=prepare_field_value(conn,message_id=message_id,field_id=field_id)
+    descriptor=os.open(capture,os.O_RDONLY|getattr(os,'O_NOFOLLOW',0))
+    with os.fdopen(descriptor,'rb') as stream:
+        return recover_field_value_stream(stream,identity,prepared)
+
+
 def recover_content(conn, capture, identity, *, message_id):
     """Compatibility entry point for a caller-owned index and capture path."""
     prepared = prepare_content(conn, message_id=message_id)
