@@ -95,36 +95,36 @@ async function loadBenchmark(){
 }
 
 // ---------------------------------------------------------------- one finding, in plain language
+function friendlyField(location){
+ const raw=String(location||'');
+ const leaf=raw.split('.').pop().replace(/\[\d+\]/g,'').replaceAll('_',' ').replaceAll('-',' ').trim();
+ return leaf?leaf.replace(/\b\w/g,c=>c.toUpperCase()):'a web form field';
+}
 function explainDetection(f){
- const loc=String(f.location||'unknown field');
- if(f.detector==='bilstm'){
-  const range=Number.isInteger(f.span_start)&&Number.isInteger(f.span_end)
-   ?'characters ['+f.span_start+', '+f.span_end+')':'a text span';
-  return 'The loaded contextual BiLSTM model predicted '+String(f.pii_type||'an entity')+' at '+range+' in '+loc+'. This was inferred from the extracted text and field context, not a fixed regex. The model is not explainable from this record alone: this is a prediction, not proof of a person or leak. Raw score '+(Number(f.confidence)||0).toFixed(3)+' is NOT calibrated accuracy.';
- }
- const kind=String(f.pii_type||'');
- if(kind==='EMAIL')return 'The rules detector found an email-shaped text pattern inside '+loc+'. This is a regex-like structural match, not a judgement about whether transmission was authorised.';
- if(kind==='PHONE')return 'The rules detector found a phone-number-shaped value with a plausible digit count inside '+loc+'. Some non-phone numbers may also match.';
- if(kind==='IP_ADDRESS')return 'The rules detector recognised an IPv4-shaped pattern and checked it as a valid IPv4 address inside '+loc+'.';
- if(kind==='CREDIT_CARD')return 'The rules detector found a payment-card-shaped number that passed a Luhn checksum in '+loc+'. It is not evidence that the card belongs to a real account.';
- if(kind==='CREDENTIAL_OR_TOKEN')return 'The rules detector identified a credential-bearing field or authorisation header ('+loc+'). This relies on the field context; masked output avoids disclosing the underlying value.';
- if(kind==='USERNAME')return 'The rules detector classified '+loc+' as a username field based on its name. The entire field value is a candidate username.';
- if(kind==='PERSON_NAME_CANDIDATE')return 'The rules detector classified '+loc+' using a structured name-related key. This is a PERSON_NAME_CANDIDATE, not a validated identity or an AI prediction.';
- if(['APPLE_ADVERTISING_ID','ANDROID_ADVERTISING_ID','ADVERTISING_ID'].includes(kind))return 'A deterministic rule matched a UUID-shaped advertising identifier with supporting field context at '+loc+'. Apple/Android attribution requires explicit platform evidence. A valid format does not establish a genuine assigned device identifier.';
- if(kind==='AGE')return 'A deterministic rule matched an explicitly labelled age field and its permitted value format at '+loc+'. TRACE did not infer a person’s age.';
- if(kind==='GENDER'||kind==='SEX')return 'A deterministic rule classified an explicitly transmitted '+(kind==='SEX'?'sex':'gender')+' field using documented context and value checks at '+loc+'. TRACE did not infer demographic characteristics.';
- if(kind==='DEVICE_ID'||kind==='USER_ACCOUNT_ID')return 'A deterministic rule found an identifier-shaped value under a narrowly defined '+(kind==='DEVICE_ID'?'device':'user/account')+' field at '+loc+'. This does not verify a real person or device.';
- return 'The rule detector emitted a candidate '+kind+' finding at '+loc+'. Examine its location and source; rule scores are heuristics, not calibrated probabilities.';
+ const loc=friendlyField(f.location),kind=String(f.pii_type||'');
+ if(f.detector==='bilstm')return 'TRACE’s optional AI noticed text that looks like '+typeLabel(kind).toLowerCase()+' in “'+loc+'”. Review the match to decide whether it relates to personal information.';
+ if(kind==='EMAIL')return 'This looks like an email address in “'+loc+'”.';
+ if(kind==='PHONE')return 'This looks like a phone number in “'+loc+'”.';
+ if(kind==='CREDIT_CARD')return 'A card-number pattern was found in “'+loc+'”.';
+ if(kind==='CREDENTIAL_OR_TOKEN')return 'This field looks like it contains a password, login secret or access token.';
+ if(kind==='USERNAME')return 'The field “'+loc+'” is commonly used for usernames.';
+ if(kind==='PERSON_NAME_CANDIDATE'||kind==='PERSON_NAME')return 'The field “'+loc+'” looks like it may contain a person’s name.';
+ if(kind==='IP_ADDRESS')return 'This looks like a network address.';
+ if(kind==='AGE')return 'TRACE noticed a field labelled as someone’s age.';
+ if(kind==='GENDER'||kind==='SEX')return 'TRACE noticed a field labelled “'+loc+'”.';
+ if(kind.includes('ADVERTISING_ID'))return 'This looks like an advertising identifier used by apps and devices.';
+ if(kind==='DEVICE_ID'||kind==='USER_ACCOUNT_ID')return 'This looks like an identifier for a device or account.';
+ return 'TRACE noticed a possible '+typeLabel(kind).toLowerCase()+' in “'+loc+'”.';
 }
 function findingKey(f){return [f?.http_message_id||f?.evidence?.http_message_id,f?.location,f?.pii_type,f?.value,f?.detector,f?.span_start,f?.span_end].join('|')}
 function endpoint(ip,port){return ip?String(ip)+(port!=null?':'+port:''):'an unknown endpoint'}
 function whereText(f){
  const kind=f.http_message_type==='response'?'HTTP response':f.http_message_type==='request'?'HTTP request':'HTTP message';
- return 'In the field '+String(f.location||'(unknown)')+' of an '+kind+' sent from '+endpoint(f.source_ip,f.source_port)+' to '+endpoint(f.destination_ip,f.destination_port)+'.';
+ return 'This appeared in a '+(kind==='HTTP response'?'reply from a web service':kind==='HTTP request'?'web request sent by a device':'web message')+'. It was in the “'+friendlyField(f.location)+'” field. You can open the original message below.';
 }
 function detectorText(f){
  const score=typeof f.confidence==='number'?f.confidence.toFixed(f.detector==='bilstm'?3:2):'unreported';
- return f.detector==='bilstm'?'Contextual model prediction · raw score '+score+' (uncalibrated)':'Rule match · heuristic score '+score;
+ return f.detector==='bilstm'?'Suggested by TRACE’s AI':'Found by a pattern check';
 }
 function markFindingRows(){
  const key=state.selectedFinding?findingKey(state.selectedFinding):null;
@@ -133,7 +133,7 @@ function markFindingRows(){
 function inspectFinding(f,opts={}){
  if(!opts.restore||state.tab==='findings'){state.selectedFinding=f;markFindingRows();}
  setText('inspect-title',typeLabel(f.pii_type||'PII'));
- setText('inspect-sub',f.value||'[masked]');
+ setText('inspect-sub',f.value||'[hidden]');
  setText('fi-detector',detectorText(f));
  setText('fi-where',whereText(f));
  setText('inspect-reason',explainDetection(f));
@@ -264,8 +264,8 @@ function renderSummary(){
  const total=Number(s.potential_leaks)||0;
  setText('answer-title',total?num(total)+' potential '+(total===1?'finding':'findings'):'No potential findings in inspected content');
  setText('answer-text',total
-  ?'Involving '+num(items.length)+' '+(items.length===1?'type':'types')+' of information across '+num(s.http_messages)+' HTTP messages. Values are masked. Each finding is a candidate to review, not confirmed personal information.'
-  :'TRACE checked '+num(s.http_messages)+' HTTP messages and found nothing at the current thresholds. That does not show the capture is free of personal information, especially if some traffic was encrypted or incomplete.');
+  ?'TRACE noticed '+num(items.length)+' '+(items.length===1?'kind':'kinds')+' of possible personal information in the recorded web activity. Choose a category to see what appeared and where.'
+  :'TRACE checked '+num(s.http_messages)+' web messages and found no matches in the information it could read. See “What did TRACE check?” for details.');
  // Completeness: every signal that limits the result is stated, never hidden behind a green tick.
  const reasons=[];
  if(Number(s.stream_gaps)>0)reasons.push('Some packets were missing ('+num(s.stream_gaps)+' gaps in the captured streams), so parts of some conversations may be incomplete.');
@@ -275,24 +275,24 @@ function renderSummary(){
  const bad=!!s.analysis_incomplete||reasons.length>0;
  // Different evidence boundaries must not be collapsed into a global "safe/complete" score.
  // All quantities are from the actual report; unsupported encrypted content has no measured count.
- setText('scope-examined',num(s.http_messages)+' supported HTTP messages reconstructed from '+num(s.packets_captured)+' captured frames. This counts messages TRACE processed, not all network content.');
+ setText('scope-examined','TRACE looked at '+num(s.http_messages)+' readable web messages in this recording.');
  const partialNotes=[];
- if(Number(s.stream_gaps)>0)partialNotes.push(num(s.stream_gaps)+' reported stream gaps can make conversations incomplete.');
- if(s.analysis_incomplete&&Number(s.stream_gaps)<=0)partialNotes.push('Capture processing or reconstruction was incomplete.');
+ if(Number(s.stream_gaps)>0)partialNotes.push('Some parts of '+num(s.stream_gaps)+' conversations were missing from the recording.');
+ if(s.analysis_incomplete&&Number(s.stream_gaps)<=0&&s.ml_coverage_status!=='partial'&&!s.ml_inference_failed)partialNotes.push('Some parts of the recording may need another check.');
  const usedModel=r.metadata?.detection_method==='rules_plus_bilstm';
  if(usedModel&&(s.ml_coverage_status==='partial'||s.ml_inference_failed)){
   const eligible=Number(s.ml_fields_eligible),evaluated=Number(s.ml_fields_evaluated);
   if(s.ml_coverage_status==='partial'&&Number.isFinite(eligible)&&eligible>0&&Number.isFinite(evaluated)&&evaluated>=0)
-   partialNotes.push('The contextual model evaluated '+num(evaluated)+' of '+num(eligible)+' eligible fields.');
-  else partialNotes.push('Contextual model coverage was incomplete.');
+   partialNotes.push('The optional AI checked '+num(evaluated)+' of '+num(eligible)+' eligible pieces of information.');
+  else partialNotes.push('The optional AI checked only part of the recording.');
  }
- if(s.ml_inference_failed)partialNotes.push('The contextual model failed or did not finish.');
- if(!partialNotes.length)partialNotes.push('No stream gaps or incomplete analysis were reported. Unsupported or encrypted content may still be unreadable.');
+ if(s.ml_inference_failed)partialNotes.push('The optional AI check did not finish.');
+ if(!partialNotes.length)partialNotes.push('No missing pieces were reported in the web conversations TRACE could read.');
  setText('scope-partial',partialNotes.join(' '));
- setText('scope-uninspectable','Encrypted payloads and unsupported protocols are not decoded. TRACE does not measure all inaccessible content in this summary; an empty findings list is not an all-clear.');
- setText('verdict-icon',bad?'Known limits':'No reported gaps');$('verdict-icon').classList.toggle('warning',bad);$('verdict-icon').dataset.state=bad?'warn':'ok';
- setText('verdict-title',bad?'Some supported traffic could not be fully analysed':'No capture or reconstruction gaps reported');
- setText('verdict-text',bad?reasons.join(' ')+' Missing findings are not evidence of absence.':'TRACE reported no capture damage or stream gaps. Only supported content was examined; encrypted traffic and unsupported protocols remain outside this result.');
+ setText('scope-uninspectable','TRACE checks readable web conversations. Encrypted information and other network formats are not part of this scan.');
+ setText('verdict-icon',bad?'Check details':'Scan finished');$('verdict-icon').classList.toggle('warning',bad);$('verdict-icon').dataset.state=bad?'warn':'ok';
+ setText('verdict-title',bad?'Some information needs a closer look':'Your scan is ready to review');
+ setText('verdict-text',bad?(s.ml_coverage_status==='partial'?'The optional AI reached its selected check limit. Open “What did TRACE check?” for the numbers.':reasons.length?'Part of the recorded activity could not be fully checked. See scan details for more.':'See scan details for more.'):'Explore the possible personal details TRACE found and where they appeared.');
  const root=$('breakdown');root.replaceChildren();
  if(!items.length){const p=document.createElement('p');p.className='empty-inline';p.textContent='No findings were reported at the current thresholds.';root.appendChild(p)}
  else{const max=items[0][1];for(const [label,count] of items.slice(0,8)){const line=document.createElement('button');line.type='button';line.className='bar-row';line.setAttribute('aria-label',typeLabel(label)+': '+count+' findings. Show them.');const name=document.createElement('span');name.className='bar-label';name.textContent=typeLabel(label);const track=document.createElement('span');track.className='bar-track';const fill=document.createElement('span');fill.className='bar-fill';fill.style.width=`${Math.max(3,(count/max)*100)}%`;track.appendChild(fill);const n=document.createElement('b');n.className='bar-count';n.textContent=count;line.append(name,track,n);line.addEventListener('click',()=>showType(label));root.appendChild(line)}}
