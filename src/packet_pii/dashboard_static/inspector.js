@@ -153,11 +153,11 @@ const TraceInspector=(()=>{
  }
  function evidenceStatement(data){
   const f=data.selected_field,v=data.verification||{};
-  const scope=!f?'The packets below support the whole message. Select a field to see the packets for that field alone.'
-   :f.granularity==='exact_stream_range'?'The packets contain the whole field exactly as captured. TRACE does not mark the byte position of the detected value inside it.'
-   :f.granularity==='transformed_source_range'?'The field was decoded (for example from JSON or URL encoding), so the packets support the field but cannot show the value byte for byte.'
-   :'This field could not be mapped precisely. The packets support the message as a whole.';
-  const coverage=v.coverage_complete?'Recorded packet ranges cover the whole selection.':'Part of the selection has no recorded packet range, so this evidence is incomplete.';
+  const scope=!f?'The recorded data below shows where this web message came from. Select a field to narrow it down.'
+   :f.granularity==='exact_stream_range'?'We found this field in the original recording. You can open the web message below.'
+   :f.granularity==='transformed_source_range'?'TRACE read this field from the recorded web message and converted it into readable text.'
+   :'The original recording supports this web message. Select another field to explore more closely.';
+  const coverage=v.coverage_complete?'The supporting part of the recording was found.':'Only part of the supporting recording could be matched.';
   return [scope,coverage,!!v.coverage_complete];
  }
  function packetChips(sources,limit){
@@ -178,8 +178,8 @@ const TraceInspector=(()=>{
    const data=await request('investigation?'+new URLSearchParams({message_id:mid,field_id:fieldId,limit:String(PAGE)}));
    if(!alive(seq,epoch))return;
    const m=data.message;host.replaceChildren();
-   const roleText=m.message_type==='request'?'sent by the client '+endpoint(m.client)+' to the server '+endpoint(m.server):'sent by the server '+endpoint(m.server)+' to the client '+endpoint(m.client);
-   $i('fi-where').textContent='In the field '+String(f.location||'(unknown)')+' of an '+kindOf(m)+' '+roleText+'.';
+   const roleText=m.message_type==='request'?'sent from one device to another':'sent back to a device';
+   $i('fi-where').textContent='This appeared in a '+(m.message_type==='request'?'web request':'web reply')+' '+roleText+'. It was in the “'+friendlyField(f.location)+'” field.';
    const card=el('div','msg-card');
    const head=el('div','msg-card-head');head.append(el('span','msg-kind',kindOf(m)),el('code','msg-line',m.start_line||'Start line unavailable'));
    card.append(head);
@@ -189,8 +189,8 @@ const TraceInspector=(()=>{
    const [scope,coverage,complete]=evidenceStatement(data);
    host.append(el('p','prose',scope),note(coverage,complete?'ok':'warn'));
    if(ids.length>1)host.append(note('This rule matched '+ids.length+' fields with the same name, so the evidence covers the whole message.'));
-   if(data.source_ranges&&data.source_ranges.length){host.append(el('p','iv-label','Supported by '+nf(data.source_ranges.length)+' packet range'+(data.source_ranges.length===1?'':'s')+(data.source_ranges_truncated?' (more not shown)':'')),packetChips(data.source_ranges,6))}
-   else host.append(note('No recorded packet range is available for this selection. TRACE does not infer one.','warn'));
+   if(data.source_ranges&&data.source_ranges.length){host.append(el('p','iv-label','Found in '+nf(data.source_ranges.length)+' part'+(data.source_ranges.length===1?'':'s')+(data.source_ranges_truncated?' (more not shown)':'')),packetChips(data.source_ranges,6))}
+   else host.append(note('We could not locate an exact supporting section for this selection.','warn'));
   }catch(e){if(alive(seq,epoch)){host.replaceChildren(errorBox(e,()=>show()))}}
  }
 
