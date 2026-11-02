@@ -71,6 +71,32 @@ def test_job_showcase_pages_download_and_repeat_requests():
         assert request(s,'GET','/api/jobs/not-a-job',headers=auth)[0]==404
 
 
+
+@pytest.mark.parametrize('reason,expect', [
+    ('Analysis exceeded configured report byte budget','evidence/report limit'),
+    ('Capture exceeds configured packet limit','packet limit'),
+    ('Capture exceeds configured buffered TCP payload limit','Network payload exceeded'),
+    ('Analysis exceeded configured process memory budget: x','process-memory limit'),
+])
+def test_failed_scan_explains_which_budget_was_reached_without_leaking_content(monkeypatch, reason, expect):
+    from packet_pii.engine import AnalysisLimitError
+    import packet_pii.jobs as jobs
+    def reject(*args, **kwargs):
+        raise AnalysisLimitError(reason + ' /private/client/password-SECRET')
+    monkeypatch.setattr(jobs, 'analyze_to_report', reject)
+    with server() as s:
+        code, body, _ = begin(s, request_id='limit-repro-abcdef1234')
+        assert code == 202
+        done=finish(s,json.loads(body)['job_id'])
+        assert done['status']=='failed'
+        assert expect in done['error']
+        assert done['reason_type']=='AnalysisLimitError'
+        assert '/private/client' not in json.dumps(done)
+        assert 'password-SECRET' not in json.dumps(done)
+        assert not list(s.jobs.get(done['job_id']).directory.iterdir())
+
+
+
 def test_missing_model_and_bad_request_are_not_success():
     with server() as s:
         assert begin(s,mode='hybrid')[0]==422

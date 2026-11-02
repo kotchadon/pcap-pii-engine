@@ -862,8 +862,10 @@ def analyze(path: str | Path, threshold: float = 0.8, include_values: bool = Fal
         if progress is not None:
             progress(dict(stage='complete', **report['summary']))
         return report
-    except (MemoryError, ReportLimitError) as exc:
-        raise AnalysisLimitError('Analysis exhausted memory or report budget; no complete report') from exc
+    except ReportLimitError as exc:
+        raise AnalysisLimitError('Analysis exceeded configured report byte budget') from exc
+    except MemoryError as exc:
+        raise AnalysisLimitError('Analysis exhausted process memory budget') from exc
 
 
 def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0.8,
@@ -927,5 +929,7 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
                 # Publication already succeeded; observer failure cannot undo it.
                 receipt['progress_notification_failed'] = True
         return receipt
-    except (MemoryError, ReportLimitError) as exc:
-        raise AnalysisLimitError('Analysis exhausted memory or report budget; no complete report') from exc
+    except ReportLimitError as exc:
+        raise AnalysisLimitError('Analysis exceeded configured report byte budget') from exc
+    except MemoryError as exc:
+        raise AnalysisLimitError('Analysis exhausted process memory budget') from exc

@@ -34,6 +34,45 @@ class JobCancelled(ValueError): pass
 class JobQuota(ValueError): pass
 
 
+def _explain_analysis_limit(exc: AnalysisLimitError, job) -> str:
+    """Give actionable, bounded failure details without copying raw exception contents.
+
+    All strings below are authored here. Captured payloads, local file paths and
+    third-party exception text are never published in a status response.
+    """
+    message = str(exc).lower()
+    limits = job.limits
+    profile = job.profile.capitalize()
+    if 'report' in message or 'evidence' in message:
+        maximum = limits.max_report_bytes // MIB
+        suggestion = ('Try Stress for a larger report allowance, although dense files may still exceed it.'
+                      if job.profile != 'stress'
+                      else 'This capture needs a smaller evidence footprint or a separately validated higher-capacity reporting workflow.')
+        return (f'The {profile} analysis reached its {maximum:,} MiB evidence/report limit. '
+                f'{suggestion} Changing the AI field limit does not increase report storage.')
+    if 'memory' in message:
+        return (f'Analysis reached its {limits.max_memory_bytes // (1024*MIB)} GiB process-memory limit. '
+                'Try a less dense recording or an independently verified memory-efficient workflow.')
+    if 'buffered tcp payload' in message:
+        return (f'Network payload exceeded the {profile} limit of '
+                f'{limits.max_tcp_payload_bytes // MIB:,} MiB. '
+                'Try Stress if available; the AI field limit is separate.')
+    if 'packet' in message:
+        return (f'This recording exceeds the {profile} packet limit of {limits.max_packets:,}. '
+                'Try Stress if available; a larger AI field allowance does not affect packets.')
+    if 'flow' in message or 'session' in message:
+        return (f'This recording exceeds the {profile} connection/session limit of '
+                f'{limits.max_flows:,}. Try Stress if available.')
+    if 'http field' in message or 'per-message detection' in message:
+        return ('One web message contains too many or overly long fields for exact supported analysis. '
+                'TRACE kept the incomplete result unpublished.')
+    if 'http message' in message:
+        return ('One web conversation exceeded the supported message count. '
+                'TRACE kept the incomplete result unpublished.')
+    return ('A configured scan resource limit stopped this analysis. '
+            'Try Stress for dense recordings and check available memory and disk space.')
+
+
 @dataclass
 class Job:
     job_id: str
@@ -290,7 +329,7 @@ class JobManager:
                     job.reason_type=type(exc).__name__
                     job.ml_failed=bool(getattr(exc,'ml_inference_failed',False))
                     job.error=('Scan cancelled' if job.status=='cancelled' else
-                               'Scan exceeded a configured resource budget' if isinstance(exc,AnalysisLimitError) else
+                               _explain_analysis_limit(exc, job) if isinstance(exc, AnalysisLimitError) else
                                'Scan could not complete; no complete result is available')
                     job.progress={'stage':job.status};job.updated=time.monotonic();job.evaluation=None
         finally:
