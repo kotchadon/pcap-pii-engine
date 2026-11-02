@@ -269,6 +269,32 @@ def test_journey_d_sensitive_source_is_inert_and_hide_wins_races(browser, server
     assert problems == []
 
 
+
+def test_opt_in_single_field_reveal_is_hidden_and_cleared_on_navigation(browser, server):
+    page, problems = open_page(browser, server(retain_capture_for_inspection=True), 1440, 900)
+    run_sample(page)
+    page.click('.nav-link[data-tab=findings]')
+    page.select_option('#filter-type', 'EMAIL')
+    page.wait_for_selector('#findings-body tr .row-main')
+    page.locator('#findings-body tr .row-main').first.click()
+    page.wait_for_selector('#fi-support .msg-card')
+    page.wait_for_selector('#fi-support .iv-reveal button')
+    original_preview = page.inner_text('#inspect-sub')
+    assert '*' in original_preview
+    assert page.locator('#fi-support .iv-reveal .iv-revealed-value').is_hidden()
+    page.get_by_role('button', name='Show original value').click()
+    page.wait_for_function('() => document.querySelector("#fi-support .iv-reveal .iv-revealed-value").textContent.includes("@")')
+    assert '@' in page.inner_text('#inspect-sub')
+    page.get_by_role('button', name='Hide value').click()
+    assert page.inner_text('#inspect-sub') == original_preview
+    assert page.locator('#fi-support .iv-reveal .iv-revealed-value').is_hidden()
+    # A new selection must never inherit the raw value from the previous item.
+    page.locator('#findings-body tr .row-main').nth(1).click()
+    assert page.locator('#fi-support .iv-reveal .iv-revealed-value').is_hidden()
+    assert problems == []
+    page.close()
+
+
 def test_journey_e_slow_and_failed_evidence_never_shows_stale_details(browser, server):
     url = server()
     page, problems = open_page(browser, url, 1440, 900)

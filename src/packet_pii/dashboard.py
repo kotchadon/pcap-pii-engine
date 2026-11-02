@@ -359,7 +359,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except (OSError,sqlite3.Error):self._reply({'error':'Result unavailable'},404)
 
     def _job_post(self,path):
-        content=re.fullmatch(r'/api/jobs/([0-9a-f]{32})/content',path)
+        content=re.fullmatch(r'/api/jobs/([0-9a-f]{32})/(content|field-value)',path)
         if content:
             try:
                 length=self.headers.get('Content-Length','')
@@ -369,16 +369,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 payload=json.loads(self.rfile.read(int(length)))
                 if not isinstance(payload,dict) or payload.get('acknowledge_sensitive_content') is not True:
                     raise ValueError('Explicit sensitive-content acknowledgement required')
-                representation=payload.get('representation','source')
-                if representation not in ('source','static'):
-                    raise ValueError('Unknown content representation')
-                result=self.server.jobs.investigate(self.server.jobs.get(content[1]),'content',message_id=payload.get('message_id',''))
-                if representation=='static':
-                    from .static_page import project_content
-                    result=dict(result,static_representation=project_content(result))
+                if content[2]=='field-value':
+                    if set(payload) != {'message_id','field_id','acknowledge_sensitive_content'}:
+                        raise ValueError('Expected one field identifier and explicit acknowledgement')
+                    result=self.server.jobs.investigate(self.server.jobs.get(content[1]),'field_value',
+                        message_id=payload.get('message_id',''),field_id=payload.get('field_id',''))
+                else:
+                    representation=payload.get('representation','source')
+                    if representation not in ('source','static'):
+                        raise ValueError('Unknown content representation')
+                    result=self.server.jobs.investigate(self.server.jobs.get(content[1]),'content',message_id=payload.get('message_id',''))
+                    if representation=='static':
+                        from .static_page import project_content
+                        result=dict(result,static_representation=project_content(result))
                 self._reply(result)
             except KeyError:self._reply({'error':'Job or evidence unavailable'},404)
-            except (ValueError,UnicodeError):self._reply({'error':'Content unavailable: acknowledge sensitive content; retention, verified source, and a supported response within 64 KiB are required'},400)
+            except (ValueError,UnicodeError):
+                msg=('Value unavailable: this finding requires retained, verified, directly mapped source bytes within 4 KiB' 
+                     if content[2]=='field-value' else
+                     'Content unavailable: acknowledge sensitive content; retention, verified source, and a supported response within 64 KiB are required')
+                self._reply({'error':msg},400)
             except (OSError,sqlite3.Error):self._reply({'error':'Retained content unavailable'},404)
             return
         acancel=re.fullmatch(r'/api/jobs/([0-9a-f]{32})/assessment/cancel',path)

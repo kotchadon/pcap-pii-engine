@@ -513,3 +513,11 @@ summary::-webkit-details-marker{display:none}
 .scope-item p{font-size:var(--fs-sm);color:var(--text-2);line-height:1.55;overflow-wrap:anywhere}
 .scope-foot{font-size:var(--fs-xs);color:var(--text-3);margin-top:var(--s3)}
 @media(max-width:980px){.scope-grid{grid-template-columns:1fr}}
+
+/* A single deliberately revealed field; never store raw strings in report rows. */
+.iv-reveal{margin:var(--s3) 0;padding:var(--s3);border:1px solid var(--accent);border-radius:var(--r-md);background:var(--surface-2)}
+.iv-reveal .prose{margin:0 0 var(--s2);line-height:1.5}
+.iv-reveal-actions{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap}
+.iv-reveal .hint{margin:var(--s2) 0 0}
+.iv-revealed-value{max-width:100%;max-height:200px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--mono);font-size:var(--fs-sm);padding:var(--s3);border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.iv-revealed-value[hidden]{display:none}

@@ -145,6 +145,8 @@ function inspectFinding(f,opts={}){
  // Packet-to-field references load only when that section is open; the inspector's evidence section covers the common case.
  if($('provenance-details').open)void loadFindingEvidence(f);else clearFindingEvidence('Open this section to check verified packet references.');
  if(hasInspector())TraceInspector.openFinding(f,{open:opts.open===true,push:opts.push===true,restore:opts.restore===true});
+ // Navigation clears an earlier revealed value; keep the new selected preview visible.
+ setText('inspect-sub',f.value||'[hidden]');
 }
 
 /* Evidence v1.0: read-only authenticated joins. Never fetch raw capture bytes. */
