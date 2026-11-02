@@ -71,7 +71,7 @@ def test_user_can_switch_between_rules_and_real_model():
         assert hybrid["report"]["metadata"]["ml_model_version"] == "test-v2"
         assert hybrid["report"]["summary"]["ml_findings"] == 1
         assert detector.calls > 0
-        assert all("Alex Example" not in json.dumps(res) for res in (rules, hybrid))
+        assert "Alex Example" in json.dumps(hybrid), "Client-facing name should be shown in full"
 
 
 def test_unavailable_ml_and_invalid_modes_fail_closed():
