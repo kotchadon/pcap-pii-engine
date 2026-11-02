@@ -36,7 +36,7 @@ def test_high_capacity_is_exposed_to_UI_and_remains_explicit_opt_in():
     html = (ROOT / 'src/packet_pii/dashboard_static/index.html').read_text()
     assert '<option value="high_capacity">' in html
     assert '2,500,000' in html
-    assert 'may remain incomplete' in html
+    assert 'TRACE will show any fields skipped' in html
     lab = (ROOT / 'src/packet_pii/dashboard_static/lab.js').read_text()
     assert "headers['X-ML-Coverage']=st.mlProfile" in lab
     assert "st={mlProfile:'standard'" in lab
