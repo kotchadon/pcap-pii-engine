@@ -136,7 +136,8 @@ def test_showcase_endpoint_real_detection_and_mode_switch():
         assert hybrid["report"]["summary"]["ml_findings"] > 0
         assert hybrid["report"]["metadata"]["ml_model_version"] == "test-bilstm-v2"
         assert rules["report"]["summary"]["rules_findings"] == hybrid["report"]["summary"]["rules_findings"]
-        assert "night_owl_77" not in json.dumps(hybrid)
+        assert "night_owl_77" in json.dumps(hybrid)
+        assert "fictional-demo-password" not in json.dumps(hybrid)
 
 
 def test_showcase_with_real_saved_model_when_available(tmp_path):
