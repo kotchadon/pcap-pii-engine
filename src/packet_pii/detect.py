@@ -120,11 +120,20 @@ def _mask_for(kind: str, value: str) -> str:
     return _mask(value)
 
 
+def client_value_visible(kind: str, location: str) -> bool:
+    """Client view: show ordinary matches, retain explicit credential masking.
+
+    A noncredential-looking match *inside* a secret-bearing field remains hidden.
+    This is independent of the default redacted CLI/report behaviour.
+    """
+    return kind != 'CREDENTIAL_OR_TOKEN' and not SECRET_KEYS.search(location)
+
+
 def _finding(kind: str, location: str, confidence: float, value: str, include_values: bool, detector='rule') -> Detection:
     return Detection(kind,location,confidence,value if include_values else _mask_for(kind, value),detector,hashlib.sha256(value.encode('utf-8')).hexdigest()[:16])
 
 
-def detect_fields(fields: list[tuple[str,str]], threshold: float=0.8, include_values: bool=False) -> list[Detection]:
+def detect_fields(fields: list[tuple[str,str]], threshold: float=0.8, include_values: bool=False, *, display_nonsecret_values: bool=False) -> list[Detection]:
     if not 0 <= threshold <= 1:
         raise ValueError('threshold must be between 0 and 1')
     detections: list[Detection]=[]
@@ -137,7 +146,8 @@ def detect_fields(fields: list[tuple[str,str]], threshold: float=0.8, include_va
         if key in seen or len(detections)>=10000:
             return
         seen.add(key)
-        detections.append(_finding(kind,loc,score,value,include_values))
+        visible = include_values or (display_nonsecret_values and client_value_visible(kind, loc))
+        detections.append(_finding(kind,loc,score,value,visible))
     for location,value in fields:
         value=value[:MAX_FIELD_LENGTH]
         for match in EMAIL.finditer(value):
