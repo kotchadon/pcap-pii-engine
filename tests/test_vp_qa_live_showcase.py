@@ -304,6 +304,12 @@ def test_dashboard_api_matches_direct_engine_with_real_model(run):
     for api, direct in ((rules, run["rules"]), (hyb, run["hybrid"])):
         ks = ("packets_captured", "flows_processed", "http_messages", "rules_findings", "ml_findings", "ml_fields_evaluated", "ml_fields_excluded_by_policy", "potential_leaks")
         assert {k: api["report"]["summary"][k] for k in ks} == {k: direct["summary"][k] for k in ks}
-        assert api["report"]["findings"] == direct["findings"]
+        # The local client dashboard intentionally shows original noncredential
+        # values. Only their presentation changes; detection and provenance must match.
+        scrub = lambda findings: [{k:v for k,v in x.items() if k != "value"} for x in findings]
+        assert scrub(api["report"]["findings"]) == scrub(direct["findings"])
+        assert api["report"]["metadata"]["finding_value_policy"] == "noncredential_original"
     blob = json.dumps(hyb, ensure_ascii=False)
-    assert not any(raw in blob for raw in RAW_FICTIONAL)
+    assert "night_owl_77" in blob  # Original username visible in the local client.
+    assert "fictional-demo-password" not in blob
+    assert "fictional-demo-token-123" not in blob
