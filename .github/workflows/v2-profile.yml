@@ -37,6 +37,3 @@ jobs:
           path: |
             /tmp/v2-profile.json
             /tmp/v2-equivalence.json
-            src/packet_pii/ml/artifacts/bilstm_v1/model.pt
-            src/packet_pii/ml/artifacts/bilstm_v2/*/model.pt
-            src/packet_pii/ml/datasets/v2/train.jsonl.gz

@@ -6,6 +6,7 @@ controlled timing runs. Full report digest excludes only documented clocks.
 """
 import argparse
 import cProfile
+from dataclasses import asdict
 import gc
 import hashlib
 import importlib.util
@@ -75,7 +76,8 @@ def main():
     p.add_argument('--repeat',type=int,default=1)
     p.add_argument('--instrument',action='store_true')
     p.add_argument('--checkpoint',type=Path,help='Genuine checkpoint; omission explicitly selects Rules')
-    p.add_argument('--ml-profile',choices=('standard','extended','complete','high_capacity'),default='standard',
+    p.add_argument('--ml-profile',choices=('standard','extended','complete','high_capacity',
+                                          'capacity_5m','capacity_8m','capacity_10m','capacity_15m'),default='standard',
                    help='Explicit bounded ML work profile for Hybrid; default Standard is unchanged')
     p.add_argument('--no-cache',action='store_true')
     p.add_argument('--threads',type=int,default=2)
@@ -134,10 +136,21 @@ def main():
     original_runner = engine.MLBatchRunner
     cache_samples = []
     class MeasuredRunner(original_runner):
+        def _run(self, batch):
+            tick, model_before = time.perf_counter(), self.seconds
+            try:
+                return super()._run(batch)
+            finally:
+                # Includes cache lookup/insertion AND finding reconstruction;
+                # do not mislabel this residual as pure cache time.
+                self._bench_bookkeeping = getattr(self, '_bench_bookkeeping', 0.) + max(
+                    0., time.perf_counter() - tick - (self.seconds - model_before))
+
         def flush(self, *, final=True):
             result = super().flush(final=final)
             sample = {'model_evaluations':self.model_evaluations,'cache_hits':self.cache_hits,
-                      'cache_evictions':self.cache_evictions,'accounted_cache_bytes':self.cache_bytes}
+                      'cache_evictions':self.cache_evictions,'accounted_cache_bytes':self.cache_bytes,
+                      'bookkeeping_including_cache_and_findings_seconds':getattr(self, '_bench_bookkeeping', 0.)}
             if cache_samples:cache_samples[0] = sample
             else:cache_samples.append(sample)
             return result
@@ -148,6 +161,7 @@ def main():
             memory[key]={'last_current_rss':current,'observed_peak_rss':peak(),
                          'max_sampled_rss':max(current or 0,memory.get(key,{}).get('max_sampled_rss',0))}
         start=time.perf_counter()
+        cpu_start=time.process_time()
         if profiler and not args.indexed:profiler.enable()
         manager=None
         original=None
@@ -183,6 +197,7 @@ def main():
                 job.limits=bounds
                 shutil.copyfile(args.capture,job.capture)
                 start=time.perf_counter()
+                cpu_start=time.process_time()
                 manager.start(job);job.thread.join(timeout=args.worker_timeout)
                 if job.thread.is_alive():
                     job.cancel.set();raise RuntimeError('indexed scan timed out')
@@ -212,7 +227,7 @@ def main():
             if original is not None:jobs.analyze_to_report=original
             engine.MLBatchRunner=original_runner
         if profiler:profiler.disable()
-        elapsed=time.perf_counter()-start;current=rss();maximum=peak()
+        elapsed=time.perf_counter()-start;cpu_elapsed=time.process_time()-cpu_start;current=rss();maximum=peak()
         # Decode/hash outside the scan worker: a full JSON load would contaminate later RSS samples.
         digest_mode='--stream-digest-report' if args.stream_digest else '--digest-report'
         try:
@@ -224,6 +239,7 @@ def main():
             if manager:manager.close()
             break
         runs.append({'status':'completed','seconds':elapsed,'model_seconds':stages.get('ml_inference',0),
+                     'process_cpu_seconds':cpu_elapsed,'average_cpu_cores':cpu_elapsed/elapsed,
                      'current_rss_after_analysis':current,'lifetime_peak_rss':maximum,'stages':stages,
                      'memory':memory,'output_bytes':target.stat().st_size,'canonical_report_sha256':full_digest,
                      'report_digest_method':'ordered-json-events-v1' if args.stream_digest else 'sorted-json-v1',
@@ -236,6 +252,11 @@ def main():
     result={'platform':platform.platform(),'architecture':platform.machine(),'python':platform.python_version(),
             'source_root':str(root),'capture_sha256':capture_sha,'capture_bytes':args.capture.stat().st_size,
             'profile':args.profile,'memory_budget_bytes':bounds.max_memory_bytes,'rss_before':before,
+            'analysis_limits':asdict(bounds),
+            'ml_work_budget':ml_runner.MLWorkBudget.for_profile(args.ml_profile).public() if detector else None,
+            'checkpoint_sha256':{str(f.relative_to(args.checkpoint)):hashlib.sha256(f.read_bytes()).hexdigest()
+                                 for f in sorted(args.checkpoint.rglob('*')) if f.is_file() and f.suffix in ('.pt','.json')}
+                                if detector else None,
             'worker_timeout_seconds':args.worker_timeout,'expected_capture_sha256':args.expected_capture_sha256,
             'scope':'JobManager + SQLite index + atomic report' if args.indexed else 'engine + atomic report; excludes dashboard SQLite indexing',
             'mode':'hybrid' if detector else 'rules','ml_profile':args.ml_profile if detector else None,

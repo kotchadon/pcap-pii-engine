@@ -112,15 +112,17 @@ class BiLSTMTagger(nn.Module):
                             dropout=cfg.dropout if cfg.layers > 1 else 0.0)
         self.out = nn.Linear(2 * cfg.hidden, cfg.n_tags)
 
-    def forward(self, word_ids, shape_ids, ctx_ids, char_ids, lengths):
+    def forward(self, word_ids, shape_ids, ctx_ids, char_ids, lengths, character_plan=None):
         """word_ids/shape_ids/ctx_ids: [B,T]; char_ids: [B,T,C]; lengths: [B] (cpu). Returns logits [B,T,n_tags]."""
         B, T = word_ids.shape
         feats = [self.word(word_ids), self.shape(shape_ids), self.ctx(ctx_ids)]
         if self.cfg.char_filters:
-            flat_chars = char_ids.reshape(B * T, -1)
             compact = not torch.is_grad_enabled()
-            rows = None
-            if compact:
+            rows = inverse = None
+            flat_chars = char_ids.reshape(B * T, -1)
+            if compact and not self.training:
+                flat_chars, rows, inverse = character_plan if character_plan is not None else _character_plan(char_ids)
+            elif compact:
                 # Empty character rows always pool to zero. Do not allocate embeddings/convolution workspaces
                 # for padding (or empty separator tokens); leave the training/autograd calculation unchanged.
                 nonempty = flat_chars.ne(0).any(dim=1).nonzero(as_tuple=True)[0]
@@ -141,6 +143,8 @@ class BiLSTMTagger(nn.Module):
                         h = torch.relu(cv(ce))[:, :, :ce.shape[2]]
                         h = h.masked_fill(~mask, float("-inf")).amax(dim=2)
                     h = torch.where(torch.isfinite(h), h, torch.zeros_like(h))
+                    if inverse is not None:
+                        h = h.index_select(0, inverse)
                     if rows is not None:
                         h = h.new_zeros(B * T, self.cfg.char_filters).index_copy_(0, rows, h)
                     feats.append(h.reshape(B, T, -1))
@@ -198,8 +202,33 @@ def collate(batch: Sequence[Encoded], max_seq: int, unk_id: int = 1, word_dropou
             "lengths": torch.tensor(lens, dtype=torch.long)}
 
 
+def _character_plan(char_ids):
+    """Batch-local index plan; no learned features, field strings or persistent cache."""
+    flat = char_ids.reshape(-1, char_ids.shape[-1])
+    identities, unique_positions, nonempty, inverse = {}, [], [], []
+    # One bulk conversion avoids torch.unique's per-row tensor sorting overhead
+    # for these small CPU rows. At most B*T*C integer IDs, bounded by the existing
+    # batch token and character-width caps; never a whole-scan allocation.
+    for position, row in enumerate(flat.tolist()):
+        if not any(row):
+            continue
+        key = tuple(row)  # full padded character IDs, never lowercased word IDs
+        index = identities.get(key)
+        if index is None:
+            index = len(unique_positions)
+            identities[key] = index
+            unique_positions.append(position)
+        nonempty.append(position)
+        inverse.append(index)
+    index_tensor = lambda values: torch.tensor(values, dtype=torch.long, device=char_ids.device)
+    unique = flat.index_select(0, index_tensor(unique_positions))
+    rows = index_tensor(nonempty) if len(nonempty) < flat.shape[0] else None
+    gather = index_tensor(inverse) if len(unique_positions) < len(nonempty) else None
+    return unique, rows, gather
+
+
 def _forward(model: BiLSTMTagger, b: dict):
-    return model(b["word"], b["shape"], b["ctx"], b["chars"], b["lengths"])
+    return model(b["word"], b["shape"], b["ctx"], b["chars"], b["lengths"], b.get("character_plan"))
 
 
 # ------------------------------------------------------------------ prediction
@@ -268,6 +297,8 @@ class SpanPredictor:
             with torch.inference_mode():
                 for part in self._batches(jobs):
                     batch = collate([jobs[j][1] for j in part], max_seq)
+                    if self.model.cfg.char_filters:
+                        batch['character_plan'] = _character_plan(batch['chars'])
                     if len(self.models) == 1:
                         lp = torch.log_softmax(_forward(self.models[0], batch), dim=-1)
                     else:  # average member probabilities, then log
