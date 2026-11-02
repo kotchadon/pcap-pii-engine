@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TRACE — Network Privacy Intelligence</title>
+  <title>TRACE — Understand what your network shares</title>
   <meta name="description" content="Inspect a network capture for potential personal information and review the evidence behind each finding.">
   <meta name="color-scheme" content="light dark">
   <link rel="stylesheet" href="/app.css">
@@ -34,7 +34,7 @@
   <aside class="sidebar" id="sidebar" aria-label="TRACE">
     <div class="brand">
       <svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7"/><path d="M6.5 18.5 11 10.5l4.5 6 6-9"/><circle cx="6.5" cy="18.5" r="1.6"/><circle cx="21.5" cy="7.5" r="1.6"/></svg>
-      <div><strong>TRACE</strong><small>Network privacy analysis</small></div>
+      <div><strong>TRACE</strong><small>Understand what gets shared</small></div>
     </div>
     <section class="capture-card" aria-label="Current capture">
       <span class="capture-label">Current capture</span>
@@ -85,8 +85,8 @@
       <!-- Start -->
       <section class="view view-start" id="view-overview" aria-labelledby="start-title">
         <div class="start">
-          <h2 id="start-title" class="start-title">Inspect a network capture</h2>
-          <p class="start-lede">TRACE rebuilds the unencrypted web traffic in a packet capture and shows where personal information may be exposed, with the evidence for each finding.</p>
+          <h2 id="start-title" class="start-title">See what your network may be sharing</h2>
+          <p class="start-lede">Upload a network recording to discover personal details that appeared in web conversations. Choose any result to find out what was noticed and where it appeared.</p>
           <div class="upload" id="dropzone">
             <svg class="icon upload-icon" aria-hidden="true"><use href="#i-upload"/></svg>
             <strong>Drop a .pcap or .pcapng file here</strong>
@@ -105,7 +105,7 @@
           </div>
 
           <section class="options" aria-labelledby="opt-title">
-            <h3 id="opt-title">Analysis options</h3>
+            <h3 id="opt-title">Choose how to check your recording</h3>
             <span class="option-label" id="method-label">Detection method</span>
             <div class="scan-modes" role="radiogroup" aria-labelledby="method-label">
               <label class="scan-option"><input type="radio" name="scan-mode" value="rules" checked><span class="opt-body"><b>Rules</b><small>Recognises formats and field names such as email addresses, card numbers and credentials.</small></span></label>
@@ -143,15 +143,15 @@
           </div>
           <div class="answer-actions"><button class="btn btn-primary" type="button" data-go="findings"><span>Review findings</span><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button><button class="btn btn-ghost" type="button" data-go="flows">View traffic</button></div>
         </section>
-        <section class="scope-card card" id="scope-summary" aria-labelledby="scope-title">
-          <div class="card-head"><h3 id="scope-title">What TRACE could examine</h3><span class="section-meta">Scope, not an accuracy score</span></div>
+        <details class="scope-card card" id="scope-summary">
+          <summary class="card-head"><h3 id="scope-title">What did TRACE check?</h3><span class="section-meta">View details</span></summary>
           <div class="scope-grid">
-            <div class="scope-item"><h4>Examined</h4><p id="scope-examined">Run an analysis to see which supported messages TRACE read.</p></div>
-            <div class="scope-item"><h4>Partly examined</h4><p id="scope-partial">After a scan, known gaps and processing limits appear here.</p></div>
-            <div class="scope-item"><h4>Cannot inspect</h4><p id="scope-uninspectable">Encrypted payloads and unsupported protocols are outside TRACE's supported decoders. Their full extent cannot be measured here.</p></div>
+            <div class="scope-item"><h4>Web conversations checked</h4><p id="scope-examined">Run an analysis to see which supported messages TRACE read.</p></div>
+            <div class="scope-item"><h4>Anything that needs attention</h4><p id="scope-partial">After a scan, known gaps and processing limits appear here.</p></div>
+            <div class="scope-item"><h4>Other network activity</h4><p id="scope-uninspectable">This check focuses on readable web conversations. Other types of network activity are outside this scan.</p></div>
           </div>
-          <p class="scope-foot">A completed scan is not proof of complete network visibility or absence of personal information.</p>
-        </section>
+          <p class="scope-foot">This result describes what appeared in the recorded, readable traffic. It is not a guarantee about everything your device shares.</p>
+        </details>
         <div class="summary-grid">
           <section class="card" aria-labelledby="exposed-title">
             <div class="card-head"><h3 id="exposed-title">What may be exposed</h3><span class="section-meta" id="breakdown-scope">Current capture</span></div>
@@ -170,7 +170,7 @@
           </section>
         </div>
         <details class="card disclosure-card" id="tech-summary">
-          <summary><span>Technical details</span><span class="section-meta" id="analysis-meta">Awaiting input</span></summary>
+          <summary><span>Advanced scan details</span><span class="section-meta" id="analysis-meta">Awaiting input</span></summary>
           <div class="metric-grid">
             <div class="metric"><span class="metric-head">Potential findings</span><span class="metric-value" id="metric-findings">—</span><span class="metric-foot">Candidates, not confirmed personal information</span></div>
             <div class="metric"><span class="metric-head">HTTP messages</span><span class="metric-value" id="metric-messages">—</span><span class="metric-foot">Requests and responses decoded</span></div>
@@ -180,7 +180,7 @@
             <div class="metric"><span class="metric-head">Stream gaps</span><span class="metric-value" id="metric-gaps">—</span><span class="metric-foot">Places where captured data was missing</span></div>
             <div class="metric"><span class="metric-head">Analysis time</span><span class="metric-value" id="metric-time">—</span><span class="metric-foot">Measured on this computer</span></div>
           </div>
-          <div id="limitations-panel" class="limitations hidden"><h4>Limitations reported for this analysis</h4><ul id="report-limitations"></ul></div>
+          <details id="limitations-panel" class="limitations hidden"><summary>Technical notes about supported network formats</summary><ul id="report-limitations"></ul></details>
         </details>
       </section>
 
@@ -353,14 +353,14 @@
 
         <div class="insp-view hidden" id="insp-finding">
           <section class="iv-hero">
-            <span class="eyebrow">Potential personal information</span>
+            <span class="eyebrow">A possible personal detail</span>
             <p class="iv-type" id="inspect-title">—</p>
-            <p class="iv-value"><span class="mono" id="inspect-sub">—</span><span class="chip">Masked</span></p>
+            <p class="iv-value"><span class="mono" id="inspect-sub">—</span><span class="chip">Preview</span></p>
             <p class="iv-detector" id="fi-detector"></p>
           </section>
-          <section class="iv-section"><h3>Where it appeared</h3><p id="fi-where" class="prose">—</p></section>
-          <section class="iv-section"><h3>Why TRACE flagged it</h3><p id="inspect-reason" class="prose">—</p></section>
-          <section class="iv-section"><h3>Supporting evidence</h3><div id="fi-support" aria-live="polite"></div></section>
+          <section class="iv-section"><h3>Where did it appear?</h3><p id="fi-where" class="prose">—</p></section>
+          <section class="iv-section"><h3>Why did TRACE notice it?</h3><p id="inspect-reason" class="prose">—</p></section>
+          <section class="iv-section"><h3>See where it came from</h3><div id="fi-support" aria-live="polite"></div></section>
           <details class="iv-more">
             <summary>Technical details</summary>
             <dl class="facts">
@@ -375,7 +375,7 @@
             </dl>
           </details>
           <details class="iv-more" id="provenance-details">
-            <summary>Packet-to-field references</summary>
+            <summary>Original packet references (advanced)</summary>
             <section id="evidence-provenance" class="evidence-provenance" aria-label="Packet-to-field provenance">
               <p id="evidence-status" class="hint" role="status">Open this section to check verified packet references.</p>
               <h4>HTTP message</h4><div id="evidence-http" class="evidence-facts"></div>
@@ -384,7 +384,7 @@
               <p class="hint">This viewer displays redacted metadata and supporting packet references, not raw request/response content. Decoded model character spans are not PCAP byte offsets; transformed content cannot be highlighted as an exact raw match. A matching, separately authorised capture is required to inspect original bytes.</p>
             </section>
           </details>
-          <p class="iv-foot">Detection signals may overlap. An individual PII finding is not proof of exfiltration or misuse.</p>
+          <p class="iv-foot">A result is a possible match to review. Sometimes more than one check notices the same information.</p>
         </div>
 
         <div class="insp-view hidden" id="insp-dynamic"></div>
