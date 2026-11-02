@@ -31,6 +31,7 @@ const TraceInspector=(()=>{
  const typeName=t=>typeof typeLabel==='function'?typeLabel(t):String(t||'Unknown');
  const interval=(a,b)=>Number.isInteger(a)&&Number.isInteger(b)&&b>=a?'['+nf(a)+', '+nf(b)+')':'unavailable';
  const endpoint=ep=>ep&&ep.ip?ep.ip+':'+ep.port:'unknown';
+ const friendlyFieldName=location=>{const leaf=String(location||'').split('.').pop().replace(/\\[\\d+\\]/g,'').replaceAll('_',' ').replaceAll('-',' ').trim();return leaf?leaf.replace(/\\b\\w/g,c=>c.toUpperCase()):'a web form field'};
  const kindOf=m=>m.message_type==='request'?'HTTP request':m.interim_response?'Interim HTTP response':'HTTP response';
  const messageOf=f=>f&&(f.evidence&&f.evidence.http_message_id||f.http_message_id)||null;
  const BASIS={directional_fifo_best_effort:'Matched to its partner by message order (best effort)',http2_stream_id:'Matched to its partner by HTTP/2 stream ID'};
@@ -179,7 +180,7 @@ const TraceInspector=(()=>{
    if(!alive(seq,epoch))return;
    const m=data.message;host.replaceChildren();
    const roleText=m.message_type==='request'?'sent from one device to another':'sent back to a device';
-   $i('fi-where').textContent='This appeared in a '+(m.message_type==='request'?'web request':'web reply')+' '+roleText+'. It was in the “'+friendlyField(f.location)+'” field.';
+   $i('fi-where').textContent='This appeared in a '+(m.message_type==='request'?'web request':'web reply')+' '+roleText+'. It was in the “'+friendlyFieldName(f.location)+'” field.';
    const card=el('div','msg-card');
    const head=el('div','msg-card-head');head.append(el('span','msg-kind',kindOf(m)),el('code','msg-line',m.start_line||'Start line unavailable'));
    card.append(head);
