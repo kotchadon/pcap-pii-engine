@@ -57,7 +57,8 @@ class DashboardServer(ThreadingHTTPServer):
         self.request_slots = BoundedSemaphore(8)
         self.jobs = JobManager(self.analysis_lock,self.ml_detector,assessment_budget=assessment_budget,disk_quota_bytes=job_disk_mib*1024*1024,
                                ml_work_budget=LegacyMLWorkBudget.for_profile(ml_budget_profile),
-                               retain_capture_for_inspection=retain_capture_for_inspection)
+                               retain_capture_for_inspection=retain_capture_for_inspection,
+                               display_nonsecret_values=True)
 
     def process_request(self, request, client_address):
         if not self.request_slots.acquire(blocking=False):
@@ -265,7 +266,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # Serialise inference to avoid overlapping CPU-heavy analyses on the same
             # shared checkpoint during a live presentation.
             use_ml = self.server.ml_detector is not None and requested_mode != 'rules'
-            report = analyze(capture, include_values=False,
+            report = analyze(capture, include_values=False, display_nonsecret_values=True,
                              limits=AnalysisLimits(max_capture_bytes=min(self.server.max_upload,_MAX_SYNC_UPLOAD),
                                                    max_report_bytes=4*1024*1024,max_findings=10000),
                              ml_detector=self.server.ml_detector if use_ml else None)
