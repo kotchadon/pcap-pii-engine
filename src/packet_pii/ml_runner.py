@@ -18,7 +18,7 @@ import sys
 import time
 from typing import Callable, Mapping, Sequence
 
-from .detect import _mask
+from .detect import _mask, client_value_visible
 from .hybrid import InferenceError, _excluded
 from .ml import FieldInput, run_detector
 from .ml.detector import ContextualPIIDetector
@@ -143,12 +143,14 @@ class MLBatchRunner:
     """
 
     def __init__(self, detector: ContextualPIIDetector, budget: MLWorkBudget, *, include_values: bool = False,
+                 display_nonsecret_values: bool = False,
                  checkpoint: Callable[[dict], None] | None = None, max_pending_messages: int = 4096,
                  disposition: Callable[[object, int, str], None] | None = None,
                  zero_work: bool = False, prediction_cache: bool | None = None, prediction_cache_entries: int | None = None):
         if not isinstance(budget, MLWorkBudget):
             raise TypeError('budget must be an MLWorkBudget')
         self.detector, self.budget, self.include_values = detector, budget, include_values
+        self.display_nonsecret_values = display_nonsecret_values
         self._checkpoint, self._max_pending_messages = checkpoint, max_pending_messages
         self._disposition = disposition  # optional (ticket key, field index, status) audit hook; carries no text
         self._field_limit, self._char_limit = (0 if zero_work else budget.max_fields), budget.max_characters
@@ -331,7 +333,9 @@ class MLBatchRunner:
                     'location': item.field.location,
                     'confidence': score,  # raw, uncalibrated; never averaged with rules
                     'confidence_type': score_type,
-                    'value': original if self.include_values else _mask(original),
+                    'value': (original if (self.include_values or
+                         (self.display_nonsecret_values and client_value_visible(label, item.field.location)))
+                         else _mask(original)),
                     'detector': 'bilstm',
                     'model_version': model_version,
                     'span_start': start,
