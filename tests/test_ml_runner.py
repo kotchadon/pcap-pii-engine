@@ -60,7 +60,8 @@ def test_invalid_budgets_are_rejected(kwargs):
 
 def test_profiles_are_bounded_and_ordered():
     budgets = [MLWorkBudget.for_profile(p) for p in ML_PROFILES]
-    assert [b.name for b in budgets] == ['standard', 'extended', 'complete', 'high_capacity']
+    assert [b.name for b in budgets] == ['standard', 'extended', 'complete', 'high_capacity',
+                                        'capacity_5m', 'capacity_8m', 'capacity_10m', 'capacity_15m']
     assert budgets[0].max_fields == 10_000 and budgets[0].max_characters == 2_000_000          # the safe default is unchanged
     assert all(a.max_fields < b.max_fields and a.max_seconds < b.max_seconds for a, b in zip(budgets, budgets[1:]))
     assert all(b.max_fields <= MLWorkBudget.CEILING_FIELDS and b.max_seconds <= MLWorkBudget.CEILING_SECONDS for b in budgets)
@@ -81,6 +82,25 @@ def test_engine_runs_with_opt_in_high_capacity_and_reports_selected_limits(tmp_p
     assert report['metadata']['ml_work_limits']['max_fields'] == 2_500_000
     assert report['summary']['ml_fields_skipped'] == 0
     assert report['summary']['ml_coverage_status'] in ('complete', 'no_eligible_fields')
+
+
+@pytest.mark.parametrize('profile,limit', [
+    ('capacity_5m', 5_000_000),
+    ('capacity_8m', 8_000_000),
+    ('capacity_10m', 10_000_000),
+    ('capacity_15m', 15_000_000),
+])
+def test_engine_uses_new_multi_million_profile_without_changing_detection(tmp_path, profile, limit):
+    source = capture(tmp_path)
+    reference = analyze(source, ml_detector=Stub(), ml_budget='high_capacity')
+    result = analyze(source, ml_detector=Stub(), ml_budget=profile)
+    assert result['metadata']['ml_work_limits']['profile'] == profile
+    assert result['metadata']['ml_work_limits']['max_fields'] == limit
+    assert result['summary']['ml_fields_skipped'] == 0
+    assert result['summary']['ml_coverage_status'] in ('complete', 'no_eligible_fields')
+    # Same actual predictions; increasing the admission limit alone changes neither
+    # the checkpoint nor the rule/model classifications on identical short work.
+    assert result['findings'] == reference['findings']
 
 
 # ------------------------------------------------------------------ coverage states
