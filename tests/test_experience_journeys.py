@@ -79,9 +79,10 @@ def open_page(browser, url, width, height):
 
 def run_sample(page):
     page.click('#sample')
-    page.wait_for_selector('#statusbar:not(.hidden)')
+    # On fast machines the example completes before the progress banner is
+    # observable. Completion, not a transient animation, is the contract.
+    page.wait_for_selector('#view-summary:not(.hidden)', timeout=60000)
     page.wait_for_selector('#statusbar.hidden', state='attached', timeout=60000)
-    page.wait_for_selector('#view-summary:not(.hidden)')
 
 
 def screenshot_artifact(page, name):
