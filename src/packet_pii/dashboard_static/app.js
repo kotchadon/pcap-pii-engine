@@ -112,7 +112,7 @@ function explainDetection(f){
  if(kind==='IP_ADDRESS')return 'This looks like a network address.';
  if(kind==='AGE')return 'TRACE noticed a field labelled as someone’s age.';
  if(kind==='GENDER'||kind==='SEX')return 'TRACE noticed a field labelled “'+loc+'”.';
- if(kind.includes('ADVERTISING_ID'))return 'This looks like an advertising identifier used by apps and devices.';
+ if(['APPLE_ADVERTISING_ID','ANDROID_ADVERTISING_ID','ADVERTISING_ID'].includes(kind))return 'This looks like an advertising identifier used by apps and devices.';
  if(kind==='DEVICE_ID'||kind==='USER_ACCOUNT_ID')return 'This looks like an identifier for a device or account.';
  return 'TRACE noticed a possible '+typeLabel(kind).toLowerCase()+' in “'+loc+'”.';
 }
