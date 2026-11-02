@@ -66,8 +66,10 @@ class MLWorkBudget:
     name: str = 'custom'
 
     # Absolute ceilings: even the most generous profile stays bounded.
-    CEILING_FIELDS = 5_000_000
-    CEILING_CHARACTERS = 1_000_000_000
+    # Absolute scan-local admission ceilings, NOT an invitation to allocate this many fields or characters.
+    # The runner still retains only bounded batches/cache and the engine enforces independent RSS/report caps.
+    CEILING_FIELDS = 15_000_000
+    CEILING_CHARACTERS = 3_000_000_000
     CEILING_SECONDS = 7_200.0
 
     def __post_init__(self) -> None:
@@ -96,9 +98,14 @@ class MLWorkBudget:
             'complete': dict(max_fields=1_000_000, max_characters=200_000_000, max_seconds=1_800.0),
             # Explicit opt-in for very dense captures. Retain all per-batch, field and process memory guards.
             'high_capacity': dict(max_fields=2_500_000, max_characters=500_000_000, max_seconds=3_600.0),
+            # Bigger opt-in budgets extend coverage, not batch/RSS ceilings or the model's accuracy.
+            'capacity_5m': dict(max_fields=5_000_000, max_characters=1_000_000_000, max_seconds=4_500.0),
+            'capacity_8m': dict(max_fields=8_000_000, max_characters=1_600_000_000, max_seconds=5_700.0),
+            'capacity_10m': dict(max_fields=10_000_000, max_characters=2_000_000_000, max_seconds=6_600.0),
+            'capacity_15m': dict(max_fields=15_000_000, max_characters=3_000_000_000, max_seconds=7_200.0),
         }
         if name not in profiles:
-            raise ValueError('ML coverage profile must be standard, extended, complete or high_capacity')
+            raise ValueError('Unknown ML coverage profile')
         return cls(name=name, **profiles[name])
 
     def public(self) -> dict:
@@ -107,7 +114,8 @@ class MLWorkBudget:
                 'batch_characters': self.batch_characters, 'max_field_chars': self.max_field_chars}
 
 
-ML_PROFILES = ('standard', 'extended', 'complete', 'high_capacity')
+ML_PROFILES = ('standard', 'extended', 'complete', 'high_capacity',
+               'capacity_5m', 'capacity_8m', 'capacity_10m', 'capacity_15m')
 
 
 class _Ticket:
