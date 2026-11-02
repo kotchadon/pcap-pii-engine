@@ -35,7 +35,7 @@ vm.createContext(context);vm.runInContext(fs.readFileSync(process.argv[1]+'/app.
  assert.strictEqual(elements['live-ml-findings'].textContent,'0');
  assert.strictEqual(elements['findings-page'].textContent,'1–100 of 250');
  assert.strictEqual(elements['findings-next'].disabled,false);
- assert.strictEqual(elements['breakdown-scope'].textContent,'All findings in this capture');
+ assert.strictEqual(elements['breakdown-scope'].textContent,'All findings in this recording');
  assert.strictEqual(elements.breakdown.children[0].children[2].textContent,180);
  assert.strictEqual(requests.filter(r=>r.opts.method==='POST').length,1);
  const sent=requests.find(r=>r.url==='/api/jobs/showcase');

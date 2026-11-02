@@ -50,7 +50,7 @@ function data(id,extra={}){const message={http_message_id:id,message_type:'respo
  api.openMessage('m1',{open:true});api.openMessage('m2',{open:true});
  const n=pending.length;assert(pending[n-2].url.includes('/jobA/investigation'));assert.equal(pending[n-2].options.headers['X-Dashboard-Token'],'test-token');
  respond(n-1,data('m2'));await tick();respond(n-2,data('m1',{start_line:'HTTP/1.1 500'}));await tick();
- assert.equal(nodes['insp-title'].textContent,'HTTP/1.1 200','late response overwrote the newer selection');
+ assert.equal(nodes['insp-title'].textContent,'Reply · 200 OK','late response overwrote the newer selection');
  assert(dyn.textContent.includes('m2')&&!dyn.textContent.includes('m1'));
  // 2. Reveal, then hide before the server answers: nothing may appear.
  let ack=dyn.find(e=>e.tag==='input'),reveal=dyn.find(e=>e.tag==='button'&&e._text==='Show response source');
@@ -78,7 +78,7 @@ function data(id,extra={}){const message={http_message_id:id,message_type:'respo
  api.openMessage('m4',{open:true});const cur=pending.length-1;
  assert(pending[cur].url.includes('/jobB/'));assert.equal(pending[cur].options.headers['X-Dashboard-Token'],'new-token');
  respond(cur,data('m4',{reconstruction_complete:false,limitations:['http2_stream_incomplete']}));await tick();
- assert.match(dyn.textContent,/Some of this message is missing/);assert.match(dyn.textContent,/http2 stream incomplete/);
+ assert.match(dyn.textContent,/Part of this message was missing/);assert.match(dyn.textContent,/http2 stream incomplete/);
  // 6. Errors replace the previous evidence instead of leaving it on screen.
  api.openMessage('m5',{open:true});respond(pending.length-1,{error:'Job unavailable or expired'},404);await tick();await tick();
  assert.match(dyn.textContent,/no longer available/);assert(!dyn.textContent.includes('m4'),'stale evidence left visible after an error');
