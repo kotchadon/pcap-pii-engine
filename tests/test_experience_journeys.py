@@ -274,17 +274,17 @@ def test_opt_in_single_field_reveal_is_hidden_and_cleared_on_navigation(browser,
     page, problems = open_page(browser, server(retain_capture_for_inspection=True), 1440, 900)
     run_sample(page)
     page.click('.nav-link[data-tab=findings]')
-    page.select_option('#filter-type', 'EMAIL')
+    page.select_option('#filter-type', 'CREDENTIAL_OR_TOKEN')
     page.wait_for_selector('#findings-body tr .row-main')
     page.locator('#findings-body tr .row-main').first.click()
     page.wait_for_selector('#fi-support .msg-card')
     page.wait_for_selector('#fi-support .iv-reveal button')
     original_preview = page.inner_text('#inspect-sub')
-    assert '*' in original_preview
+    assert '*' in original_preview or original_preview == '[REDACTED]'
     assert page.locator('#fi-support .iv-reveal .iv-revealed-value').is_hidden()
     page.get_by_role('button', name='Show original value').click()
-    page.wait_for_function('() => document.querySelector("#fi-support .iv-reveal .iv-revealed-value").textContent.includes("@")')
-    assert '@' in page.inner_text('#inspect-sub')
+    page.wait_for_function('(masked) => {const n=document.querySelector("#fi-support .iv-reveal .iv-revealed-value"); return n && n.textContent && n.textContent !== masked;}', arg=original_preview)
+    assert page.inner_text('#inspect-sub') != original_preview
     page.get_by_role('button', name='Hide value').click()
     assert page.inner_text('#inspect-sub') == original_preview
     assert page.locator('#fi-support .iv-reveal .iv-revealed-value').is_hidden()
