@@ -52,3 +52,18 @@ def test_incomplete_or_invalid_receipts_never_pass(change):
     elif change=='empty':run['summary']['ml_fields_eligible']=run['summary']['ml_fields_evaluated']=0
     else:run['lifetime_peak_rss']=5*2**30
     assert module().validate_pair(a,b)
+
+
+def test_historical_capture_requires_its_known_counts_even_if_both_runs_agree():
+    a=receipt()
+    owner_sha='42e52f7ebb470d45e3d883ba6c800a11fce17357cf0edad417fefb8ca059c9ce'
+    a['capture_sha256']=a['runs'][0]['verified_capture_evidence']['capture_sha256']=owner_sha
+    a['runs'][0]['summary'].update(packets_captured=361389,http_messages=120462,
+        fields_extracted=2349009,ml_fields_excluded_by_policy=421617,
+        ml_fields_eligible=1927392,ml_fields_evaluated=1927392,
+        rules_findings=244046,ml_findings=180694,potential_leaks=424740)
+    assert module().validate_pair(a,copy.deepcopy(a))==[]
+    # A matching digest and 100% of the wrong eligible count cannot pass.
+    a['runs'][0]['summary']['ml_fields_eligible']=1927391
+    a['runs'][0]['summary']['ml_fields_evaluated']=1927391
+    assert module().validate_pair(a,copy.deepcopy(a))

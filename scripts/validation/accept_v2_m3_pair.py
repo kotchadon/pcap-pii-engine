@@ -13,6 +13,12 @@ import statistics
 import subprocess
 import sys
 
+OWNER_CAPTURE_SHA256='42e52f7ebb470d45e3d883ba6c800a11fce17357cf0edad417fefb8ca059c9ce'
+OWNER_COUNTS={'packets_captured':361389,'http_messages':120462,'fields_extracted':2349009,
+              'ml_fields_excluded_by_policy':421617,'ml_fields_eligible':1927392,
+              'ml_fields_evaluated':1927392,'ml_fields_skipped':0,
+              'rules_findings':244046,'ml_findings':180694,'potential_leaks':424740}
+
 
 def validate_pair(before, after):
     errors=[]
@@ -28,6 +34,9 @@ def validate_pair(before, after):
         runs=data.get('runs',[])
         if len(runs)!=1:errors.append(name+': expected one isolated scan');continue
         run=runs[0];summary=run.get('summary',{});identity=run.get('verified_capture_evidence',{})
+        if data.get('capture_sha256')==OWNER_CAPTURE_SHA256:
+            for key,expected in OWNER_COUNTS.items():
+                if summary.get(key)!=expected:errors.append(name+': historical capture count mismatch: '+key)
         if run.get('status')!='completed' or summary.get('analysis_incomplete') is not False:
             errors.append(name+': incomplete scan')
         if (summary.get('ml_inference_complete') is not True or summary.get('ml_fields_skipped')!=0
@@ -87,7 +96,7 @@ def main():
     # Require repeatable report identity, not merely equal totals in each pair.
     digests={d['runs'][0]['canonical_report_sha256'] for results in collected.values() for d in results}
     if len(digests)!=1:errors.append('nonrepeatable report identity across repetitions')
-    owner_capture=args.expected_capture_sha256=='42e52f7ebb470d45e3d883ba6c800a11fce17357cf0edad417fefb8ca059c9ce'
+    owner_capture=args.expected_capture_sha256==OWNER_CAPTURE_SHA256
     report={'chip':chip,'machine_model':machine_model,'memory_bytes':memory,'platform':platform.platform(),
             'repetitions':args.repetitions,'errors':errors,'median_scan_seconds':medians,
             'reduction_percent':100*(1-medians['candidate']/medians['baseline']),
