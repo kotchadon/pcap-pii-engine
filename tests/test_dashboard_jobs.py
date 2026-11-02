@@ -85,7 +85,7 @@ def test_failed_scan_explains_which_budget_was_reached_without_leaking_content(m
         raise AnalysisLimitError(reason + ' /private/client/password-SECRET')
     monkeypatch.setattr(jobs, 'analyze_to_report', reject)
     with server() as s:
-        code, body, _ = begin(s, request_id='limit-repro-'+expect.replace(' ','-')[:45])
+        code, body, _ = begin(s, request_id='limit-repro-abcdef1234')
         assert code == 202
         done=finish(s,json.loads(body)['job_id'])
         assert done['status']=='failed'
