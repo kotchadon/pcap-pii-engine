@@ -313,7 +313,7 @@ def test_summary_scope_distinguishes_supported_reconstruction_and_unreadable_con
     page.locator('#scope-summary > summary').click()
     examined = page.inner_text('#scope-examined')
     assert 'readable web messages' in examined
-    assert 'captured frames' in examined
+    assert 'TRACE looked at' in examined
     assert 'encrypted' in page.inner_text('#scope-uninspectable').lower()
     assert 'not part of this scan' in page.inner_text('#scope-uninspectable').lower()
     # Controlled report variations exercise truthful rendering. These values
