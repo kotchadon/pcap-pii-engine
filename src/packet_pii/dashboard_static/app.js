@@ -409,7 +409,20 @@ function render(payload){
  if(typeof TraceLab!=='undefined')TraceLab.onResult(payload);
 }
 function rememberJob(id){try{if(id)localStorage.setItem('trace-last-job',id);else localStorage.removeItem('trace-last-job')}catch{}}
-function profileChanged(){state.profile=$('analysis-profile').value;const limit=Number(state.profiles[state.profile]?.max_capture_bytes)||state.serverMaxBytes;state.maxBytes=Math.min(state.serverMaxBytes,limit);setText('max-file',Math.round(state.maxBytes/1048576)+' MiB');setText('profile-caption','Files up to '+Math.round(state.maxBytes/1048576)+' MiB. If a limit is reached, TRACE says so in the results.');}
+function profileChanged(){
+ state.profile=$('analysis-profile').value;
+ const limits=state.profiles[state.profile]||{};
+ const mib=n=>Math.round(Number(n||0)/1048576);
+ const size=Number(limits.max_capture_bytes)||state.serverMaxBytes;
+ state.maxBytes=Math.min(state.serverMaxBytes,size);
+ setText('max-file',mib(state.maxBytes)+' MiB');
+ // These are independent limits. A 220 MiB file may fit the 256 MiB
+ // upload allowance yet fail a much smaller evidence/report budget.
+ const detail=Number.isFinite(limits.max_packets)&&limits.max_packets>0
+  ? ' · '+num(limits.max_packets)+' packets · '+mib(limits.max_tcp_payload_bytes)+' MiB of TCP data · '+mib(limits.max_report_bytes)+' MiB of evidence · '+Math.round(Number(limits.max_memory_bytes||0)/1073741824)+' GiB process memory'
+  : '';
+ setText('profile-caption','Maximum recording size '+mib(state.maxBytes)+' MiB'+detail+'. These limits are independent of the AI field setting.');
+}
 function markLatestScan(status,message){
  if(typeof TraceLab!=='undefined')TraceLab.onAttempt(status,message);
  setLiveEvidence({summary:{}});
