@@ -7,7 +7,7 @@ const $=id=>document.getElementById(id);
 const labels={
  overview:['New analysis','New analysis','Choose a packet capture to inspect.'],
  summary:['Summary','Summary','What TRACE found in this capture and how complete the examination was.'],
- findings:['Findings','Findings','Potential personal information found in HTTP traffic. Values are masked.'],
+ findings:['Findings','Findings','Possible personal information found in web conversations. Original values appear for ordinary findings.'],
  flows:['Traffic','Traffic','The HTTP conversations and TCP connections TRACE rebuilt from the capture.'],
  model:['Model laboratory','Model laboratory','How the optional contextual model behaved, kept separate from synthetic and offline research results.'],
  how:['How TRACE works','How TRACE works','What TRACE does, the terms it uses and the limits of its results.']};
@@ -133,7 +133,7 @@ function markFindingRows(){
 function inspectFinding(f,opts={}){
  if(!opts.restore||state.tab==='findings'){state.selectedFinding=f;markFindingRows();}
  setText('inspect-title',typeLabel(f.pii_type||'PII'));
- setText('inspect-sub',f.value||'[hidden]');
+ setText('inspect-sub',f.value??'—');
  setText('fi-detector',detectorText(f));
  setText('fi-where',whereText(f));
  setText('inspect-reason',explainDetection(f));
@@ -146,7 +146,7 @@ function inspectFinding(f,opts={}){
  if($('provenance-details').open)void loadFindingEvidence(f);else clearFindingEvidence('Open this section to check verified packet references.');
  if(hasInspector())TraceInspector.openFinding(f,{open:opts.open===true,push:opts.push===true,restore:opts.restore===true});
  // Navigation clears an earlier revealed value; keep the new selected preview visible.
- setText('inspect-sub',f.value||'[hidden]');
+ setText('inspect-sub',f.value??'—');
 }
 
 /* Evidence v1.0: read-only authenticated joins. Never fetch raw capture bytes. */
@@ -311,8 +311,8 @@ function paintFindings(rows,total,offset){
  for(const f of rows){
   const tr=document.createElement('tr');tr.finding=f;
   const first=cell(tr,'');const main=document.createElement('button');main.type='button';main.className='row-main';
-  main.append(span(typeLabel(f.pii_type),'row-title'),span(f.value||'[masked]','row-sub mono'));
-  main.setAttribute('aria-label',typeLabel(f.pii_type)+', '+(f.value||'masked value')+', in '+String(f.location||'an unknown field')+'. Inspect.');
+  main.append(span(typeLabel(f.pii_type),'row-title'),span(f.value??'—','row-sub mono'));
+  main.setAttribute('aria-label',typeLabel(f.pii_type)+', '+(f.value??'value unavailable')+', in '+String(f.location||'an unknown field')+'. Inspect.');
   main.addEventListener('click',ev=>{if(ev&&ev.stopPropagation)ev.stopPropagation();inspectFinding(f,{open:true})});
   first.appendChild(main);tr.main=main;tr.select=open=>inspectFinding(f,{open});
   const where=cell(tr,'');where.append(span(f.location||'—','row-loc'),span([f.http_message_type?'HTTP '+f.http_message_type:'',f.flow_id||''].filter(Boolean).join(' · '),'cell-sub'));
