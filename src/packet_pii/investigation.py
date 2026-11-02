@@ -223,12 +223,12 @@ def prepare_field_value(conn, *, message_id, field_id):
     field = _one(conn, 'field_evidence', _id(field_id))
     if field.get('http_message_id') != message_id or field.get('stream_id') != message.get('stream_id'):
         raise ValueError('Field does not belong to this message')
-    matched = conn.execute('SELECT 1 FROM finding_fields WHERE field_id=? LIMIT 1', (field_id,)).fetchone()
-    if not matched:
-        raise ValueError('Field has no reported finding')
     if (field.get('granularity') != 'exact_stream_range' or field.get('transformations') or
             field.get('text_encoding') not in ('utf-8', 'iso-8859-1')):
         raise ValueError('A direct, untransformed field source is required')
+    matched = conn.execute('SELECT 1 FROM finding_fields WHERE field_id=? LIMIT 1', (field_id,)).fetchone()
+    if not matched:
+        raise ValueError('Field has no reported finding')
     ranges = field.get('stream_ranges')
     if not isinstance(ranges, list) or not 1 <= len(ranges) <= MAX_SOURCE_RANGES:
         raise ValueError('Invalid field ranges')
