@@ -34,12 +34,12 @@ def test_high_capacity_extends_field_coverage_without_changing_defaults():
 
 def test_high_capacity_is_exposed_to_UI_and_remains_explicit_opt_in():
     html = (ROOT / 'src/packet_pii/dashboard_static/index.html').read_text()
-    assert '<option value="high_capacity">' in html
-    assert '2,500,000' in html
-    assert 'may remain incomplete' in html
+    assert '<option value="high_capacity" selected>' in html
+    assert '2.5 million fields' in html
+    assert 'TRACE will show any fields skipped' in html
     lab = (ROOT / 'src/packet_pii/dashboard_static/lab.js').read_text()
     assert "headers['X-ML-Coverage']=st.mlProfile" in lab
-    assert "st={mlProfile:'standard'" in lab
+    assert "st={mlProfile:'high_capacity'" in lab
     source = (ROOT / 'src/packet_pii/dashboard.py').read_text()
     assert "ml_profile not in ML_PROFILES" in source
 

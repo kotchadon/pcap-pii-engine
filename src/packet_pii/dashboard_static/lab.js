@@ -10,7 +10,7 @@ const TraceLab=(()=>{
  const SKIP_LABEL={field_budget:'field budget reached',character_budget:'character budget reached',time_budget:'inference time budget reached',field_too_large:'single field too large',location_too_long:'field name too long',invalid_field:'invalid field'};
  const KIND_LABEL={controlled_synthetic_fixture:'Controlled synthetic fixture',hand_designed_demonstration:'Hand-designed demonstration — not an independent benchmark',human_annotated_capture:'Human-annotated capture'};
  const CHIP={pending:'PENDING',unavailable:'UNAVAILABLE',complete:'COMPLETE',partial:'PARTIAL',no_eligible_fields:'NO ELIGIBLE FIELDS',not_requested:'NOT REQUESTED',unavailable:'UNAVAILABLE',failed:'FAILED',running:'RUNNING',cancelled:'CANCELLED',unknown:'UNKNOWN',none:'NO SCAN YET'};
- const st={mlProfile:'standard',manifestId:null,manifest:null,coverage:'none',evalJob:null,evalResult:null};
+ const st={mlProfile:'high_capacity',manifestId:null,manifest:null,coverage:'none',evalJob:null,evalResult:null};
 
  function item(list,text){const li=document.createElement('li');li.textContent=text;list.appendChild(li)}
  function row(tr,text,cls){const td=document.createElement('td');td.textContent=String(text);if(cls)td.className=cls;tr.appendChild(td)}
