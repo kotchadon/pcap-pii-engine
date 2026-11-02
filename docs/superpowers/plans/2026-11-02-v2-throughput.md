@@ -20,11 +20,13 @@ Spec: user’s 2026-11-02 Extreme Performance Mission and issue #45. First gate 
 
 ## Tasks and ledger
 - [x] Restore current main plus PR46 on isolated branch; checksum genuine weights; profile restored baseline and compare frozen fields.
-- [ ] Profile CNN/LSTM, tokenization, encoding, padding and indexed pipeline on bounded synthetic inputs.
-- [ ] Test then implement worthwhile batch-local reuse in ml/bilstm.py; training untouched. Reject unhelpful experiments with recorded data.
-- [ ] Compare all frozen fields and complete indexed report identities; measure repeated isolated CPU timing/RSS.
-- [ ] Provide repeatable M3 acceptance workflow; run core, genuine ML, actual Chromium, mentor and Hybrid gates; draft PR, no merge.
+- [x] Profile CNN/LSTM, tokenization, encoding, padding and indexed pipeline on bounded synthetic inputs.
+- [x] Test then implement worthwhile batch-local reuse in ml/bilstm.py; training untouched. Reject unhelpful experiments with recorded data.
+- [x] Compare all frozen fields and complete indexed report identities; measure repeated isolated CPU timing/RSS.
+- [x] Provide repeatable M3 acceptance workflow; run core, genuine ML, actual Chromium, mentor and Hybrid gates; draft PR, no merge.
 
 Review focus: unknown/case/Unicode char rows, all-empty and unique batches, training gradients, per-occurrence span offsets, failed calls and cache isolation. Each retained implementation requires direct tests plus frozen reference comparison.
 
 Ruling: execute under the supplied specification without another design approval, as explicitly requested. One Astra architecture review completed; recommended char-row dedup and conservative equal-length dense-LSTM experiments. Neither is a performance result.
+
+Results: frozen comparison exact (4,314 fields / 4,175 spans); incremental model-only19.9%, repeated2MiB3.6%, single8MiB combined-versus-main9.3%. These do not meet the M3 performance mission. Native M3, 110/150/500MiB and15M-field acceptance remain blocked by hardware availability. Failed per-member sorting, dense regrouping, INT8 and compile experiments are documented. Final read-only Astra code review: no material findings; hardware and performance claims explicitly outside its verification.

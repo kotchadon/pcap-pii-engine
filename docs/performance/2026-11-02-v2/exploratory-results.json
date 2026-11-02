@@ -1,0 +1,3462 @@
+{
+  "experiment-compile.json": {
+    "variant": "compile",
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "torch": "2.6.0+cpu",
+    "threads": 2,
+    "pairs": 256,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "threshold": 0.35,
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "weights_sha256": {
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "baseline_cold_seconds": 0.47711665500014533,
+    "baseline_warm_seconds": [
+      0.5180229899999631,
+      0.42358030099990174,
+      0.346584896999957
+    ],
+    "notes": "Experimental only; timings sequential in one process. No M3/full-scan claim; no defaults or assets changed.",
+    "preparation_seconds": 0.6326646869999877,
+    "status": "unsupported_or_failed",
+    "error_type": "Unsupported",
+    "attempted_seconds": 0.22863317800010918,
+    "lifetime_peak_rss_includes_reference_bytes": 313806848
+  },
+  "exact-dense-scan-experiment.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "source_root": "/workspace/scratch/28ec9f0f81f9/perf-next",
+    "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "capture_bytes": 2097281,
+    "profile": "stress",
+    "memory_budget_bytes": 4294967296,
+    "rss_before": 208252928,
+    "analysis_limits": {
+      "max_capture_bytes": 536870912,
+      "max_packets": 2000000,
+      "max_flows": 300000,
+      "max_tcp_payload_bytes": 503316480,
+      "max_report_bytes": 2147483648,
+      "max_findings": 4000000,
+      "max_memory_bytes": 4294967296
+    },
+    "ml_work_budget": {
+      "profile": "high_capacity",
+      "max_fields": 2500000,
+      "max_characters": 500000000,
+      "max_seconds": 3600.0,
+      "batch_fields": 256,
+      "batch_characters": 262144,
+      "max_field_chars": 65536
+    },
+    "checkpoint_sha256": {
+      "ensemble.json": "d1d3ae10de0eb8634eff55199606495980102be8a4614f3f0f48de571a5d55b3",
+      "seed11/meta.json": "c9ec4841cbc2f79c05f4cdf5c6d11f68e4ed3e880917bab048497936c1bc03fa",
+      "seed11/model.pt": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed12/meta.json": "ef81dfa9b8643db089363d42d6748e9661f82d0e1eb2464a92879da65e15ff8d",
+      "seed12/model.pt": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed13/meta.json": "c8188dc8bec725608725b67a3ceca92916b790ec7318f603ec6c8cd60960d9bd",
+      "seed13/model.pt": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "worker_timeout_seconds": 300,
+    "expected_capture_sha256": null,
+    "scope": "JobManager + SQLite index + atomic report",
+    "mode": "hybrid",
+    "ml_profile": "high_capacity",
+    "model_load_seconds": 0.07484377999981007,
+    "rss_after_model_load": 234930176,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "torch": "2.6.0+cpu",
+    "cache_enabled": true,
+    "threads": 2,
+    "instrumented": false,
+    "historical_peak_reproduction": null,
+    "runs": [
+      {
+        "status": "completed",
+        "seconds": 11.412722763000147,
+        "model_seconds": 7.19460112400111,
+        "process_cpu_seconds": 18.41390083,
+        "average_cpu_cores": 1.6134537929631965,
+        "current_rss_after_analysis": 368357376,
+        "lifetime_peak_rss": 367661056,
+        "stages": {
+          "read_decode_group": 0.6108635860000504,
+          "session_segmentation": 0.027442307999535842,
+          "reassembly": 0.38492748302041946,
+          "http_parse": 0.04879406797272168,
+          "field_extraction": 0.09469790801358613,
+          "field_http_evidence": 1.248760953985311,
+          "rule_detection": 0.20932836398742438,
+          "ml_inference": 7.19460112400111,
+          "result_aggregation": 0.5741018059889029,
+          "report_write": 0.10572088899971277,
+          "index_observer_included_in_other_stages": 1.2077596020180863,
+          "index_bytes": 69095424
+        },
+        "memory": {
+          "reading": {
+            "last_current_rss": 244613120,
+            "observed_peak_rss": 244162560,
+            "max_sampled_rss": 244613120
+          },
+          "reconstructing": {
+            "last_current_rss": 245301248,
+            "observed_peak_rss": 244817920,
+            "max_sampled_rss": 245301248
+          },
+          "ml_inference": {
+            "last_current_rss": 368340992,
+            "observed_peak_rss": 367661056,
+            "max_sampled_rss": 368340992
+          },
+          "analysing": {
+            "last_current_rss": 367927296,
+            "observed_peak_rss": 367267840,
+            "max_sampled_rss": 367927296
+          },
+          "writing_report": {
+            "last_current_rss": 368340992,
+            "observed_peak_rss": 367661056,
+            "max_sampled_rss": 368340992
+          },
+          "complete": {
+            "last_current_rss": 368365568,
+            "observed_peak_rss": 367661056,
+            "max_sampled_rss": 368365568
+          }
+        },
+        "output_bytes": 41352872,
+        "canonical_report_sha256": "c317f9c288a3bde714162d25feb39bad111c884ea18c70ac3405e813b12eff62",
+        "report_digest_method": "ordered-json-events-v1",
+        "cache": {
+          "model_evaluations": 5717,
+          "cache_hits": 16371,
+          "cache_evictions": 0,
+          "accounted_cache_bytes": 4279009,
+          "bookkeeping_including_cache_and_findings_seconds": 0.1303752799999529
+        },
+        "verified_capture_evidence": {
+          "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+          "capture_bytes": 2097281,
+          "identity_status": "verified_read",
+          "frame_index_origin": 1,
+          "range_convention": "zero_based_half_open"
+        },
+        "summary": {
+          "packets_captured": 13294,
+          "non_tcp_or_unsupported_packets": 0,
+          "unsupported_packets_by_reason": {},
+          "unsupported_packets_hiding_tcp": 0,
+          "packet_dispositions": {
+            "tcp_decoded": 13294
+          },
+          "fragment_diagnostics": {},
+          "fragment_loss_events": {},
+          "fragment_datagrams_invalidated_after_emission": 0,
+          "tcp_observed_damage": false,
+          "tcp_capture_completeness": "unknown",
+          "http_observed_incomplete": false,
+          "flows_processed": 2195,
+          "endpoint_pairs": 2195,
+          "http_flows": 2195,
+          "http_messages": 4390,
+          "http_transactions": 2195,
+          "unpaired_requests": 0,
+          "unpaired_responses": 0,
+          "total_data_bytes": 1884553,
+          "processing_time_seconds": 11.2952,
+          "distinct_exposed_locations": 6542,
+          "locations_flagged_by_rules": 4390,
+          "locations_flagged_by_model": 6542,
+          "locations_flagged_by_both": 4390,
+          "potential_leaks": 16530,
+          "fields_extracted": 28673,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_skip_reasons": {},
+          "ml_inference_complete": true,
+          "ml_inference_invoked": true,
+          "ml_inference_batches": 87,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_batches": 87,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_fields_empty": 0,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          },
+          "ml_processing_time_seconds": 7.19460112400111,
+          "ml_invoked": true,
+          "ml_inference_failed": false,
+          "ml_incomplete": false,
+          "stream_gaps": 0,
+          "unterminated_http_messages": 0,
+          "http_incomplete_streams": 0,
+          "http_uncertain_streams": 0,
+          "http2_streams_not_decoded": 0,
+          "http2_connections_decoded": 0,
+          "http2_messages_decoded": 0,
+          "tls_streams_not_inspected": 0,
+          "http_bodies_not_inspected": 0,
+          "http_bodies_not_inspected_by_reason": {},
+          "capture_truncated_records": 0,
+          "capture_malformed_records": 0,
+          "capture_unsupported_packet_records": 0,
+          "analysis_incomplete": false
+        },
+        "current_rss_after_report_release": 368435200
+      }
+    ]
+  },
+  "forward-components.json": {
+    "source": "main50c3a12 + PR46 (4e73649)",
+    "torch": "2.6.0+cpu",
+    "threads": 2,
+    "fields": 256,
+    "wall_seconds": 0.4292318160000832,
+    "process_cpu_seconds": 0.8164638489999998,
+    "average_cpu_cores": 1.902151281814211,
+    "stages_seconds_first_call": {
+      "tokenize": 0.011245022498769686,
+      "encode": 0.04945124199832662,
+      "collate": 0.016872713500220016,
+      "word": 0.001030129499895338,
+      "shape": 0.0003048624996608851,
+      "ctx": 0.0002527305001649438,
+      "char": 0.002041824999423625,
+      "conv": 0.04340218599963919,
+      "drop": 0.000612112000567322,
+      "lstm": 0.20729131199993844,
+      "out": 0.0027014709996819875,
+      "_forward": 0.3052199900004098,
+      "viterbi_decode": 0.011027848998537593,
+      "tags_to_spans": 0.0016270180014998914
+    },
+    "calls_two_invocations": {
+      "tokenize": 512,
+      "encode": 1086,
+      "collate": 12,
+      "word": 36,
+      "shape": 36,
+      "ctx": 36,
+      "char": 36,
+      "conv": 36,
+      "drop": 72,
+      "lstm": 36,
+      "out": 36,
+      "_forward": 36,
+      "viterbi_decode": 574,
+      "tags_to_spans": 574
+    },
+    "rows": {
+      "batches": 6,
+      "positions": 14182,
+      "nonempty_rows": 10843,
+      "unique_nonempty_rows": 409,
+      "equal_length_batches": 1
+    },
+    "peak_rss_bytes": 276959232,
+    "note": "module cumulative times overlap; average of two instrumented calls, not throughput acceptance"
+  },
+  "baseline-indexed2-2.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "source_root": "/workspace/scratch/28ec9f0f81f9/perf-reference",
+    "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "capture_bytes": 2097281,
+    "profile": "stress",
+    "memory_budget_bytes": 4294967296,
+    "rss_before": 19279872,
+    "worker_timeout_seconds": 300,
+    "expected_capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "scope": "JobManager + SQLite index + atomic report",
+    "mode": "hybrid",
+    "ml_profile": "high_capacity",
+    "model_load_seconds": 0.050480149999884816,
+    "rss_after_model_load": 234864640,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "torch": "2.6.0+cpu",
+    "cache_enabled": true,
+    "threads": 2,
+    "instrumented": false,
+    "historical_peak_reproduction": null,
+    "runs": [
+      {
+        "status": "completed",
+        "seconds": 10.716115173000162,
+        "model_seconds": 7.20077326100045,
+        "process_cpu_seconds": 17.415141861,
+        "average_cpu_cores": 1.6251357492758571,
+        "current_rss_after_analysis": 284835840,
+        "lifetime_peak_rss": 290889728,
+        "stages": {
+          "read_decode_group": 0.45661719700001413,
+          "session_segmentation": 0.02373295599954872,
+          "reassembly": 0.31913935199213483,
+          "http_parse": 0.04108447100156809,
+          "field_extraction": 0.0751355910026632,
+          "field_http_evidence": 1.0248739319974902,
+          "rule_detection": 0.18413542299163055,
+          "ml_inference": 7.20077326100045,
+          "result_aggregation": 0.5315640179958336,
+          "report_write": 0.1064848199998778,
+          "index_observer_included_in_other_stages": 0.997181697007818,
+          "index_bytes": 69095424
+        },
+        "memory": {
+          "reading": {
+            "last_current_rss": 244600832,
+            "observed_peak_rss": 244400128,
+            "max_sampled_rss": 244600832
+          },
+          "reconstructing": {
+            "last_current_rss": 245280768,
+            "observed_peak_rss": 245055488,
+            "max_sampled_rss": 245280768
+          },
+          "ml_inference": {
+            "last_current_rss": 284819456,
+            "observed_peak_rss": 290889728,
+            "max_sampled_rss": 287428608
+          },
+          "analysing": {
+            "last_current_rss": 284794880,
+            "observed_peak_rss": 290889728,
+            "max_sampled_rss": 284901376
+          },
+          "writing_report": {
+            "last_current_rss": 284819456,
+            "observed_peak_rss": 290889728,
+            "max_sampled_rss": 284819456
+          },
+          "complete": {
+            "last_current_rss": 284844032,
+            "observed_peak_rss": 290889728,
+            "max_sampled_rss": 284844032
+          }
+        },
+        "output_bytes": 41352872,
+        "canonical_report_sha256": "1bcff4bf61ffd7fd937e83ef77768249a3ee03eb2704ec61c7aad505e3716a4e",
+        "report_digest_method": "ordered-json-events-v1",
+        "cache": {
+          "model_evaluations": 5717,
+          "cache_hits": 16371,
+          "cache_evictions": 0,
+          "accounted_cache_bytes": 4279009,
+          "bookkeeping_including_cache_and_findings_seconds": 0.12215130299932753
+        },
+        "verified_capture_evidence": {
+          "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+          "capture_bytes": 2097281,
+          "identity_status": "verified_read",
+          "frame_index_origin": 1,
+          "range_convention": "zero_based_half_open"
+        },
+        "summary": {
+          "packets_captured": 13294,
+          "non_tcp_or_unsupported_packets": 0,
+          "unsupported_packets_by_reason": {},
+          "unsupported_packets_hiding_tcp": 0,
+          "packet_dispositions": {
+            "tcp_decoded": 13294
+          },
+          "fragment_diagnostics": {},
+          "fragment_loss_events": {},
+          "fragment_datagrams_invalidated_after_emission": 0,
+          "tcp_observed_damage": false,
+          "tcp_capture_completeness": "unknown",
+          "http_observed_incomplete": false,
+          "flows_processed": 2195,
+          "endpoint_pairs": 2195,
+          "http_flows": 2195,
+          "http_messages": 4390,
+          "http_transactions": 2195,
+          "unpaired_requests": 0,
+          "unpaired_responses": 0,
+          "total_data_bytes": 1884553,
+          "processing_time_seconds": 10.5974,
+          "distinct_exposed_locations": 6542,
+          "locations_flagged_by_rules": 4390,
+          "locations_flagged_by_model": 6542,
+          "locations_flagged_by_both": 4390,
+          "potential_leaks": 16530,
+          "fields_extracted": 28673,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_skip_reasons": {},
+          "ml_inference_complete": true,
+          "ml_inference_invoked": true,
+          "ml_inference_batches": 87,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_batches": 87,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_fields_empty": 0,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          },
+          "ml_processing_time_seconds": 7.20077326100045,
+          "ml_invoked": true,
+          "ml_inference_failed": false,
+          "ml_incomplete": false,
+          "stream_gaps": 0,
+          "unterminated_http_messages": 0,
+          "http_incomplete_streams": 0,
+          "http_uncertain_streams": 0,
+          "http2_streams_not_decoded": 0,
+          "http2_connections_decoded": 0,
+          "http2_messages_decoded": 0,
+          "tls_streams_not_inspected": 0,
+          "http_bodies_not_inspected": 0,
+          "http_bodies_not_inspected_by_reason": {},
+          "capture_truncated_records": 0,
+          "capture_malformed_records": 0,
+          "capture_unsupported_packet_records": 0,
+          "analysis_incomplete": false
+        },
+        "current_rss_after_report_release": 284979200
+      }
+    ]
+  },
+  "forward-experiments.json": {
+    "torch": "2.6.0+cpu",
+    "threads": 2,
+    "scope": "256 fictional model-only fields, sequential candidates in one process; lifetime RSS is cumulative, not per variant",
+    "results": [
+      {
+        "variant": "baseline",
+        "cold": 0.48512199299989334,
+        "warm": [
+          0.5033283940001638,
+          0.508640534000051,
+          0.6409279780000361
+        ],
+        "median": 0.508640534000051,
+        "cpu_seconds": [
+          0.929173859,
+          0.9033869560000003,
+          0.9804727469999994,
+          1.150565028
+        ],
+        "same_labels": true,
+        "same_decisions": true,
+        "bit_exact": true,
+        "max_score_difference": 0.0,
+        "lifetime_peak_rss": 276512768
+      },
+      {
+        "variant": "dedup",
+        "cold": 0.5933065369999895,
+        "warm": [
+          0.41387767599985636,
+          0.430197815999918,
+          0.40458273000012923
+        ],
+        "median": 0.41387767599985636,
+        "cpu_seconds": [
+          1.1275973429999997,
+          0.7888954079999992,
+          0.7698470129999997,
+          0.7735663719999994
+        ],
+        "same_labels": true,
+        "same_decisions": true,
+        "bit_exact": true,
+        "max_score_difference": 0.0,
+        "lifetime_peak_rss": 276512768
+      },
+      {
+        "variant": "dense",
+        "cold": 0.49838456399993447,
+        "warm": [
+          0.39858121199995367,
+          0.37202721299991026,
+          0.46626708199983113
+        ],
+        "median": 0.39858121199995367,
+        "cpu_seconds": [
+          0.876656015,
+          0.748074591,
+          0.701182596999999,
+          0.8202667429999995
+        ],
+        "same_labels": true,
+        "same_decisions": true,
+        "bit_exact": false,
+        "max_score_difference": 2.2779172148545968e-07,
+        "lifetime_peak_rss": 288018432
+      },
+      {
+        "variant": "exact-dense",
+        "cold": 0.484072069000149,
+        "warm": [
+          0.4343168540001443,
+          0.5112733650000791,
+          0.3225005509998482
+        ],
+        "median": 0.4343168540001443,
+        "cpu_seconds": [
+          0.9271822309999997,
+          0.8175335070000003,
+          0.8929254960000002,
+          0.6100452620000016
+        ],
+        "same_labels": true,
+        "same_decisions": true,
+        "bit_exact": false,
+        "max_score_difference": 2.2779172148545968e-07,
+        "lifetime_peak_rss": 310824960
+      },
+      {
+        "variant": "exact-dedup-dense",
+        "cold": 0.4092814939999698,
+        "warm": [
+          0.4293023699999594,
+          0.3792874910000137,
+          0.3543036529999881
+        ],
+        "median": 0.3792874910000137,
+        "cpu_seconds": [
+          0.7761519829999983,
+          0.7618772259999993,
+          0.7175173970000017,
+          0.6709576740000003
+        ],
+        "same_labels": true,
+        "same_decisions": true,
+        "bit_exact": false,
+        "max_score_difference": 2.2779172148545968e-07,
+        "lifetime_peak_rss": 310824960
+      }
+    ]
+  },
+  "hash-plan-indexed2.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "source_root": "/workspace/scratch/28ec9f0f81f9/perf-next",
+    "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "capture_bytes": 2097281,
+    "profile": "stress",
+    "memory_budget_bytes": 4294967296,
+    "rss_before": 19308544,
+    "analysis_limits": {
+      "max_capture_bytes": 536870912,
+      "max_packets": 2000000,
+      "max_flows": 300000,
+      "max_tcp_payload_bytes": 503316480,
+      "max_report_bytes": 2147483648,
+      "max_findings": 4000000,
+      "max_memory_bytes": 4294967296
+    },
+    "ml_work_budget": {
+      "profile": "high_capacity",
+      "max_fields": 2500000,
+      "max_characters": 500000000,
+      "max_seconds": 3600.0,
+      "batch_fields": 256,
+      "batch_characters": 262144,
+      "max_field_chars": 65536
+    },
+    "checkpoint_sha256": {
+      "ensemble.json": "d1d3ae10de0eb8634eff55199606495980102be8a4614f3f0f48de571a5d55b3",
+      "seed11/meta.json": "c9ec4841cbc2f79c05f4cdf5c6d11f68e4ed3e880917bab048497936c1bc03fa",
+      "seed11/model.pt": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed12/meta.json": "ef81dfa9b8643db089363d42d6748e9661f82d0e1eb2464a92879da65e15ff8d",
+      "seed12/model.pt": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed13/meta.json": "c8188dc8bec725608725b67a3ceca92916b790ec7318f603ec6c8cd60960d9bd",
+      "seed13/model.pt": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "worker_timeout_seconds": 300,
+    "expected_capture_sha256": null,
+    "scope": "JobManager + SQLite index + atomic report",
+    "mode": "hybrid",
+    "ml_profile": "high_capacity",
+    "model_load_seconds": 0.059274549999827286,
+    "rss_after_model_load": 235663360,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "torch": "2.6.0+cpu",
+    "cache_enabled": true,
+    "threads": 2,
+    "instrumented": false,
+    "historical_peak_reproduction": null,
+    "runs": [
+      {
+        "status": "completed",
+        "seconds": 10.494055721999985,
+        "model_seconds": 6.83959904399876,
+        "process_cpu_seconds": 16.821100567000002,
+        "average_cpu_cores": 1.6029170239429786,
+        "current_rss_after_analysis": 280403968,
+        "lifetime_peak_rss": 285802496,
+        "stages": {
+          "read_decode_group": 0.46930883200002427,
+          "session_segmentation": 0.025118446006672457,
+          "reassembly": 0.32981084400853433,
+          "http_parse": 0.04052274300397585,
+          "field_extraction": 0.07814782000150444,
+          "field_http_evidence": 1.0388853640072284,
+          "rule_detection": 0.18908153099096126,
+          "ml_inference": 6.83959904399876,
+          "result_aggregation": 0.5564049099843942,
+          "report_write": 0.09906200299997181,
+          "index_observer_included_in_other_stages": 1.027532738045693,
+          "index_bytes": 69095424
+        },
+        "memory": {
+          "reading": {
+            "last_current_rss": 245374976,
+            "observed_peak_rss": 244887552,
+            "max_sampled_rss": 245374976
+          },
+          "reconstructing": {
+            "last_current_rss": 246067200,
+            "observed_peak_rss": 245673984,
+            "max_sampled_rss": 246067200
+          },
+          "ml_inference": {
+            "last_current_rss": 280223744,
+            "observed_peak_rss": 285802496,
+            "max_sampled_rss": 280223744
+          },
+          "analysing": {
+            "last_current_rss": 280203264,
+            "observed_peak_rss": 285802496,
+            "max_sampled_rss": 280203264
+          },
+          "writing_report": {
+            "last_current_rss": 280223744,
+            "observed_peak_rss": 285802496,
+            "max_sampled_rss": 280223744
+          },
+          "complete": {
+            "last_current_rss": 280248320,
+            "observed_peak_rss": 285802496,
+            "max_sampled_rss": 280248320
+          }
+        },
+        "output_bytes": 41352871,
+        "canonical_report_sha256": "1bcff4bf61ffd7fd937e83ef77768249a3ee03eb2704ec61c7aad505e3716a4e",
+        "report_digest_method": "ordered-json-events-v1",
+        "cache": {
+          "model_evaluations": 5717,
+          "cache_hits": 16371,
+          "cache_evictions": 0,
+          "accounted_cache_bytes": 4279009,
+          "bookkeeping_including_cache_and_findings_seconds": 0.12321422500326662
+        },
+        "verified_capture_evidence": {
+          "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+          "capture_bytes": 2097281,
+          "identity_status": "verified_read",
+          "frame_index_origin": 1,
+          "range_convention": "zero_based_half_open"
+        },
+        "summary": {
+          "packets_captured": 13294,
+          "non_tcp_or_unsupported_packets": 0,
+          "unsupported_packets_by_reason": {},
+          "unsupported_packets_hiding_tcp": 0,
+          "packet_dispositions": {
+            "tcp_decoded": 13294
+          },
+          "fragment_diagnostics": {},
+          "fragment_loss_events": {},
+          "fragment_datagrams_invalidated_after_emission": 0,
+          "tcp_observed_damage": false,
+          "tcp_capture_completeness": "unknown",
+          "http_observed_incomplete": false,
+          "flows_processed": 2195,
+          "endpoint_pairs": 2195,
+          "http_flows": 2195,
+          "http_messages": 4390,
+          "http_transactions": 2195,
+          "unpaired_requests": 0,
+          "unpaired_responses": 0,
+          "total_data_bytes": 1884553,
+          "processing_time_seconds": 10.383,
+          "distinct_exposed_locations": 6542,
+          "locations_flagged_by_rules": 4390,
+          "locations_flagged_by_model": 6542,
+          "locations_flagged_by_both": 4390,
+          "potential_leaks": 16530,
+          "fields_extracted": 28673,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_skip_reasons": {},
+          "ml_inference_complete": true,
+          "ml_inference_invoked": true,
+          "ml_inference_batches": 87,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_batches": 87,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_fields_empty": 0,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          },
+          "ml_processing_time_seconds": 6.83959904399876,
+          "ml_invoked": true,
+          "ml_inference_failed": false,
+          "ml_incomplete": false,
+          "stream_gaps": 0,
+          "unterminated_http_messages": 0,
+          "http_incomplete_streams": 0,
+          "http_uncertain_streams": 0,
+          "http2_streams_not_decoded": 0,
+          "http2_connections_decoded": 0,
+          "http2_messages_decoded": 0,
+          "tls_streams_not_inspected": 0,
+          "http_bodies_not_inspected": 0,
+          "http_bodies_not_inspected_by_reason": {},
+          "capture_truncated_records": 0,
+          "capture_malformed_records": 0,
+          "capture_unsupported_packet_records": 0,
+          "analysis_incomplete": false
+        },
+        "current_rss_after_report_release": 280383488
+      }
+    ]
+  },
+  "experiment-dynamic-int8.json": {
+    "variant": "dynamic-int8",
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "torch": "2.6.0+cpu",
+    "threads": 2,
+    "pairs": 256,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "threshold": 0.35,
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "weights_sha256": {
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "baseline_cold_seconds": 0.4178391719999581,
+    "baseline_warm_seconds": [
+      0.5146239180000975,
+      0.36944619299993064,
+      0.3981733919999897
+    ],
+    "notes": "Experimental only; timings sequential in one process. No M3/full-scan claim; no defaults or assets changed.",
+    "preparation_seconds": 0.01995862900002976,
+    "candidate_cold_seconds": 0.3809201589999702,
+    "status": "measured",
+    "candidate_warm_seconds": [
+      0.29156977200000256,
+      0.40351829600012934,
+      0.31776758499995594
+    ],
+    "warm_median_reduction_percent": 20.19366653210113,
+    "equivalence": {
+      "same_labels_spans_order": false,
+      "same_threshold_decisions": false,
+      "raw_scores_bit_identical": false,
+      "max_raw_score_difference": null
+    },
+    "lifetime_peak_rss_includes_reference_bytes": 278048768
+  },
+  "experiment-dense-equal-length.json": {
+    "variant": "dense-equal-length",
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "torch": "2.6.0+cpu",
+    "threads": 2,
+    "pairs": 256,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "threshold": 0.35,
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "weights_sha256": {
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "baseline_cold_seconds": 0.41711734399996203,
+    "baseline_warm_seconds": [
+      0.4311350460000085,
+      0.44296884400000636,
+      0.37804489100017236
+    ],
+    "notes": "Experimental only; timings sequential in one process. No M3/full-scan claim; no defaults or assets changed.",
+    "preparation_seconds": 6.280200000219338e-05,
+    "candidate_cold_seconds": 0.4506891109999742,
+    "status": "measured",
+    "candidate_warm_seconds": [
+      0.3275723360000029,
+      0.4134726800000408,
+      0.2752106039999944
+    ],
+    "warm_median_reduction_percent": 24.020944472234707,
+    "equivalence": {
+      "same_labels_spans_order": true,
+      "same_threshold_decisions": true,
+      "raw_scores_bit_identical": false,
+      "max_raw_score_difference": 2.2779172148545968e-07
+    },
+    "lifetime_peak_rss_includes_reference_bytes": 279384064
+  },
+  "baseline-indexed2-0.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "source_root": "/workspace/scratch/28ec9f0f81f9/perf-reference",
+    "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "capture_bytes": 2097281,
+    "profile": "stress",
+    "memory_budget_bytes": 4294967296,
+    "rss_before": 19279872,
+    "worker_timeout_seconds": 300,
+    "expected_capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "scope": "JobManager + SQLite index + atomic report",
+    "mode": "hybrid",
+    "ml_profile": "high_capacity",
+    "model_load_seconds": 0.05814948300007927,
+    "rss_after_model_load": 234872832,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "torch": "2.6.0+cpu",
+    "cache_enabled": true,
+    "threads": 2,
+    "instrumented": false,
+    "historical_peak_reproduction": null,
+    "runs": [
+      {
+        "status": "completed",
+        "seconds": 10.374444546000177,
+        "model_seconds": 6.812010100998805,
+        "process_cpu_seconds": 16.734148487,
+        "average_cpu_cores": 1.613016331891405,
+        "current_rss_after_analysis": 285003776,
+        "lifetime_peak_rss": 290766848,
+        "stages": {
+          "read_decode_group": 0.487727520999897,
+          "session_segmentation": 0.02364548399555133,
+          "reassembly": 0.3187390859905008,
+          "http_parse": 0.04299713899467861,
+          "field_extraction": 0.08340889500027515,
+          "field_http_evidence": 1.0406549919891859,
+          "rule_detection": 0.1874214099980236,
+          "ml_inference": 6.812010100998805,
+          "result_aggregation": 0.53760912099915,
+          "report_write": 0.09948235599995314,
+          "index_observer_included_in_other_stages": 1.016607430022077,
+          "index_bytes": 69095424
+        },
+        "memory": {
+          "reading": {
+            "last_current_rss": 244609024,
+            "observed_peak_rss": 244310016,
+            "max_sampled_rss": 244609024
+          },
+          "reconstructing": {
+            "last_current_rss": 245293056,
+            "observed_peak_rss": 244965376,
+            "max_sampled_rss": 245293056
+          },
+          "ml_inference": {
+            "last_current_rss": 284848128,
+            "observed_peak_rss": 290766848,
+            "max_sampled_rss": 287457280
+          },
+          "analysing": {
+            "last_current_rss": 284823552,
+            "observed_peak_rss": 290766848,
+            "max_sampled_rss": 284930048
+          },
+          "writing_report": {
+            "last_current_rss": 284848128,
+            "observed_peak_rss": 290766848,
+            "max_sampled_rss": 284848128
+          },
+          "complete": {
+            "last_current_rss": 284872704,
+            "observed_peak_rss": 290766848,
+            "max_sampled_rss": 284872704
+          }
+        },
+        "output_bytes": 41352873,
+        "canonical_report_sha256": "1bcff4bf61ffd7fd937e83ef77768249a3ee03eb2704ec61c7aad505e3716a4e",
+        "report_digest_method": "ordered-json-events-v1",
+        "cache": {
+          "model_evaluations": 5717,
+          "cache_hits": 16371,
+          "cache_evictions": 0,
+          "accounted_cache_bytes": 4279009,
+          "bookkeeping_including_cache_and_findings_seconds": 0.11926529200081859
+        },
+        "verified_capture_evidence": {
+          "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+          "capture_bytes": 2097281,
+          "identity_status": "verified_read",
+          "frame_index_origin": 1,
+          "range_convention": "zero_based_half_open"
+        },
+        "summary": {
+          "packets_captured": 13294,
+          "non_tcp_or_unsupported_packets": 0,
+          "unsupported_packets_by_reason": {},
+          "unsupported_packets_hiding_tcp": 0,
+          "packet_dispositions": {
+            "tcp_decoded": 13294
+          },
+          "fragment_diagnostics": {},
+          "fragment_loss_events": {},
+          "fragment_datagrams_invalidated_after_emission": 0,
+          "tcp_observed_damage": false,
+          "tcp_capture_completeness": "unknown",
+          "http_observed_incomplete": false,
+          "flows_processed": 2195,
+          "endpoint_pairs": 2195,
+          "http_flows": 2195,
+          "http_messages": 4390,
+          "http_transactions": 2195,
+          "unpaired_requests": 0,
+          "unpaired_responses": 0,
+          "total_data_bytes": 1884553,
+          "processing_time_seconds": 10.2642,
+          "distinct_exposed_locations": 6542,
+          "locations_flagged_by_rules": 4390,
+          "locations_flagged_by_model": 6542,
+          "locations_flagged_by_both": 4390,
+          "potential_leaks": 16530,
+          "fields_extracted": 28673,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_skip_reasons": {},
+          "ml_inference_complete": true,
+          "ml_inference_invoked": true,
+          "ml_inference_batches": 87,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_batches": 87,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_fields_empty": 0,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          },
+          "ml_processing_time_seconds": 6.812010100998805,
+          "ml_invoked": true,
+          "ml_inference_failed": false,
+          "ml_incomplete": false,
+          "stream_gaps": 0,
+          "unterminated_http_messages": 0,
+          "http_incomplete_streams": 0,
+          "http_uncertain_streams": 0,
+          "http2_streams_not_decoded": 0,
+          "http2_connections_decoded": 0,
+          "http2_messages_decoded": 0,
+          "tls_streams_not_inspected": 0,
+          "http_bodies_not_inspected": 0,
+          "http_bodies_not_inspected_by_reason": {},
+          "capture_truncated_records": 0,
+          "capture_malformed_records": 0,
+          "capture_unsupported_packet_records": 0,
+          "analysis_incomplete": false
+        },
+        "current_rss_after_report_release": 285007872
+      }
+    ]
+  },
+  "dense-scan-experiment.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "source_root": "/workspace/scratch/28ec9f0f81f9/perf-next",
+    "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "capture_bytes": 2097281,
+    "profile": "stress",
+    "memory_budget_bytes": 4294967296,
+    "rss_before": 208171008,
+    "analysis_limits": {
+      "max_capture_bytes": 536870912,
+      "max_packets": 2000000,
+      "max_flows": 300000,
+      "max_tcp_payload_bytes": 503316480,
+      "max_report_bytes": 2147483648,
+      "max_findings": 4000000,
+      "max_memory_bytes": 4294967296
+    },
+    "ml_work_budget": {
+      "profile": "high_capacity",
+      "max_fields": 2500000,
+      "max_characters": 500000000,
+      "max_seconds": 3600.0,
+      "batch_fields": 256,
+      "batch_characters": 262144,
+      "max_field_chars": 65536
+    },
+    "checkpoint_sha256": {
+      "ensemble.json": "d1d3ae10de0eb8634eff55199606495980102be8a4614f3f0f48de571a5d55b3",
+      "seed11/meta.json": "c9ec4841cbc2f79c05f4cdf5c6d11f68e4ed3e880917bab048497936c1bc03fa",
+      "seed11/model.pt": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed12/meta.json": "ef81dfa9b8643db089363d42d6748e9661f82d0e1eb2464a92879da65e15ff8d",
+      "seed12/model.pt": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed13/meta.json": "c8188dc8bec725608725b67a3ceca92916b790ec7318f603ec6c8cd60960d9bd",
+      "seed13/model.pt": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "worker_timeout_seconds": 300,
+    "expected_capture_sha256": null,
+    "scope": "JobManager + SQLite index + atomic report",
+    "mode": "hybrid",
+    "ml_profile": "high_capacity",
+    "model_load_seconds": 0.05237848899992059,
+    "rss_after_model_load": 234905600,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "torch": "2.6.0+cpu",
+    "cache_enabled": true,
+    "threads": 2,
+    "instrumented": false,
+    "historical_peak_reproduction": null,
+    "runs": [
+      {
+        "status": "completed",
+        "seconds": 10.041689682999959,
+        "model_seconds": 6.354156244000251,
+        "process_cpu_seconds": 15.770321671999998,
+        "average_cpu_cores": 1.5704848655797745,
+        "current_rss_after_analysis": 280834048,
+        "lifetime_peak_rss": 288976896,
+        "stages": {
+          "read_decode_group": 0.46665891800012105,
+          "session_segmentation": 0.025387793005393178,
+          "reassembly": 0.3466744679999465,
+          "http_parse": 0.04488548800486569,
+          "field_extraction": 0.08394466999607175,
+          "field_http_evidence": 1.088952708005536,
+          "rule_detection": 0.2558869790036624,
+          "ml_inference": 6.354156244000251,
+          "result_aggregation": 0.5545341410072524,
+          "report_write": 0.09804848699991453,
+          "index_observer_included_in_other_stages": 1.073969642066686,
+          "index_bytes": 69095424
+        },
+        "memory": {
+          "reading": {
+            "last_current_rss": 244592640,
+            "observed_peak_rss": 244215808,
+            "max_sampled_rss": 244592640
+          },
+          "reconstructing": {
+            "last_current_rss": 245280768,
+            "observed_peak_rss": 245002240,
+            "max_sampled_rss": 245280768
+          },
+          "ml_inference": {
+            "last_current_rss": 283525120,
+            "observed_peak_rss": 288976896,
+            "max_sampled_rss": 283525120
+          },
+          "analysing": {
+            "last_current_rss": 283504640,
+            "observed_peak_rss": 288976896,
+            "max_sampled_rss": 283504640
+          },
+          "writing_report": {
+            "last_current_rss": 283525120,
+            "observed_peak_rss": 288976896,
+            "max_sampled_rss": 283525120
+          },
+          "complete": {
+            "last_current_rss": 283549696,
+            "observed_peak_rss": 288976896,
+            "max_sampled_rss": 283549696
+          }
+        },
+        "output_bytes": 41352880,
+        "canonical_report_sha256": "5c3cadce955b9a67326e6da1959cc1a0d5dbe6d26ed6b0051ae6a8951bbe6ef1",
+        "report_digest_method": "ordered-json-events-v1",
+        "cache": {
+          "model_evaluations": 5717,
+          "cache_hits": 16371,
+          "cache_evictions": 0,
+          "accounted_cache_bytes": 4279009,
+          "bookkeeping_including_cache_and_findings_seconds": 0.12966122500029087
+        },
+        "verified_capture_evidence": {
+          "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+          "capture_bytes": 2097281,
+          "identity_status": "verified_read",
+          "frame_index_origin": 1,
+          "range_convention": "zero_based_half_open"
+        },
+        "summary": {
+          "packets_captured": 13294,
+          "non_tcp_or_unsupported_packets": 0,
+          "unsupported_packets_by_reason": {},
+          "unsupported_packets_hiding_tcp": 0,
+          "packet_dispositions": {
+            "tcp_decoded": 13294
+          },
+          "fragment_diagnostics": {},
+          "fragment_loss_events": {},
+          "fragment_datagrams_invalidated_after_emission": 0,
+          "tcp_observed_damage": false,
+          "tcp_capture_completeness": "unknown",
+          "http_observed_incomplete": false,
+          "flows_processed": 2195,
+          "endpoint_pairs": 2195,
+          "http_flows": 2195,
+          "http_messages": 4390,
+          "http_transactions": 2195,
+          "unpaired_requests": 0,
+          "unpaired_responses": 0,
+          "total_data_bytes": 1884553,
+          "processing_time_seconds": 9.9319,
+          "distinct_exposed_locations": 6542,
+          "locations_flagged_by_rules": 4390,
+          "locations_flagged_by_model": 6542,
+          "locations_flagged_by_both": 4390,
+          "potential_leaks": 16530,
+          "fields_extracted": 28673,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_skip_reasons": {},
+          "ml_inference_complete": true,
+          "ml_inference_invoked": true,
+          "ml_inference_batches": 87,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_batches": 87,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_fields_empty": 0,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          },
+          "ml_processing_time_seconds": 6.354156244000251,
+          "ml_invoked": true,
+          "ml_inference_failed": false,
+          "ml_incomplete": false,
+          "stream_gaps": 0,
+          "unterminated_http_messages": 0,
+          "http_incomplete_streams": 0,
+          "http_uncertain_streams": 0,
+          "http2_streams_not_decoded": 0,
+          "http2_connections_decoded": 0,
+          "http2_messages_decoded": 0,
+          "tls_streams_not_inspected": 0,
+          "http_bodies_not_inspected": 0,
+          "http_bodies_not_inspected_by_reason": {},
+          "capture_truncated_records": 0,
+          "capture_malformed_records": 0,
+          "capture_unsupported_packet_records": 0,
+          "analysis_incomplete": false
+        },
+        "current_rss_after_report_release": 277454848
+      }
+    ]
+  },
+  "shared-dedup-indexed2.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "source_root": "/workspace/scratch/28ec9f0f81f9/perf-next",
+    "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "capture_bytes": 2097281,
+    "profile": "stress",
+    "memory_budget_bytes": 4294967296,
+    "rss_before": 19308544,
+    "worker_timeout_seconds": 300,
+    "expected_capture_sha256": null,
+    "scope": "JobManager + SQLite index + atomic report",
+    "mode": "hybrid",
+    "ml_profile": "high_capacity",
+    "model_load_seconds": 0.04543579799997133,
+    "rss_after_model_load": 234782720,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "torch": "2.6.0+cpu",
+    "cache_enabled": true,
+    "threads": 2,
+    "instrumented": false,
+    "historical_peak_reproduction": null,
+    "runs": [
+      {
+        "status": "completed",
+        "seconds": 10.452320397999983,
+        "model_seconds": 6.837978881999788,
+        "process_cpu_seconds": 16.648225643,
+        "average_cpu_cores": 1.5927779678649712,
+        "current_rss_after_analysis": 279793664,
+        "lifetime_peak_rss": 285630464,
+        "stages": {
+          "read_decode_group": 0.4405334049999965,
+          "session_segmentation": 0.027414468001097703,
+          "reassembly": 0.3282743690094776,
+          "http_parse": 0.0458211119976113,
+          "field_extraction": 0.08278287800135331,
+          "field_http_evidence": 1.062558362991922,
+          "rule_detection": 0.19412738500068372,
+          "ml_inference": 6.837978881999788,
+          "result_aggregation": 0.5437328559933121,
+          "report_write": 0.10454431800008024,
+          "index_observer_included_in_other_stages": 1.0171630539616672,
+          "index_bytes": 69095424
+        },
+        "memory": {
+          "reading": {
+            "last_current_rss": 244518912,
+            "observed_peak_rss": 243994624,
+            "max_sampled_rss": 244518912
+          },
+          "reconstructing": {
+            "last_current_rss": 245207040,
+            "observed_peak_rss": 244781056,
+            "max_sampled_rss": 245207040
+          },
+          "ml_inference": {
+            "last_current_rss": 279678976,
+            "observed_peak_rss": 285630464,
+            "max_sampled_rss": 279678976
+          },
+          "analysing": {
+            "last_current_rss": 279658496,
+            "observed_peak_rss": 285630464,
+            "max_sampled_rss": 279658496
+          },
+          "writing_report": {
+            "last_current_rss": 279678976,
+            "observed_peak_rss": 285630464,
+            "max_sampled_rss": 279678976
+          },
+          "complete": {
+            "last_current_rss": 279703552,
+            "observed_peak_rss": 285630464,
+            "max_sampled_rss": 279703552
+          }
+        },
+        "output_bytes": 41352873,
+        "canonical_report_sha256": "1bcff4bf61ffd7fd937e83ef77768249a3ee03eb2704ec61c7aad505e3716a4e",
+        "report_digest_method": "ordered-json-events-v1",
+        "cache": {
+          "model_evaluations": 5717,
+          "cache_hits": 16371,
+          "cache_evictions": 0,
+          "accounted_cache_bytes": 4279009,
+          "bookkeeping_including_cache_and_findings_seconds": 0.12407484599953023
+        },
+        "verified_capture_evidence": {
+          "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+          "capture_bytes": 2097281,
+          "identity_status": "verified_read",
+          "frame_index_origin": 1,
+          "range_convention": "zero_based_half_open"
+        },
+        "summary": {
+          "packets_captured": 13294,
+          "non_tcp_or_unsupported_packets": 0,
+          "unsupported_packets_by_reason": {},
+          "unsupported_packets_hiding_tcp": 0,
+          "packet_dispositions": {
+            "tcp_decoded": 13294
+          },
+          "fragment_diagnostics": {},
+          "fragment_loss_events": {},
+          "fragment_datagrams_invalidated_after_emission": 0,
+          "tcp_observed_damage": false,
+          "tcp_capture_completeness": "unknown",
+          "http_observed_incomplete": false,
+          "flows_processed": 2195,
+          "endpoint_pairs": 2195,
+          "http_flows": 2195,
+          "http_messages": 4390,
+          "http_transactions": 2195,
+          "unpaired_requests": 0,
+          "unpaired_responses": 0,
+          "total_data_bytes": 1884553,
+          "processing_time_seconds": 10.3365,
+          "distinct_exposed_locations": 6542,
+          "locations_flagged_by_rules": 4390,
+          "locations_flagged_by_model": 6542,
+          "locations_flagged_by_both": 4390,
+          "potential_leaks": 16530,
+          "fields_extracted": 28673,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_skip_reasons": {},
+          "ml_inference_complete": true,
+          "ml_inference_invoked": true,
+          "ml_inference_batches": 87,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_batches": 87,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_fields_empty": 0,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          },
+          "ml_processing_time_seconds": 6.837978881999788,
+          "ml_invoked": true,
+          "ml_inference_failed": false,
+          "ml_incomplete": false,
+          "stream_gaps": 0,
+          "unterminated_http_messages": 0,
+          "http_incomplete_streams": 0,
+          "http_uncertain_streams": 0,
+          "http2_streams_not_decoded": 0,
+          "http2_connections_decoded": 0,
+          "http2_messages_decoded": 0,
+          "tls_streams_not_inspected": 0,
+          "http_bodies_not_inspected": 0,
+          "http_bodies_not_inspected_by_reason": {},
+          "capture_truncated_records": 0,
+          "capture_malformed_records": 0,
+          "capture_unsupported_packet_records": 0,
+          "analysis_incomplete": false
+        },
+        "current_rss_after_report_release": 279838720
+      }
+    ]
+  },
+  "frozen-character-reuse.json": {
+    "baseline": {
+      "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+      "architecture": "x86_64",
+      "python": "3.12.14",
+      "torch": "2.6.0+cpu",
+      "threads": 2,
+      "batch_size": 64,
+      "max_batch_tokens": 4096,
+      "model_version": "bilstm-v2-d1f9e9fb9a2b",
+      "min_score": 0.35,
+      "source_sha256": {
+        "bilstm.py": "03a3b174f7d5d175dbf6aef5f841926c6df9121dfa153bdcc71d4cee6b3be06e",
+        "spans.py": "c9e9352239b32a8840a33188682aa2f38311193cbbbbf8c9730c623f58b60e7a",
+        "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+      },
+      "weights_sha256": {
+        "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+        "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+        "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+      },
+      "input_sha256": "f217f59da368560fda817b23eff6f21befcc8ce5bce723df6a8d4eebe1496314",
+      "fields": 4314,
+      "model_load_seconds": 0.04736582400005318,
+      "cold_seconds": 2.6356945080001424,
+      "warm_seconds": [
+        2.447331211000119,
+        2.520498032999967,
+        2.6479275310000503
+      ],
+      "warm_median_seconds": 2.520498032999967,
+      "lifetime_peak_rss_bytes_by_iteration": [
+        314253312,
+        315453440,
+        316596224,
+        316596224
+      ]
+    },
+    "candidate": {
+      "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+      "architecture": "x86_64",
+      "python": "3.12.14",
+      "torch": "2.6.0+cpu",
+      "threads": 2,
+      "batch_size": 64,
+      "max_batch_tokens": 4096,
+      "model_version": "bilstm-v2-d1f9e9fb9a2b",
+      "min_score": 0.35,
+      "source_sha256": {
+        "bilstm.py": "9c8443c1d6fb411db677dae519dbb9ebaa77915c99b65ca295f1c41f988846a6",
+        "spans.py": "c9e9352239b32a8840a33188682aa2f38311193cbbbbf8c9730c623f58b60e7a",
+        "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+      },
+      "weights_sha256": {
+        "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+        "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+        "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+      },
+      "input_sha256": "f217f59da368560fda817b23eff6f21befcc8ce5bce723df6a8d4eebe1496314",
+      "fields": 4314,
+      "model_load_seconds": 0.05413875000022017,
+      "cold_seconds": 2.2244634180001412,
+      "warm_seconds": [
+        2.0661085319998165,
+        2.87942305699994,
+        2.9209736669999984
+      ],
+      "warm_median_seconds": 2.87942305699994,
+      "lifetime_peak_rss_bytes_by_iteration": [
+        293416960,
+        294621184,
+        295665664,
+        295698432
+      ]
+    },
+    "equivalence": {
+      "same_inputs": true,
+      "same_weights": true,
+      "same_model_version": true,
+      "same_configured_threshold": true,
+      "same_labels_spans_field_order": true,
+      "same_threshold_decisions": true,
+      "raw_scores_bit_identical": true,
+      "max_raw_score_difference": 0.0,
+      "unthresholded_spans": 4175
+    },
+    "warm_median_reduction_percent": -14.240242178359107,
+    "scope": "Isolated model-only CPU runs; excludes capture processing and report indexing."
+  },
+  "dedup-indexed2-0.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "source_root": "/workspace/scratch/28ec9f0f81f9/perf-next",
+    "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "capture_bytes": 2097281,
+    "profile": "stress",
+    "memory_budget_bytes": 4294967296,
+    "rss_before": 19283968,
+    "worker_timeout_seconds": 300,
+    "expected_capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "scope": "JobManager + SQLite index + atomic report",
+    "mode": "hybrid",
+    "ml_profile": "high_capacity",
+    "model_load_seconds": 0.05508246899989899,
+    "rss_after_model_load": 234799104,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "torch": "2.6.0+cpu",
+    "cache_enabled": true,
+    "threads": 2,
+    "instrumented": false,
+    "historical_peak_reproduction": null,
+    "runs": [
+      {
+        "status": "completed",
+        "seconds": 11.320264125999984,
+        "model_seconds": 7.6494242460000805,
+        "process_cpu_seconds": 18.430082859,
+        "average_cpu_cores": 1.6280612054510666,
+        "current_rss_after_analysis": 279638016,
+        "lifetime_peak_rss": 285335552,
+        "stages": {
+          "read_decode_group": 0.49341236800000843,
+          "session_segmentation": 0.02663962200176684,
+          "reassembly": 0.3422179670035348,
+          "http_parse": 0.04139659799898254,
+          "field_extraction": 0.08192373599877101,
+          "field_http_evidence": 1.0601175569977386,
+          "rule_detection": 0.18624499599673072,
+          "ml_inference": 7.6494242460000805,
+          "result_aggregation": 0.5541674749927097,
+          "report_write": 0.0972057550000045,
+          "index_observer_included_in_other_stages": 1.042064760982612,
+          "index_bytes": 69095424
+        },
+        "memory": {
+          "reading": {
+            "last_current_rss": 244609024,
+            "observed_peak_rss": 244158464,
+            "max_sampled_rss": 244609024
+          },
+          "reconstructing": {
+            "last_current_rss": 245297152,
+            "observed_peak_rss": 244813824,
+            "max_sampled_rss": 245297152
+          },
+          "ml_inference": {
+            "last_current_rss": 279621632,
+            "observed_peak_rss": 285335552,
+            "max_sampled_rss": 282181632
+          },
+          "analysing": {
+            "last_current_rss": 279609344,
+            "observed_peak_rss": 285335552,
+            "max_sampled_rss": 279797760
+          },
+          "writing_report": {
+            "last_current_rss": 279621632,
+            "observed_peak_rss": 285335552,
+            "max_sampled_rss": 279621632
+          },
+          "complete": {
+            "last_current_rss": 279646208,
+            "observed_peak_rss": 285335552,
+            "max_sampled_rss": 279646208
+          }
+        },
+        "output_bytes": 41352874,
+        "canonical_report_sha256": "1bcff4bf61ffd7fd937e83ef77768249a3ee03eb2704ec61c7aad505e3716a4e",
+        "report_digest_method": "ordered-json-events-v1",
+        "cache": {
+          "model_evaluations": 5717,
+          "cache_hits": 16371,
+          "cache_evictions": 0,
+          "accounted_cache_bytes": 4279009,
+          "bookkeeping_including_cache_and_findings_seconds": 0.12515681999911976
+        },
+        "verified_capture_evidence": {
+          "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+          "capture_bytes": 2097281,
+          "identity_status": "verified_read",
+          "frame_index_origin": 1,
+          "range_convention": "zero_based_half_open"
+        },
+        "summary": {
+          "packets_captured": 13294,
+          "non_tcp_or_unsupported_packets": 0,
+          "unsupported_packets_by_reason": {},
+          "unsupported_packets_hiding_tcp": 0,
+          "packet_dispositions": {
+            "tcp_decoded": 13294
+          },
+          "fragment_diagnostics": {},
+          "fragment_loss_events": {},
+          "fragment_datagrams_invalidated_after_emission": 0,
+          "tcp_observed_damage": false,
+          "tcp_capture_completeness": "unknown",
+          "http_observed_incomplete": false,
+          "flows_processed": 2195,
+          "endpoint_pairs": 2195,
+          "http_flows": 2195,
+          "http_messages": 4390,
+          "http_transactions": 2195,
+          "unpaired_requests": 0,
+          "unpaired_responses": 0,
+          "total_data_bytes": 1884553,
+          "processing_time_seconds": 11.2101,
+          "distinct_exposed_locations": 6542,
+          "locations_flagged_by_rules": 4390,
+          "locations_flagged_by_model": 6542,
+          "locations_flagged_by_both": 4390,
+          "potential_leaks": 16530,
+          "fields_extracted": 28673,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_skip_reasons": {},
+          "ml_inference_complete": true,
+          "ml_inference_invoked": true,
+          "ml_inference_batches": 87,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_batches": 87,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_fields_empty": 0,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          },
+          "ml_processing_time_seconds": 7.6494242460000805,
+          "ml_invoked": true,
+          "ml_inference_failed": false,
+          "ml_incomplete": false,
+          "stream_gaps": 0,
+          "unterminated_http_messages": 0,
+          "http_incomplete_streams": 0,
+          "http_uncertain_streams": 0,
+          "http2_streams_not_decoded": 0,
+          "http2_connections_decoded": 0,
+          "http2_messages_decoded": 0,
+          "tls_streams_not_inspected": 0,
+          "http_bodies_not_inspected": 0,
+          "http_bodies_not_inspected_by_reason": {},
+          "capture_truncated_records": 0,
+          "capture_malformed_records": 0,
+          "capture_unsupported_packet_records": 0,
+          "analysis_incomplete": false
+        },
+        "current_rss_after_report_release": 279781376
+      }
+    ]
+  },
+  "baseline-indexed-profile.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "source_root": "/workspace/scratch/28ec9f0f81f9/perf-reference",
+    "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "capture_bytes": 2097281,
+    "profile": "stress",
+    "memory_budget_bytes": 4294967296,
+    "rss_before": 23855104,
+    "worker_timeout_seconds": 300,
+    "expected_capture_sha256": null,
+    "scope": "JobManager + SQLite index + atomic report",
+    "mode": "hybrid",
+    "ml_profile": "high_capacity",
+    "model_load_seconds": 0.0468793810000534,
+    "rss_after_model_load": 235917312,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "torch": "2.6.0+cpu",
+    "cache_enabled": true,
+    "threads": 2,
+    "instrumented": true,
+    "historical_peak_reproduction": null,
+    "runs": [
+      {
+        "status": "completed",
+        "seconds": 68.34407203800015,
+        "model_seconds": 22.394353078998847,
+        "current_rss_after_analysis": 305319936,
+        "lifetime_peak_rss": 309161984,
+        "stages": {
+          "read_decode_group": 6.261777083999959,
+          "session_segmentation": 0.31468840199841,
+          "reassembly": 3.3267224659900876,
+          "http_parse": 1.1528975519934193,
+          "field_extraction": 1.4646070789910937,
+          "field_http_evidence": 13.157031392996942,
+          "rule_detection": 2.248552572003746,
+          "ml_inference": 22.394353078998847,
+          "result_aggregation": 4.401766833992951,
+          "report_write": 1.9539849029999914,
+          "index_observer_included_in_other_stages": 4.22052140601545,
+          "index_bytes": 69095424
+        },
+        "memory": {
+          "reading": {
+            "last_current_rss": 262492160,
+            "observed_peak_rss": 262123520,
+            "max_sampled_rss": 262492160
+          },
+          "reconstructing": {
+            "last_current_rss": 263147520,
+            "observed_peak_rss": 262778880,
+            "max_sampled_rss": 263147520
+          },
+          "ml_inference": {
+            "last_current_rss": 309506048,
+            "observed_peak_rss": 309161984,
+            "max_sampled_rss": 309506048
+          },
+          "analysing": {
+            "last_current_rss": 309481472,
+            "observed_peak_rss": 309161984,
+            "max_sampled_rss": 309481472
+          },
+          "writing_report": {
+            "last_current_rss": 305307648,
+            "observed_peak_rss": 309161984,
+            "max_sampled_rss": 305307648
+          },
+          "complete": {
+            "last_current_rss": 305328128,
+            "observed_peak_rss": 309161984,
+            "max_sampled_rss": 305328128
+          }
+        },
+        "output_bytes": 41352873,
+        "canonical_report_sha256": "1bcff4bf61ffd7fd937e83ef77768249a3ee03eb2704ec61c7aad505e3716a4e",
+        "report_digest_method": "ordered-json-events-v1",
+        "cache": {
+          "model_evaluations": 5717,
+          "cache_hits": 16371,
+          "cache_evictions": 0,
+          "accounted_cache_bytes": 4279009
+        },
+        "verified_capture_evidence": {
+          "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+          "capture_bytes": 2097281,
+          "identity_status": "verified_read",
+          "frame_index_origin": 1,
+          "range_convention": "zero_based_half_open"
+        },
+        "summary": {
+          "packets_captured": 13294,
+          "non_tcp_or_unsupported_packets": 0,
+          "unsupported_packets_by_reason": {},
+          "unsupported_packets_hiding_tcp": 0,
+          "packet_dispositions": {
+            "tcp_decoded": 13294
+          },
+          "fragment_diagnostics": {},
+          "fragment_loss_events": {},
+          "fragment_datagrams_invalidated_after_emission": 0,
+          "tcp_observed_damage": false,
+          "tcp_capture_completeness": "unknown",
+          "http_observed_incomplete": false,
+          "flows_processed": 2195,
+          "endpoint_pairs": 2195,
+          "http_flows": 2195,
+          "http_messages": 4390,
+          "http_transactions": 2195,
+          "unpaired_requests": 0,
+          "unpaired_responses": 0,
+          "total_data_bytes": 1884553,
+          "processing_time_seconds": 66.335,
+          "distinct_exposed_locations": 6542,
+          "locations_flagged_by_rules": 4390,
+          "locations_flagged_by_model": 6542,
+          "locations_flagged_by_both": 4390,
+          "potential_leaks": 16530,
+          "fields_extracted": 28673,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_skip_reasons": {},
+          "ml_inference_complete": true,
+          "ml_inference_invoked": true,
+          "ml_inference_batches": 87,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_batches": 87,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_fields_empty": 0,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          },
+          "ml_processing_time_seconds": 22.394353078998847,
+          "ml_invoked": true,
+          "ml_inference_failed": false,
+          "ml_incomplete": false,
+          "stream_gaps": 0,
+          "unterminated_http_messages": 0,
+          "http_incomplete_streams": 0,
+          "http_uncertain_streams": 0,
+          "http2_streams_not_decoded": 0,
+          "http2_connections_decoded": 0,
+          "http2_messages_decoded": 0,
+          "tls_streams_not_inspected": 0,
+          "http_bodies_not_inspected": 0,
+          "http_bodies_not_inspected_by_reason": {},
+          "capture_truncated_records": 0,
+          "capture_malformed_records": 0,
+          "capture_unsupported_packet_records": 0,
+          "analysis_incomplete": false
+        },
+        "current_rss_after_report_release": 305467392
+      }
+    ],
+    "python_heap": {
+      "current": 883910,
+      "peak": 10909327,
+      "excludes": "native allocations; run timing instrumented"
+    },
+    "profile_top": [
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml_runner.py",
+        "line": 254,
+        "function": "flush",
+        "calls": 86,
+        "self_seconds": 0.03609942,
+        "cumulative_seconds": 24.436701663
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml_runner.py",
+        "line": 283,
+        "function": "_run",
+        "calls": 87,
+        "self_seconds": 0.482859313,
+        "cumulative_seconds": 24.397684270000003
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml/detector.py",
+        "line": 26,
+        "function": "run_detector",
+        "calls": 87,
+        "self_seconds": 0.03477599,
+        "cumulative_seconds": 23.302273079000003
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml_runner.py",
+        "line": 446,
+        "function": "predict_fields",
+        "calls": 87,
+        "self_seconds": 0.110360781,
+        "cumulative_seconds": 23.117679181
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml/infer.py",
+        "line": 46,
+        "function": "predict_fields",
+        "calls": 87,
+        "self_seconds": 0.285164252,
+        "cumulative_seconds": 22.271613307000003
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml/bilstm.py",
+        "line": 252,
+        "function": "predict_pairs",
+        "calls": 87,
+        "self_seconds": 0.036293634000000005,
+        "cumulative_seconds": 21.647867535
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/ml-deps/torch/autograd/grad_mode.py",
+        "line": 273,
+        "function": "__exit__",
+        "calls": 87,
+        "self_seconds": 0.571704973,
+        "cumulative_seconds": 21.475613159
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/reporting.py",
+        "line": 116,
+        "function": "append",
+        "calls": 78376,
+        "self_seconds": 0.652693698,
+        "cumulative_seconds": 10.802023603
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/ml-deps/torch/autograd/grad_mode.py",
+        "line": 269,
+        "function": "__enter__",
+        "calls": 87,
+        "self_seconds": 0.100348957,
+        "cumulative_seconds": 8.13593589
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/engine.py",
+        "line": 297,
+        "function": "append_evidence",
+        "calls": 55261,
+        "self_seconds": 0.044246280000000006,
+        "cumulative_seconds": 7.427720741000001
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml_runner.py",
+        "line": 189,
+        "function": "add",
+        "calls": 4305,
+        "self_seconds": 1.093215854,
+        "cumulative_seconds": 7.185214682000001
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-next/scripts/validation/bench_performance_memory.py",
+        "line": 137,
+        "function": "flush",
+        "calls": 1,
+        "self_seconds": 0.6850356120000001,
+        "cumulative_seconds": 7.120806142
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml/bilstm.py",
+        "line": 201,
+        "function": "_forward",
+        "calls": 552,
+        "self_seconds": 0.003967246000000001,
+        "cumulative_seconds": 6.5104265020000005
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/ml-deps/torch/nn/modules/module.py",
+        "line": 1735,
+        "function": "_wrapped_call_impl",
+        "calls": 5520,
+        "self_seconds": 0.049987926,
+        "cumulative_seconds": 6.506459256
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/ml-deps/torch/nn/modules/module.py",
+        "line": 1743,
+        "function": "_call_impl",
+        "calls": 5520,
+        "self_seconds": 0.060308815,
+        "cumulative_seconds": 6.497119325000001
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml/bilstm.py",
+        "line": 115,
+        "function": "forward",
+        "calls": 552,
+        "self_seconds": 0.15103873,
+        "cumulative_seconds": 6.47056523
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml/encoding.py",
+        "line": 113,
+        "function": "encode",
+        "calls": 11560,
+        "self_seconds": 1.157968625,
+        "cumulative_seconds": 6.225926563000001
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/http_evidence.py",
+        "line": 99,
+        "function": "evidence_for_fields",
+        "calls": 4390,
+        "self_seconds": 2.402037703,
+        "cumulative_seconds": 6.195563609000001
+      },
+      {
+        "file": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py",
+        "line": 183,
+        "function": "encode",
+        "calls": 78387,
+        "self_seconds": 0.20946791,
+        "cumulative_seconds": 5.314371110000001
+      },
+      {
+        "file": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py",
+        "line": 205,
+        "function": "iterencode",
+        "calls": 78380,
+        "self_seconds": 5.014777656000001,
+        "cumulative_seconds": 5.014806979
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/ml-deps/torch/nn/modules/rnn.py",
+        "line": 1042,
+        "function": "forward",
+        "calls": 552,
+        "self_seconds": 0.056902638000000005,
+        "cumulative_seconds": 4.590036764000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method torch.lstm>",
+        "calls": 552,
+        "self_seconds": 4.463263835,
+        "cumulative_seconds": 4.463263835
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-next/scripts/validation/bench_performance_memory.py",
+        "line": 164,
+        "function": "observe",
+        "calls": 78376,
+        "self_seconds": 0.08832537700000001,
+        "cumulative_seconds": 4.286780352
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/jobs.py",
+        "line": 236,
+        "function": "observe",
+        "calls": 78376,
+        "self_seconds": 1.135302638,
+        "cumulative_seconds": 4.1391258550000005
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/engine.py",
+        "line": 405,
+        "function": "drain",
+        "calls": 4391,
+        "self_seconds": 0.201450709,
+        "cumulative_seconds": 4.054601591
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/engine.py",
+        "line": 381,
+        "function": "publish",
+        "calls": 4390,
+        "self_seconds": 0.356825449,
+        "cumulative_seconds": 3.8239214500000003
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml/bilstm.py",
+        "line": 164,
+        "function": "collate",
+        "calls": 184,
+        "self_seconds": 2.391966676,
+        "cumulative_seconds": 3.3750058330000003
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml/encoding.py",
+        "line": 37,
+        "function": "shape_id",
+        "calls": 113281,
+        "self_seconds": 1.599828808,
+        "cumulative_seconds": 3.2234643530000002
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'append' of 'list' objects>",
+        "calls": 1037531,
+        "self_seconds": 2.428047959,
+        "cumulative_seconds": 2.428047959
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/http_evidence.py",
+        "line": 21,
+        "function": "_json_sources",
+        "calls": 2195,
+        "self_seconds": 0.01579517,
+        "cumulative_seconds": 2.26276054
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/http_evidence.py",
+        "line": 43,
+        "function": "value",
+        "calls": 33088,
+        "self_seconds": 0.831564744,
+        "cumulative_seconds": 2.245399602
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/capture.py",
+        "line": 604,
+        "function": "ingest",
+        "calls": 13294,
+        "self_seconds": 0.018022456000000003,
+        "cumulative_seconds": 1.965332069
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/reporting.py",
+        "line": 18,
+        "function": "write_private_report",
+        "calls": 1,
+        "self_seconds": 0.6197438900000001,
+        "cumulative_seconds": 1.9538064890000002
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/ml/spans.py",
+        "line": 95,
+        "function": "viterbi_decode",
+        "calls": 5843,
+        "self_seconds": 1.439366544,
+        "cumulative_seconds": 1.943822162
+      },
+      {
+        "file": "/workspace/scratch/28ec9f0f81f9/perf-reference/src/packet_pii/capture.py",
+        "line": 461,
+        "function": "_decode_tcp",
+        "calls": 13294,
+        "self_seconds": 0.501802474,
+        "cumulative_seconds": 1.9010784100000002
+      }
+    ]
+  },
+  "dedup-indexed2-1.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "source_root": "/workspace/scratch/28ec9f0f81f9/perf-next",
+    "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "capture_bytes": 2097281,
+    "profile": "stress",
+    "memory_budget_bytes": 4294967296,
+    "rss_before": 19283968,
+    "worker_timeout_seconds": 300,
+    "expected_capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "scope": "JobManager + SQLite index + atomic report",
+    "mode": "hybrid",
+    "ml_profile": "high_capacity",
+    "model_load_seconds": 0.054246302999899854,
+    "rss_after_model_load": 234856448,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "torch": "2.6.0+cpu",
+    "cache_enabled": true,
+    "threads": 2,
+    "instrumented": false,
+    "historical_peak_reproduction": null,
+    "runs": [
+      {
+        "status": "completed",
+        "seconds": 12.012232466000114,
+        "model_seconds": 8.025657913998657,
+        "process_cpu_seconds": 19.409839912000002,
+        "average_cpu_cores": 1.615839517503375,
+        "current_rss_after_analysis": 280150016,
+        "lifetime_peak_rss": 284905472,
+        "stages": {
+          "read_decode_group": 0.5296876679999514,
+          "session_segmentation": 0.02861685301104444,
+          "reassembly": 0.3687966379914087,
+          "http_parse": 0.04473865699651469,
+          "field_extraction": 0.08652046800034441,
+          "field_http_evidence": 1.1562692289912775,
+          "rule_detection": 0.19594617599454978,
+          "ml_inference": 8.025657913998657,
+          "result_aggregation": 0.56983075899916,
+          "report_write": 0.14863449099993886,
+          "index_observer_included_in_other_stages": 1.114980970984334,
+          "index_bytes": 69095424
+        },
+        "memory": {
+          "reading": {
+            "last_current_rss": 244588544,
+            "observed_peak_rss": 244092928,
+            "max_sampled_rss": 244588544
+          },
+          "reconstructing": {
+            "last_current_rss": 245276672,
+            "observed_peak_rss": 244879360,
+            "max_sampled_rss": 245276672
+          },
+          "ml_inference": {
+            "last_current_rss": 280133632,
+            "observed_peak_rss": 284905472,
+            "max_sampled_rss": 282402816
+          },
+          "analysing": {
+            "last_current_rss": 279703552,
+            "observed_peak_rss": 284905472,
+            "max_sampled_rss": 282267648
+          },
+          "writing_report": {
+            "last_current_rss": 280133632,
+            "observed_peak_rss": 284905472,
+            "max_sampled_rss": 280133632
+          },
+          "complete": {
+            "last_current_rss": 280158208,
+            "observed_peak_rss": 284905472,
+            "max_sampled_rss": 280158208
+          }
+        },
+        "output_bytes": 41352873,
+        "canonical_report_sha256": "1bcff4bf61ffd7fd937e83ef77768249a3ee03eb2704ec61c7aad505e3716a4e",
+        "report_digest_method": "ordered-json-events-v1",
+        "cache": {
+          "model_evaluations": 5717,
+          "cache_hits": 16371,
+          "cache_evictions": 0,
+          "accounted_cache_bytes": 4279009,
+          "bookkeeping_including_cache_and_findings_seconds": 0.13322378300154014
+        },
+        "verified_capture_evidence": {
+          "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+          "capture_bytes": 2097281,
+          "identity_status": "verified_read",
+          "frame_index_origin": 1,
+          "range_convention": "zero_based_half_open"
+        },
+        "summary": {
+          "packets_captured": 13294,
+          "non_tcp_or_unsupported_packets": 0,
+          "unsupported_packets_by_reason": {},
+          "unsupported_packets_hiding_tcp": 0,
+          "packet_dispositions": {
+            "tcp_decoded": 13294
+          },
+          "fragment_diagnostics": {},
+          "fragment_loss_events": {},
+          "fragment_datagrams_invalidated_after_emission": 0,
+          "tcp_observed_damage": false,
+          "tcp_capture_completeness": "unknown",
+          "http_observed_incomplete": false,
+          "flows_processed": 2195,
+          "endpoint_pairs": 2195,
+          "http_flows": 2195,
+          "http_messages": 4390,
+          "http_transactions": 2195,
+          "unpaired_requests": 0,
+          "unpaired_responses": 0,
+          "total_data_bytes": 1884553,
+          "processing_time_seconds": 11.8499,
+          "distinct_exposed_locations": 6542,
+          "locations_flagged_by_rules": 4390,
+          "locations_flagged_by_model": 6542,
+          "locations_flagged_by_both": 4390,
+          "potential_leaks": 16530,
+          "fields_extracted": 28673,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_skip_reasons": {},
+          "ml_inference_complete": true,
+          "ml_inference_invoked": true,
+          "ml_inference_batches": 87,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_batches": 87,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_fields_empty": 0,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          },
+          "ml_processing_time_seconds": 8.025657913998657,
+          "ml_invoked": true,
+          "ml_inference_failed": false,
+          "ml_incomplete": false,
+          "stream_gaps": 0,
+          "unterminated_http_messages": 0,
+          "http_incomplete_streams": 0,
+          "http_uncertain_streams": 0,
+          "http2_streams_not_decoded": 0,
+          "http2_connections_decoded": 0,
+          "http2_messages_decoded": 0,
+          "tls_streams_not_inspected": 0,
+          "http_bodies_not_inspected": 0,
+          "http_bodies_not_inspected_by_reason": {},
+          "capture_truncated_records": 0,
+          "capture_malformed_records": 0,
+          "capture_unsupported_packet_records": 0,
+          "analysis_incomplete": false
+        },
+        "current_rss_after_report_release": 280293376
+      }
+    ]
+  },
+  "dedup-profile.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "torch": "2.6.0+cpu",
+    "threads": 2,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "weights": {
+      "seed11/model.pt": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed12/model.pt": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+      "seed13/model.pt": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+    },
+    "pairs": 256,
+    "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+    "prediction_sha256": "07ef900dc0d1ede6849b7934f38f91c6536ae407681955b043ef61d33de318d6",
+    "model_load_seconds": 0.05099329199993008,
+    "cold_seconds": 0.42452853899999354,
+    "warm_seconds": [
+      0.46751906000008603,
+      0.49125303599998915,
+      0.38687966799989226
+    ],
+    "process_cpu_seconds": [
+      0.8157615009999999,
+      0.8949872559999998,
+      0.8832131529999994,
+      0.733691576
+    ],
+    "average_cpu_cores": [
+      1.9215704624277623,
+      1.9143331953136524,
+      1.7978782588124684,
+      1.8964335339540364
+    ],
+    "lifetime_peak_rss_before_profiler_bytes": [
+      269701120,
+      269983744,
+      270196736,
+      270348288
+    ],
+    "warm_median_seconds": 0.46751906000008603,
+    "timed_stages_seconds": {
+      "tokenize": 0.011873600999933842,
+      "encode": 0.021175328999561316,
+      "collate": 0.015185079000275437,
+      "module_word": 0.0011673230001179036,
+      "module_shape": 0.00046041900031923433,
+      "module_ctx": 0.0002142590001312783,
+      "module_char": 0.0003807530006270099,
+      "module_conv": 0.003749706999769842,
+      "module_drop": 0.00043432099914753053,
+      "module_lstm": 0.18281588600007126,
+      "module_out": 0.002502366999806327,
+      "_forward": 0.27431817400065484,
+      "viterbi_decode": 0.009550438999667676,
+      "tags_to_spans": 0.0016899289992124977,
+      "whole_invocation": 0.4106604179999067
+    },
+    "padding": {
+      "actual_positions": 10843,
+      "padded_positions": 14182,
+      "batches": 6
+    },
+    "lifetime_peak_rss_includes_profiler_bytes": 786362368,
+    "cprofile_total_seconds": 0.5763423279999996,
+    "cprofile_top": [
+      {
+        "file": "bilstm.py",
+        "line": 209,
+        "function": "_forward",
+        "calls": 18,
+        "self_seconds": 9.925500000000001e-05,
+        "cumulative_seconds": 0.37110454600000004
+      },
+      {
+        "file": "module.py",
+        "line": 1735,
+        "function": "_wrapped_call_impl",
+        "calls": 180,
+        "self_seconds": 0.000379441,
+        "cumulative_seconds": 0.371005291
+      },
+      {
+        "file": "module.py",
+        "line": 1743,
+        "function": "_call_impl",
+        "calls": 180,
+        "self_seconds": 0.005653796,
+        "cumulative_seconds": 0.37094449
+      },
+      {
+        "file": "bilstm.py",
+        "line": 115,
+        "function": "forward",
+        "calls": 18,
+        "self_seconds": 0.001906113,
+        "cumulative_seconds": 0.365967333
+      },
+      {
+        "file": "rnn.py",
+        "line": 1042,
+        "function": "forward",
+        "calls": 18,
+        "self_seconds": 0.000570389,
+        "cumulative_seconds": 0.24518344300000003
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method torch.lstm>",
+        "calls": 18,
+        "self_seconds": 0.243017013,
+        "cumulative_seconds": 0.243017013
+      },
+      {
+        "file": "grad_mode.py",
+        "line": 269,
+        "function": "__enter__",
+        "calls": 1,
+        "self_seconds": 0.000899749,
+        "cumulative_seconds": 0.150667606
+      },
+      {
+        "file": "encoding.py",
+        "line": 113,
+        "function": "encode",
+        "calls": 543,
+        "self_seconds": 0.015642748,
+        "cumulative_seconds": 0.107062114
+      },
+      {
+        "file": "_jit_internal.py",
+        "line": 614,
+        "function": "fn",
+        "calls": 36,
+        "self_seconds": 0.000135209,
+        "cumulative_seconds": 0.07086147500000001
+      },
+      {
+        "file": "functional.py",
+        "line": 1084,
+        "function": "_return_inverse",
+        "calls": 18,
+        "self_seconds": 5.1797000000000006e-05,
+        "cumulative_seconds": 0.070717741
+      },
+      {
+        "file": "functional.py",
+        "line": 813,
+        "function": "_unique_impl",
+        "calls": 18,
+        "self_seconds": 0.000131113,
+        "cumulative_seconds": 0.07066208900000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method unique_dim>",
+        "calls": 18,
+        "self_seconds": 0.070499991,
+        "cumulative_seconds": 0.070499991
+      },
+      {
+        "file": "encoding.py",
+        "line": 37,
+        "function": "shape_id",
+        "calls": 11459,
+        "self_seconds": 0.025731662000000002,
+        "cumulative_seconds": 0.065838821
+      },
+      {
+        "file": "spans.py",
+        "line": 39,
+        "function": "tokenize",
+        "calls": 256,
+        "self_seconds": 0.016391355,
+        "cumulative_seconds": 0.041927041000000005
+      },
+      {
+        "file": "bilstm.py",
+        "line": 172,
+        "function": "collate",
+        "calls": 6,
+        "self_seconds": 0.012309338000000001,
+        "cumulative_seconds": 0.029563831000000002
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.any>",
+        "calls": 22490,
+        "self_seconds": 0.008844109000000001,
+        "cumulative_seconds": 0.028923564000000002
+      },
+      {
+        "file": "spans.py",
+        "line": 95,
+        "function": "viterbi_decode",
+        "calls": 287,
+        "self_seconds": 0.015594856,
+        "cumulative_seconds": 0.019843665
+      },
+      {
+        "file": "spans.py",
+        "line": 35,
+        "function": "_is_word_char",
+        "calls": 55963,
+        "self_seconds": 0.010959187,
+        "cumulative_seconds": 0.018450941000000002
+      },
+      {
+        "file": "encoding.py",
+        "line": 42,
+        "function": "<genexpr>",
+        "calls": 66761,
+        "self_seconds": 0.010427349,
+        "cumulative_seconds": 0.015185161
+      },
+      {
+        "file": "encoding.py",
+        "line": 68,
+        "function": "char_ids",
+        "calls": 11459,
+        "self_seconds": 0.009151663,
+        "cumulative_seconds": 0.013869570000000001
+      },
+      {
+        "file": "rnn.py",
+        "line": 345,
+        "function": "pad_packed_sequence",
+        "calls": 18,
+        "self_seconds": 0.000776365,
+        "cumulative_seconds": 0.012800288
+      },
+      {
+        "file": "rnn.py",
+        "line": 280,
+        "function": "pack_padded_sequence",
+        "calls": 18,
+        "self_seconds": 0.00023691400000000002,
+        "cumulative_seconds": 0.012014469000000002
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'index_select' of 'torch._C.TensorBase' objects>",
+        "calls": 105,
+        "self_seconds": 0.010180348,
+        "cumulative_seconds": 0.010180348
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'append' of 'list' objects>",
+        "calls": 90388,
+        "self_seconds": 0.009312779,
+        "cumulative_seconds": 0.009312779
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method torch.tensor>",
+        "calls": 36,
+        "self_seconds": 0.008724609000000001,
+        "cumulative_seconds": 0.008724609000000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method torch._pad_packed_sequence>",
+        "calls": 18,
+        "self_seconds": 0.00671478,
+        "cumulative_seconds": 0.00671478
+      },
+      {
+        "file": "encoding.py",
+        "line": 49,
+        "function": "<genexpr>",
+        "calls": 22216,
+        "self_seconds": 0.0047000160000000004,
+        "cumulative_seconds": 0.0065186720000000005
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'get' of 'dict' objects>",
+        "calls": 67239,
+        "self_seconds": 0.006512339000000001,
+        "cumulative_seconds": 0.006512339000000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'isdigit' of 'str' objects>",
+        "calls": 68849,
+        "self_seconds": 0.00631498,
+        "cumulative_seconds": 0.00631498
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method torch._pack_padded_sequence>",
+        "calls": 18,
+        "self_seconds": 0.006014031,
+        "cumulative_seconds": 0.006014031
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'isalnum' of 'str' objects>",
+        "calls": 55963,
+        "self_seconds": 0.005049962000000001,
+        "cumulative_seconds": 0.005049962000000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'isalpha' of 'str' objects>",
+        "calls": 55412,
+        "self_seconds": 0.004872497,
+        "cumulative_seconds": 0.004872497
+      },
+      {
+        "file": "conv.py",
+        "line": 374,
+        "function": "forward",
+        "calls": 18,
+        "self_seconds": 5.5303e-05,
+        "cumulative_seconds": 0.004768822000000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.max>",
+        "calls": 1215,
+        "self_seconds": 0.001492182,
+        "cumulative_seconds": 0.004717087
+      },
+      {
+        "file": "conv.py",
+        "line": 357,
+        "function": "_conv_forward",
+        "calls": 18,
+        "self_seconds": 7.226900000000001e-05,
+        "cumulative_seconds": 0.004691131
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method torch.conv1d>",
+        "calls": 18,
+        "self_seconds": 0.0046188620000000005,
+        "cumulative_seconds": 0.0046188620000000005
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method torch.cat>",
+        "calls": 18,
+        "self_seconds": 0.004361402,
+        "cumulative_seconds": 0.004361402
+      },
+      {
+        "file": "encoding.py",
+        "line": 65,
+        "function": "word_id",
+        "calls": 11515,
+        "self_seconds": 0.0023778040000000003,
+        "cumulative_seconds": 0.004118778
+      },
+      {
+        "file": "spans.py",
+        "line": 130,
+        "function": "tags_to_spans",
+        "calls": 287,
+        "self_seconds": 0.002087315,
+        "cumulative_seconds": 0.003897545
+      },
+      {
+        "file": "linear.py",
+        "line": 124,
+        "function": "forward",
+        "calls": 18,
+        "self_seconds": 5.4473000000000005e-05,
+        "cumulative_seconds": 0.0035406630000000003
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method torch._C._nn.linear>",
+        "calls": 18,
+        "self_seconds": 0.0034632160000000003,
+        "cumulative_seconds": 0.0034632160000000003
+      },
+      {
+        "file": "bilstm.py",
+        "line": 178,
+        "function": "<genexpr>",
+        "calls": 10849,
+        "self_seconds": 0.002458263,
+        "cumulative_seconds": 0.003113909
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.len>",
+        "calls": 27320,
+        "self_seconds": 0.0024827160000000003,
+        "cumulative_seconds": 0.0029085020000000003
+      },
+      {
+        "file": "encoding.py",
+        "line": 27,
+        "function": "location_tokens",
+        "calls": 543,
+        "self_seconds": 0.001247567,
+        "cumulative_seconds": 0.0028502220000000003
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'isupper' of 'str' objects>",
+        "calls": 26252,
+        "self_seconds": 0.0027541460000000003,
+        "cumulative_seconds": 0.0027541460000000003
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method torch.softmax>",
+        "calls": 18,
+        "self_seconds": 0.002638146,
+        "cumulative_seconds": 0.002638146
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'islower' of 'str' objects>",
+        "calls": 22196,
+        "self_seconds": 0.002447758,
+        "cumulative_seconds": 0.002447758
+      },
+      {
+        "file": "sparse.py",
+        "line": 189,
+        "function": "forward",
+        "calls": 72,
+        "self_seconds": 0.00015354500000000002,
+        "cumulative_seconds": 0.0023213970000000002
+      },
+      {
+        "file": "functional.py",
+        "line": 2437,
+        "function": "embedding",
+        "calls": 72,
+        "self_seconds": 9.434600000000001e-05,
+        "cumulative_seconds": 0.002096301
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method torch.embedding>",
+        "calls": 72,
+        "self_seconds": 0.0019804510000000003,
+        "cumulative_seconds": 0.0019804510000000003
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method builtins.min>",
+        "calls": 12040,
+        "self_seconds": 0.0019099210000000002,
+        "cumulative_seconds": 0.0019099210000000002
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'lower' of 'str' objects>",
+        "calls": 11459,
+        "self_seconds": 0.001739803,
+        "cumulative_seconds": 0.001739803
+      },
+      {
+        "file": "spans.py",
+        "line": 139,
+        "function": "close",
+        "calls": 9448,
+        "self_seconds": 0.001332225,
+        "cumulative_seconds": 0.0015836300000000002
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'isspace' of 'str' objects>",
+        "calls": 18265,
+        "self_seconds": 0.0014886510000000001,
+        "cumulative_seconds": 0.0014886510000000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'startswith' of 'str' objects>",
+        "calls": 10495,
+        "self_seconds": 0.0014033890000000001,
+        "cumulative_seconds": 0.0014033890000000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method unicodedata.category>",
+        "calls": 9248,
+        "self_seconds": 0.001265003,
+        "cumulative_seconds": 0.001265003
+      },
+      {
+        "file": "rnn.py",
+        "line": 226,
+        "function": "_packed_sequence_init_args",
+        "calls": 54,
+        "self_seconds": 0.000437036,
+        "cumulative_seconds": 0.001074286
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'tolist' of 'torch._C.TensorBase' objects>",
+        "calls": 287,
+        "self_seconds": 0.001048181,
+        "cumulative_seconds": 0.001048181
+      },
+      {
+        "file": "rnn.py",
+        "line": 258,
+        "function": "_packed_sequence_init",
+        "calls": 18,
+        "self_seconds": 6.0269e-05,
+        "cumulative_seconds": 0.001024813
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'index_copy_' of 'torch._C.TensorBase' objects>",
+        "calls": 15,
+        "self_seconds": 0.00084048,
+        "cumulative_seconds": 0.00084048
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<built-in method torch.isfinite>",
+        "calls": 18,
+        "self_seconds": 0.000718271,
+        "cumulative_seconds": 0.000718271
+      },
+      {
+        "file": "module.py",
+        "line": 2824,
+        "function": "train",
+        "calls": 54,
+        "self_seconds": 0.000106631,
+        "cumulative_seconds": 0.000716239
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'amax' of 'torch._C.TensorBase' objects>",
+        "calls": 18,
+        "self_seconds": 0.0006685560000000001,
+        "cumulative_seconds": 0.0006685560000000001
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'any' of 'torch._C.TensorBase' objects>",
+        "calls": 18,
+        "self_seconds": 0.000648337,
+        "cumulative_seconds": 0.000648337
+      },
+      {
+        "file": "rnn.py",
+        "line": 270,
+        "function": "invert_permutation",
+        "calls": 18,
+        "self_seconds": 0.00011085700000000001,
+        "cumulative_seconds": 0.00063725
+      },
+      {
+        "file": "~",
+        "line": 0,
+        "function": "<method 'masked_fill_' of 'torch._C.TensorBase' objects>",
+        "calls": 18,
+        "self_seconds": 0.000595048,
+        "cumulative_seconds": 0.000595048
+      },
+      {
+        "file": "bilstm.py",
+        "line": 243,
+        "function": "_batches",
+        "calls": 1,
+        "self_seconds": 0.00011839800000000001,
+        "cumulative_seconds": 0.000566897
+      },
+      {
+        "file": "rnn.py",
+        "line": 84,
+        "function": "__new__",
+        "calls": 36,
+        "self_seconds": 0.00022311500000000002,
+        "cumulative_seconds": 0.0005511050000000001
+      },
+      {
+        "file": "dropout.py",
+        "line": 69,
+        "function": "forward",
+        "calls": 36,
+        "self_seconds": 0.00010795800000000001,
+        "cumulative_seconds": 0.00054964
+      },
+      {
+        "file": "encoding.py",
+        "line": 109,
+        "function": "__len__",
+        "calls": 1431,
+        "self_seconds": 0.00042578600000000005,
+        "cumulative_seconds": 0.000520106
+      }
+    ],
+    "torch_top": [
+      {
+        "operator": "aten::addmm",
+        "calls": 1614,
+        "self_cpu_us": 24710.51800000082,
+        "self_cpu_memory_bytes": 33385128
+      },
+      {
+        "operator": "aten::lstm",
+        "calls": 6,
+        "self_cpu_us": 7885.712000001196,
+        "self_cpu_memory_bytes": -53844480
+      },
+      {
+        "operator": "aten::select",
+        "calls": 16370,
+        "self_cpu_us": 5931.567000000248,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::copy_",
+        "calls": 7151,
+        "self_cpu_us": 5318.547999999277,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::mul",
+        "calls": 4794,
+        "self_cpu_us": 5245.370000000159,
+        "self_cpu_memory_bytes": 12183504
+      },
+      {
+        "operator": "aten::unique_dim",
+        "calls": 6,
+        "self_cpu_us": 5124.7869999996965,
+        "self_cpu_memory_bytes": -357408
+      },
+      {
+        "operator": "aten::as_strided",
+        "calls": 30013,
+        "self_cpu_us": 4500.641999999756,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::tanh",
+        "calls": 1596,
+        "self_cpu_us": 4378.829000000085,
+        "self_cpu_memory_bytes": 4145664
+      },
+      {
+        "operator": "aten::narrow",
+        "calls": 9988,
+        "self_cpu_us": 4248.9939999995695,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::tanh_",
+        "calls": 1596,
+        "self_cpu_us": 3795.9029999997438,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::sigmoid_",
+        "calls": 4788,
+        "self_cpu_us": 3613.6699999994235,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::slice",
+        "calls": 10323,
+        "self_cpu_us": 3556.489000000718,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::cat",
+        "calls": 164,
+        "self_cpu_us": 3005.40599999993,
+        "self_cpu_memory_bytes": 17339952
+      },
+      {
+        "operator": "aten::equal",
+        "calls": 5394,
+        "self_cpu_us": 2477.1560000006702,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::add_",
+        "calls": 3192,
+        "self_cpu_us": 2351.7489999999416,
+        "self_cpu_memory_bytes": -326016
+      },
+      {
+        "operator": "aten::index_select",
+        "calls": 60,
+        "self_cpu_us": 2173.6879999999837,
+        "self_cpu_memory_bytes": 18993216
+      },
+      {
+        "operator": "aten::unsafe_split",
+        "calls": 1596,
+        "self_cpu_us": 1952.8690000002352,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::mkldnn_convolution",
+        "calls": 6,
+        "self_cpu_us": 1272.7009999999682,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::linear",
+        "calls": 1614,
+        "self_cpu_us": 1052.0039999996989,
+        "self_cpu_memory_bytes": 10752
+      },
+      {
+        "operator": "aten::unbind",
+        "calls": 24,
+        "self_cpu_us": 1048.0010000001475,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::fill_",
+        "calls": 26,
+        "self_cpu_us": 1038.3220000000074,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::expand",
+        "calls": 1614,
+        "self_cpu_us": 832.9279999997161,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::t",
+        "calls": 1614,
+        "self_cpu_us": 784.4120000000039,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::_softmax",
+        "calls": 6,
+        "self_cpu_us": 532.6159999999909,
+        "self_cpu_memory_bytes": 218280
+      },
+      {
+        "operator": "aten::transpose",
+        "calls": 1632,
+        "self_cpu_us": 528.8389999998799,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::unsafe_chunk",
+        "calls": 1596,
+        "self_cpu_us": 527.117999999773,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::masked_fill_",
+        "calls": 6,
+        "self_cpu_us": 250.61899999999514,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::is_same_size",
+        "calls": 5394,
+        "self_cpu_us": 195.716999999755,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::empty",
+        "calls": 234,
+        "self_cpu_us": 191.83100000002742,
+        "self_cpu_memory_bytes": 14241456
+      },
+      {
+        "operator": "aten::ne",
+        "calls": 18,
+        "self_cpu_us": 162.6300000000174,
+        "self_cpu_memory_bytes": 115439
+      },
+      {
+        "operator": "aten::index_copy_",
+        "calls": 6,
+        "self_cpu_us": 139.25100000000748,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::amax",
+        "calls": 6,
+        "self_cpu_us": 134.0100000000093,
+        "self_cpu_memory_bytes": 72000
+      },
+      {
+        "operator": "aten::any",
+        "calls": 6,
+        "self_cpu_us": 129.50000000001273,
+        "self_cpu_memory_bytes": 10914
+      },
+      {
+        "operator": "aten::_pack_padded_sequence",
+        "calls": 6,
+        "self_cpu_us": 121.94899999997142,
+        "self_cpu_memory_bytes": -2626320
+      },
+      {
+        "operator": "aten::_pad_packed_sequence",
+        "calls": 6,
+        "self_cpu_us": 114.45100000002276,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::_convolution",
+        "calls": 6,
+        "self_cpu_us": 81.71700000000055,
+        "self_cpu_memory_bytes": -310752
+      },
+      {
+        "operator": "aten::sort",
+        "calls": 6,
+        "self_cpu_us": 76.25399999998626,
+        "self_cpu_memory_bytes": 912
+      },
+      {
+        "operator": "aten::resolve_conj",
+        "calls": 3266,
+        "self_cpu_us": 74.4759999995913,
+        "self_cpu_memory_bytes": 0
+      },
+      {
+        "operator": "aten::index",
+        "calls": 6,
+        "self_cpu_us": 69.66199999999662,
+        "self_cpu_memory_bytes": 912
+      },
+      {
+        "operator": "aten::view",
+        "calls": 226,
+        "self_cpu_us": 66.7050000000254,
+        "self_cpu_memory_bytes": 0
+      }
+    ],
+    "notes": "Fictional model-only workload; no capture throughput or accuracy claim. Nested cumulative times overlap."
+  },
+  "dedup-indexed2-2.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "source_root": "/workspace/scratch/28ec9f0f81f9/perf-next",
+    "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "capture_bytes": 2097281,
+    "profile": "stress",
+    "memory_budget_bytes": 4294967296,
+    "rss_before": 19283968,
+    "worker_timeout_seconds": 300,
+    "expected_capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "scope": "JobManager + SQLite index + atomic report",
+    "mode": "hybrid",
+    "ml_profile": "high_capacity",
+    "model_load_seconds": 0.047725432000106593,
+    "rss_after_model_load": 234848256,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "torch": "2.6.0+cpu",
+    "cache_enabled": true,
+    "threads": 2,
+    "instrumented": false,
+    "historical_peak_reproduction": null,
+    "runs": [
+      {
+        "status": "completed",
+        "seconds": 11.108519140999988,
+        "model_seconds": 7.534926519999544,
+        "process_cpu_seconds": 18.152428596,
+        "average_cpu_cores": 1.6340997720390946,
+        "current_rss_after_analysis": 280145920,
+        "lifetime_peak_rss": 285032448,
+        "stages": {
+          "read_decode_group": 0.4221797190000416,
+          "session_segmentation": 0.026398310000104175,
+          "reassembly": 0.3295297219933673,
+          "http_parse": 0.040507806998903106,
+          "field_extraction": 0.08297517398568743,
+          "field_http_evidence": 1.0395917969988204,
+          "rule_detection": 0.18167556799176054,
+          "ml_inference": 7.534926519999544,
+          "result_aggregation": 0.5508580340142544,
+          "report_write": 0.10494748999985859,
+          "index_observer_included_in_other_stages": 1.018183140989322,
+          "index_bytes": 69095424
+        },
+        "memory": {
+          "reading": {
+            "last_current_rss": 244584448,
+            "observed_peak_rss": 244215808,
+            "max_sampled_rss": 244584448
+          },
+          "reconstructing": {
+            "last_current_rss": 245272576,
+            "observed_peak_rss": 244871168,
+            "max_sampled_rss": 245272576
+          },
+          "ml_inference": {
+            "last_current_rss": 280129536,
+            "observed_peak_rss": 285032448,
+            "max_sampled_rss": 282398720
+          },
+          "analysing": {
+            "last_current_rss": 279699456,
+            "observed_peak_rss": 285032448,
+            "max_sampled_rss": 282263552
+          },
+          "writing_report": {
+            "last_current_rss": 280129536,
+            "observed_peak_rss": 285032448,
+            "max_sampled_rss": 280129536
+          },
+          "complete": {
+            "last_current_rss": 280154112,
+            "observed_peak_rss": 285032448,
+            "max_sampled_rss": 280154112
+          }
+        },
+        "output_bytes": 41352873,
+        "canonical_report_sha256": "1bcff4bf61ffd7fd937e83ef77768249a3ee03eb2704ec61c7aad505e3716a4e",
+        "report_digest_method": "ordered-json-events-v1",
+        "cache": {
+          "model_evaluations": 5717,
+          "cache_hits": 16371,
+          "cache_evictions": 0,
+          "accounted_cache_bytes": 4279009,
+          "bookkeeping_including_cache_and_findings_seconds": 0.12525885000127346
+        },
+        "verified_capture_evidence": {
+          "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+          "capture_bytes": 2097281,
+          "identity_status": "verified_read",
+          "frame_index_origin": 1,
+          "range_convention": "zero_based_half_open"
+        },
+        "summary": {
+          "packets_captured": 13294,
+          "non_tcp_or_unsupported_packets": 0,
+          "unsupported_packets_by_reason": {},
+          "unsupported_packets_hiding_tcp": 0,
+          "packet_dispositions": {
+            "tcp_decoded": 13294
+          },
+          "fragment_diagnostics": {},
+          "fragment_loss_events": {},
+          "fragment_datagrams_invalidated_after_emission": 0,
+          "tcp_observed_damage": false,
+          "tcp_capture_completeness": "unknown",
+          "http_observed_incomplete": false,
+          "flows_processed": 2195,
+          "endpoint_pairs": 2195,
+          "http_flows": 2195,
+          "http_messages": 4390,
+          "http_transactions": 2195,
+          "unpaired_requests": 0,
+          "unpaired_responses": 0,
+          "total_data_bytes": 1884553,
+          "processing_time_seconds": 10.9905,
+          "distinct_exposed_locations": 6542,
+          "locations_flagged_by_rules": 4390,
+          "locations_flagged_by_model": 6542,
+          "locations_flagged_by_both": 4390,
+          "potential_leaks": 16530,
+          "fields_extracted": 28673,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_skip_reasons": {},
+          "ml_inference_complete": true,
+          "ml_inference_invoked": true,
+          "ml_inference_batches": 87,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_batches": 87,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_fields_empty": 0,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          },
+          "ml_processing_time_seconds": 7.534926519999544,
+          "ml_invoked": true,
+          "ml_inference_failed": false,
+          "ml_incomplete": false,
+          "stream_gaps": 0,
+          "unterminated_http_messages": 0,
+          "http_incomplete_streams": 0,
+          "http_uncertain_streams": 0,
+          "http2_streams_not_decoded": 0,
+          "http2_connections_decoded": 0,
+          "http2_messages_decoded": 0,
+          "tls_streams_not_inspected": 0,
+          "http_bodies_not_inspected": 0,
+          "http_bodies_not_inspected_by_reason": {},
+          "capture_truncated_records": 0,
+          "capture_malformed_records": 0,
+          "capture_unsupported_packet_records": 0,
+          "analysis_incomplete": false
+        },
+        "current_rss_after_report_release": 280289280
+      }
+    ]
+  },
+  "baseline-indexed2-1.json": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "source_root": "/workspace/scratch/28ec9f0f81f9/perf-reference",
+    "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "capture_bytes": 2097281,
+    "profile": "stress",
+    "memory_budget_bytes": 4294967296,
+    "rss_before": 19288064,
+    "worker_timeout_seconds": 300,
+    "expected_capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+    "scope": "JobManager + SQLite index + atomic report",
+    "mode": "hybrid",
+    "ml_profile": "high_capacity",
+    "model_load_seconds": 0.05527396200000112,
+    "rss_after_model_load": 234819584,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "torch": "2.6.0+cpu",
+    "cache_enabled": true,
+    "threads": 2,
+    "instrumented": false,
+    "historical_peak_reproduction": null,
+    "runs": [
+      {
+        "status": "completed",
+        "seconds": 11.061342074999857,
+        "model_seconds": 7.375181262998922,
+        "process_cpu_seconds": 17.897937940000002,
+        "average_cpu_cores": 1.6180620596167787,
+        "current_rss_after_analysis": 284807168,
+        "lifetime_peak_rss": 290721792,
+        "stages": {
+          "read_decode_group": 0.4765317500000492,
+          "session_segmentation": 0.02502643299567353,
+          "reassembly": 0.35405127700778394,
+          "http_parse": 0.04190619400378637,
+          "field_extraction": 0.08076344499681909,
+          "field_http_evidence": 1.0985694810019595,
+          "rule_detection": 0.19063467200066953,
+          "ml_inference": 7.375181262998922,
+          "result_aggregation": 0.5363469089909358,
+          "report_write": 0.1042555070000617,
+          "index_observer_included_in_other_stages": 1.0629538439854969,
+          "index_bytes": 69095424
+        },
+        "memory": {
+          "reading": {
+            "last_current_rss": 244559872,
+            "observed_peak_rss": 244088832,
+            "max_sampled_rss": 244559872
+          },
+          "reconstructing": {
+            "last_current_rss": 245243904,
+            "observed_peak_rss": 244875264,
+            "max_sampled_rss": 245243904
+          },
+          "ml_inference": {
+            "last_current_rss": 284790784,
+            "observed_peak_rss": 290721792,
+            "max_sampled_rss": 287399936
+          },
+          "analysing": {
+            "last_current_rss": 284766208,
+            "observed_peak_rss": 290721792,
+            "max_sampled_rss": 284872704
+          },
+          "writing_report": {
+            "last_current_rss": 284790784,
+            "observed_peak_rss": 290721792,
+            "max_sampled_rss": 284790784
+          },
+          "complete": {
+            "last_current_rss": 284815360,
+            "observed_peak_rss": 290721792,
+            "max_sampled_rss": 284815360
+          }
+        },
+        "output_bytes": 41352873,
+        "canonical_report_sha256": "1bcff4bf61ffd7fd937e83ef77768249a3ee03eb2704ec61c7aad505e3716a4e",
+        "report_digest_method": "ordered-json-events-v1",
+        "cache": {
+          "model_evaluations": 5717,
+          "cache_hits": 16371,
+          "cache_evictions": 0,
+          "accounted_cache_bytes": 4279009,
+          "bookkeeping_including_cache_and_findings_seconds": 0.1261762760025249
+        },
+        "verified_capture_evidence": {
+          "capture_sha256": "1b3b62a55ca9c90a3f776510ce73e1cd8db92a8b0d41d23918170afc4fa335b2",
+          "capture_bytes": 2097281,
+          "identity_status": "verified_read",
+          "frame_index_origin": 1,
+          "range_convention": "zero_based_half_open"
+        },
+        "summary": {
+          "packets_captured": 13294,
+          "non_tcp_or_unsupported_packets": 0,
+          "unsupported_packets_by_reason": {},
+          "unsupported_packets_hiding_tcp": 0,
+          "packet_dispositions": {
+            "tcp_decoded": 13294
+          },
+          "fragment_diagnostics": {},
+          "fragment_loss_events": {},
+          "fragment_datagrams_invalidated_after_emission": 0,
+          "tcp_observed_damage": false,
+          "tcp_capture_completeness": "unknown",
+          "http_observed_incomplete": false,
+          "flows_processed": 2195,
+          "endpoint_pairs": 2195,
+          "http_flows": 2195,
+          "http_messages": 4390,
+          "http_transactions": 2195,
+          "unpaired_requests": 0,
+          "unpaired_responses": 0,
+          "total_data_bytes": 1884553,
+          "processing_time_seconds": 10.9445,
+          "distinct_exposed_locations": 6542,
+          "locations_flagged_by_rules": 4390,
+          "locations_flagged_by_model": 6542,
+          "locations_flagged_by_both": 4390,
+          "potential_leaks": 16530,
+          "fields_extracted": 28673,
+          "rules_findings": 4390,
+          "ml_findings": 12140,
+          "ml_fields_eligible": 22088,
+          "ml_fields_evaluated": 22088,
+          "ml_fields_excluded_by_policy": 6585,
+          "ml_fields_skipped": 0,
+          "ml_fields_skipped_by_reason": {},
+          "ml_skip_reasons": {},
+          "ml_inference_complete": true,
+          "ml_inference_invoked": true,
+          "ml_inference_batches": 87,
+          "ml_coverage_status": "complete",
+          "ml_coverage_ratio": 1.0,
+          "ml_batches": 87,
+          "ml_fields_model_inferred": 5717,
+          "ml_prediction_cache_hits": 16371,
+          "ml_prediction_cache_enabled": true,
+          "ml_fields_empty": 0,
+          "ml_predictions_by_label": {
+            "PERSON_NAME": 9357,
+            "USERNAME": 2783
+          },
+          "ml_processing_time_seconds": 7.375181262998922,
+          "ml_invoked": true,
+          "ml_inference_failed": false,
+          "ml_incomplete": false,
+          "stream_gaps": 0,
+          "unterminated_http_messages": 0,
+          "http_incomplete_streams": 0,
+          "http_uncertain_streams": 0,
+          "http2_streams_not_decoded": 0,
+          "http2_connections_decoded": 0,
+          "http2_messages_decoded": 0,
+          "tls_streams_not_inspected": 0,
+          "http_bodies_not_inspected": 0,
+          "http_bodies_not_inspected_by_reason": {},
+          "capture_truncated_records": 0,
+          "capture_malformed_records": 0,
+          "capture_unsupported_packet_records": 0,
+          "analysis_incomplete": false
+        },
+        "current_rss_after_report_release": 284950528
+      }
+    ]
+  }
+}

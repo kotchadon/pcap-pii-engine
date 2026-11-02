@@ -1,0 +1,874 @@
+{
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+  "architecture": "x86_64",
+  "python": "3.12.14",
+  "torch": "2.6.0+cpu",
+  "threads": 2,
+  "model_version": "bilstm-v2-d1f9e9fb9a2b",
+  "weights": {
+    "seed11/model.pt": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+    "seed12/model.pt": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5",
+    "seed13/model.pt": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262"
+  },
+  "pairs": 256,
+  "input_sha256": "ae5a8e341cd7d807275d2d7461d048b66bc6a83aa0308ad14656afacb0da1366",
+  "prediction_sha256": "07ef900dc0d1ede6849b7934f38f91c6536ae407681955b043ef61d33de318d6",
+  "model_load_seconds": 0.05155079799988016,
+  "cold_seconds": 0.47397768199971324,
+  "warm_seconds": [
+    0.36669095500019466,
+    0.5562384170002588,
+    0.42909565099989777
+  ],
+  "process_cpu_seconds": [
+    0.916813782,
+    0.6961494930000001,
+    1.012617123,
+    0.8234422809999997
+  ],
+  "average_cpu_cores": [
+    1.9342973663484744,
+    1.8984637703966014,
+    1.8204731856906766,
+    1.9190180070135363
+  ],
+  "lifetime_peak_rss_before_profiler_bytes": [
+    275644416,
+    277884928,
+    277884928,
+    277884928
+  ],
+  "warm_median_seconds": 0.42909565099989777,
+  "timed_stages_seconds": {
+    "tokenize": 0.011197943002116517,
+    "encode": 0.021086769999783428,
+    "collate": 0.01721756599999935,
+    "module_word": 0.0010760870004560275,
+    "module_shape": 0.00038274200005616876,
+    "module_ctx": 0.0002197699986936641,
+    "module_char": 0.0022203470007298165,
+    "module_conv": 0.034210442001040064,
+    "module_drop": 0.0005624429968520417,
+    "module_lstm": 0.21217828800035932,
+    "module_out": 0.0025521860002299945,
+    "_forward": 0.2941717469989271,
+    "viterbi_decode": 0.01086912299888354,
+    "tags_to_spans": 0.0018173009957536124,
+    "whole_invocation": 0.4398865379998824
+  },
+  "padding": {
+    "actual_positions": 10843,
+    "padded_positions": 14182,
+    "batches": 6,
+    "nonempty_character_rows": 10843,
+    "unique_nonempty_character_rows": 409,
+    "equal_length_batches": 1
+  },
+  "lifetime_peak_rss_includes_profiler_bytes": 581353472,
+  "cprofile_total_seconds": 0.5501818590000005,
+  "cprofile_top": [
+    {
+      "file": "bilstm.py",
+      "line": 201,
+      "function": "_forward",
+      "calls": 18,
+      "self_seconds": 9.3701e-05,
+      "cumulative_seconds": 0.34940829500000004
+    },
+    {
+      "file": "module.py",
+      "line": 1735,
+      "function": "_wrapped_call_impl",
+      "calls": 180,
+      "self_seconds": 0.00044388800000000003,
+      "cumulative_seconds": 0.34931459400000003
+    },
+    {
+      "file": "module.py",
+      "line": 1743,
+      "function": "_call_impl",
+      "calls": 180,
+      "self_seconds": 0.0027177810000000003,
+      "cumulative_seconds": 0.349256281
+    },
+    {
+      "file": "bilstm.py",
+      "line": 115,
+      "function": "forward",
+      "calls": 18,
+      "self_seconds": 0.004459447,
+      "cumulative_seconds": 0.347189116
+    },
+    {
+      "file": "rnn.py",
+      "line": 1042,
+      "function": "forward",
+      "calls": 18,
+      "self_seconds": 0.00046367200000000004,
+      "cumulative_seconds": 0.242899624
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch.lstm>",
+      "calls": 18,
+      "self_seconds": 0.24088378000000002,
+      "cumulative_seconds": 0.24088378000000002
+    },
+    {
+      "file": "grad_mode.py",
+      "line": 269,
+      "function": "__enter__",
+      "calls": 1,
+      "self_seconds": 0.000975432,
+      "cumulative_seconds": 0.15132282800000002
+    },
+    {
+      "file": "encoding.py",
+      "line": 113,
+      "function": "encode",
+      "calls": 543,
+      "self_seconds": 0.013646396000000002,
+      "cumulative_seconds": 0.105326839
+    },
+    {
+      "file": "encoding.py",
+      "line": 37,
+      "function": "shape_id",
+      "calls": 11459,
+      "self_seconds": 0.023973963,
+      "cumulative_seconds": 0.064889007
+    },
+    {
+      "file": "conv.py",
+      "line": 374,
+      "function": "forward",
+      "calls": 18,
+      "self_seconds": 5.0876000000000006e-05,
+      "cumulative_seconds": 0.047146554
+    },
+    {
+      "file": "conv.py",
+      "line": 357,
+      "function": "_conv_forward",
+      "calls": 18,
+      "self_seconds": 6.5147e-05,
+      "cumulative_seconds": 0.047076173000000006
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch.conv1d>",
+      "calls": 18,
+      "self_seconds": 0.047011026000000004,
+      "cumulative_seconds": 0.047011026000000004
+    },
+    {
+      "file": "spans.py",
+      "line": 39,
+      "function": "tokenize",
+      "calls": 256,
+      "self_seconds": 0.019653195000000002,
+      "cumulative_seconds": 0.044382704
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.any>",
+      "calls": 22490,
+      "self_seconds": 0.008966565000000001,
+      "cumulative_seconds": 0.029901945000000003
+    },
+    {
+      "file": "bilstm.py",
+      "line": 164,
+      "function": "collate",
+      "calls": 6,
+      "self_seconds": 0.009916283000000001,
+      "cumulative_seconds": 0.025914071
+    },
+    {
+      "file": "spans.py",
+      "line": 95,
+      "function": "viterbi_decode",
+      "calls": 287,
+      "self_seconds": 0.015010732,
+      "cumulative_seconds": 0.018840272
+    },
+    {
+      "file": "spans.py",
+      "line": 35,
+      "function": "_is_word_char",
+      "calls": 55963,
+      "self_seconds": 0.011037296,
+      "cumulative_seconds": 0.01788537
+    },
+    {
+      "file": "encoding.py",
+      "line": 42,
+      "function": "<genexpr>",
+      "calls": 66761,
+      "self_seconds": 0.011462161,
+      "cumulative_seconds": 0.015823063000000002
+    },
+    {
+      "file": "encoding.py",
+      "line": 68,
+      "function": "char_ids",
+      "calls": 11459,
+      "self_seconds": 0.009432619,
+      "cumulative_seconds": 0.014735951
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'amax' of 'torch._C.TensorBase' objects>",
+      "calls": 18,
+      "self_seconds": 0.010174577,
+      "cumulative_seconds": 0.010174577
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'append' of 'list' objects>",
+      "calls": 90388,
+      "self_seconds": 0.009841818,
+      "cumulative_seconds": 0.009841818
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'masked_fill_' of 'torch._C.TensorBase' objects>",
+      "calls": 18,
+      "self_seconds": 0.009524535,
+      "cumulative_seconds": 0.009524535
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch.tensor>",
+      "calls": 36,
+      "self_seconds": 0.007727073,
+      "cumulative_seconds": 0.007727073
+    },
+    {
+      "file": "rnn.py",
+      "line": 280,
+      "function": "pack_padded_sequence",
+      "calls": 18,
+      "self_seconds": 0.000229091,
+      "cumulative_seconds": 0.007398424000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'get' of 'dict' objects>",
+      "calls": 67239,
+      "self_seconds": 0.007299469,
+      "cumulative_seconds": 0.007299469
+    },
+    {
+      "file": "encoding.py",
+      "line": 49,
+      "function": "<genexpr>",
+      "calls": 22216,
+      "self_seconds": 0.004746950000000001,
+      "cumulative_seconds": 0.006758096000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'isdigit' of 'str' objects>",
+      "calls": 68849,
+      "self_seconds": 0.005781963,
+      "cumulative_seconds": 0.005781963
+    },
+    {
+      "file": "rnn.py",
+      "line": 345,
+      "function": "pad_packed_sequence",
+      "calls": 18,
+      "self_seconds": 0.000638361,
+      "cumulative_seconds": 0.004738119000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'isalpha' of 'str' objects>",
+      "calls": 55412,
+      "self_seconds": 0.004607988,
+      "cumulative_seconds": 0.004607988
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.max>",
+      "calls": 1215,
+      "self_seconds": 0.001356716,
+      "cumulative_seconds": 0.004518665000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'index_select' of 'torch._C.TensorBase' objects>",
+      "calls": 87,
+      "self_seconds": 0.0044649,
+      "cumulative_seconds": 0.0044649
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'isalnum' of 'str' objects>",
+      "calls": 55963,
+      "self_seconds": 0.004433913,
+      "cumulative_seconds": 0.004433913
+    },
+    {
+      "file": "encoding.py",
+      "line": 65,
+      "function": "word_id",
+      "calls": 11515,
+      "self_seconds": 0.002433775,
+      "cumulative_seconds": 0.004371435
+    },
+    {
+      "file": "sparse.py",
+      "line": 189,
+      "function": "forward",
+      "calls": 72,
+      "self_seconds": 0.00011806,
+      "cumulative_seconds": 0.0041016740000000005
+    },
+    {
+      "file": "functional.py",
+      "line": 2437,
+      "function": "embedding",
+      "calls": 72,
+      "self_seconds": 9.060800000000001e-05,
+      "cumulative_seconds": 0.0039286780000000006
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch.embedding>",
+      "calls": 72,
+      "self_seconds": 0.003820702,
+      "cumulative_seconds": 0.003820702
+    },
+    {
+      "file": "spans.py",
+      "line": 130,
+      "function": "tags_to_spans",
+      "calls": 287,
+      "self_seconds": 0.0018893430000000001,
+      "cumulative_seconds": 0.003555827
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch._pack_padded_sequence>",
+      "calls": 18,
+      "self_seconds": 0.003540217,
+      "cumulative_seconds": 0.003540217
+    },
+    {
+      "file": "linear.py",
+      "line": 124,
+      "function": "forward",
+      "calls": 18,
+      "self_seconds": 4.3211000000000004e-05,
+      "cumulative_seconds": 0.0031371600000000004
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch._C._nn.linear>",
+      "calls": 18,
+      "self_seconds": 0.0030722180000000003,
+      "cumulative_seconds": 0.0030722180000000003
+    },
+    {
+      "file": "bilstm.py",
+      "line": 170,
+      "function": "<genexpr>",
+      "calls": 10849,
+      "self_seconds": 0.0023900790000000002,
+      "cumulative_seconds": 0.003057142
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch.isfinite>",
+      "calls": 18,
+      "self_seconds": 0.0029404,
+      "cumulative_seconds": 0.0029404
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch.cat>",
+      "calls": 18,
+      "self_seconds": 0.0028986740000000004,
+      "cumulative_seconds": 0.0028986740000000004
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'isupper' of 'str' objects>",
+      "calls": 26252,
+      "self_seconds": 0.0028784030000000003,
+      "cumulative_seconds": 0.0028784030000000003
+    },
+    {
+      "file": "encoding.py",
+      "line": 27,
+      "function": "location_tokens",
+      "calls": 543,
+      "self_seconds": 0.0011890750000000002,
+      "cumulative_seconds": 0.0027647070000000004
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'islower' of 'str' objects>",
+      "calls": 22196,
+      "self_seconds": 0.00266948,
+      "cumulative_seconds": 0.00266948
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.len>",
+      "calls": 27302,
+      "self_seconds": 0.002048995,
+      "cumulative_seconds": 0.002436106
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch.softmax>",
+      "calls": 18,
+      "self_seconds": 0.0023151110000000003,
+      "cumulative_seconds": 0.0023151110000000003
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch._pad_packed_sequence>",
+      "calls": 18,
+      "self_seconds": 0.0018840170000000002,
+      "cumulative_seconds": 0.0018840170000000002
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.min>",
+      "calls": 12040,
+      "self_seconds": 0.001677574,
+      "cumulative_seconds": 0.001677574
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'isspace' of 'str' objects>",
+      "calls": 18265,
+      "self_seconds": 0.0015679950000000002,
+      "cumulative_seconds": 0.0015679950000000002
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'lower' of 'str' objects>",
+      "calls": 11459,
+      "self_seconds": 0.001513353,
+      "cumulative_seconds": 0.001513353
+    },
+    {
+      "file": "spans.py",
+      "line": 139,
+      "function": "close",
+      "calls": 9448,
+      "self_seconds": 0.001234022,
+      "cumulative_seconds": 0.00149011
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'startswith' of 'str' objects>",
+      "calls": 10495,
+      "self_seconds": 0.0013187770000000001,
+      "cumulative_seconds": 0.0013187770000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch.where>",
+      "calls": 18,
+      "self_seconds": 0.0012946910000000002,
+      "cumulative_seconds": 0.0012946910000000002
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method unicodedata.category>",
+      "calls": 9248,
+      "self_seconds": 0.001271758,
+      "cumulative_seconds": 0.001271758
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'tolist' of 'torch._C.TensorBase' objects>",
+      "calls": 287,
+      "self_seconds": 0.000987201,
+      "cumulative_seconds": 0.000987201
+    },
+    {
+      "file": "rnn.py",
+      "line": 226,
+      "function": "_packed_sequence_init_args",
+      "calls": 54,
+      "self_seconds": 0.000398501,
+      "cumulative_seconds": 0.000978878
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'relu_' of 'torch._C.TensorBase' objects>",
+      "calls": 18,
+      "self_seconds": 0.000958506,
+      "cumulative_seconds": 0.000958506
+    },
+    {
+      "file": "rnn.py",
+      "line": 258,
+      "function": "_packed_sequence_init",
+      "calls": 18,
+      "self_seconds": 5.9628000000000006e-05,
+      "cumulative_seconds": 0.000947489
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch.sort>",
+      "calls": 18,
+      "self_seconds": 0.000761777,
+      "cumulative_seconds": 0.000761777
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'index_copy_' of 'torch._C.TensorBase' objects>",
+      "calls": 15,
+      "self_seconds": 0.000751239,
+      "cumulative_seconds": 0.000751239
+    },
+    {
+      "file": "dropout.py",
+      "line": 69,
+      "function": "forward",
+      "calls": 36,
+      "self_seconds": 0.00013353,
+      "cumulative_seconds": 0.000642339
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'any' of 'torch._C.TensorBase' objects>",
+      "calls": 18,
+      "self_seconds": 0.00060161,
+      "cumulative_seconds": 0.00060161
+    },
+    {
+      "file": "rnn.py",
+      "line": 270,
+      "function": "invert_permutation",
+      "calls": 18,
+      "self_seconds": 0.000131715,
+      "cumulative_seconds": 0.0005803770000000001
+    },
+    {
+      "file": "module.py",
+      "line": 2824,
+      "function": "train",
+      "calls": 54,
+      "self_seconds": 9.408600000000001e-05,
+      "cumulative_seconds": 0.00056871
+    },
+    {
+      "file": "rnn.py",
+      "line": 84,
+      "function": "__new__",
+      "calls": 36,
+      "self_seconds": 0.000231959,
+      "cumulative_seconds": 0.000550702
+    },
+    {
+      "file": "bilstm.py",
+      "line": 235,
+      "function": "_batches",
+      "calls": 1,
+      "self_seconds": 0.000116824,
+      "cumulative_seconds": 0.0005242140000000001
+    },
+    {
+      "file": "functional.py",
+      "line": 1401,
+      "function": "dropout",
+      "calls": 36,
+      "self_seconds": 0.000282058,
+      "cumulative_seconds": 0.000508809
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'sub' of 're.Pattern' objects>",
+      "calls": 543,
+      "self_seconds": 0.00048713200000000004,
+      "cumulative_seconds": 0.00048713200000000004
+    }
+  ],
+  "torch_top": [
+    {
+      "operator": "aten::addmm",
+      "calls": 1614,
+      "self_cpu_us": 25508.626999999837,
+      "self_cpu_memory_bytes": 33374376
+    },
+    {
+      "operator": "aten::lstm",
+      "calls": 6,
+      "self_cpu_us": 7908.611999998837,
+      "self_cpu_memory_bytes": -53907456
+    },
+    {
+      "operator": "aten::mkldnn_convolution",
+      "calls": 6,
+      "self_cpu_us": 5770.928999999998,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::mul",
+      "calls": 4794,
+      "self_cpu_us": 5370.027000000802,
+      "self_cpu_memory_bytes": 12439680
+    },
+    {
+      "operator": "aten::tanh",
+      "calls": 1596,
+      "self_cpu_us": 5261.096999999976,
+      "self_cpu_memory_bytes": 4146432
+    },
+    {
+      "operator": "aten::narrow",
+      "calls": 9982,
+      "self_cpu_us": 4516.865999999034,
+      "self_cpu_memory_bytes": -2688
+    },
+    {
+      "operator": "aten::tanh_",
+      "calls": 1596,
+      "self_cpu_us": 3833.665000000252,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::sigmoid_",
+      "calls": 4788,
+      "self_cpu_us": 3769.68899999982,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::slice",
+      "calls": 10317,
+      "self_cpu_us": 3588.110000000801,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::as_strided",
+      "calls": 13783,
+      "self_cpu_us": 2898.300999999823,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::copy_",
+      "calls": 1751,
+      "self_cpu_us": 2844.2390000000687,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::index_select",
+      "calls": 54,
+      "self_cpu_us": 2321.85600000004,
+      "self_cpu_memory_bytes": 21934560
+    },
+    {
+      "operator": "aten::add_",
+      "calls": 3192,
+      "self_cpu_us": 2304.7919999999904,
+      "self_cpu_memory_bytes": -274560
+    },
+    {
+      "operator": "aten::cat",
+      "calls": 158,
+      "self_cpu_us": 2279.4080000001522,
+      "self_cpu_memory_bytes": 17312520
+    },
+    {
+      "operator": "aten::unsafe_split",
+      "calls": 1596,
+      "self_cpu_us": 1834.1969999997127,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::linear",
+      "calls": 1614,
+      "self_cpu_us": 1034.66999999998,
+      "self_cpu_memory_bytes": 21504
+    },
+    {
+      "operator": "aten::masked_fill_",
+      "calls": 6,
+      "self_cpu_us": 1009.2999999999956,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::t",
+      "calls": 1614,
+      "self_cpu_us": 1007.7910000002121,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::amax",
+      "calls": 6,
+      "self_cpu_us": 976.4999999999854,
+      "self_cpu_memory_bytes": 1036800
+    },
+    {
+      "operator": "aten::expand",
+      "calls": 1614,
+      "self_cpu_us": 828.33000000018,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::transpose",
+      "calls": 1632,
+      "self_cpu_us": 624.6439999999147,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::_softmax",
+      "calls": 6,
+      "self_cpu_us": 548.3189999999959,
+      "self_cpu_memory_bytes": 218280
+    },
+    {
+      "operator": "aten::unsafe_chunk",
+      "calls": 1596,
+      "self_cpu_us": 526.0340000003962,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::fill_",
+      "calls": 29,
+      "self_cpu_us": 395.77500000003783,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::ne",
+      "calls": 18,
+      "self_cpu_us": 322.66600000002654,
+      "self_cpu_memory_bytes": 398062
+    },
+    {
+      "operator": "aten::select",
+      "calls": 158,
+      "self_cpu_us": 190.8199999999906,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::empty",
+      "calls": 210,
+      "self_cpu_us": 176.92799999998897,
+      "self_cpu_memory_bytes": 21694640
+    },
+    {
+      "operator": "aten::index_copy_",
+      "calls": 6,
+      "self_cpu_us": 141.10900000002584,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::clamp_min_",
+      "calls": 6,
+      "self_cpu_us": 135.73000000001412,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::any",
+      "calls": 6,
+      "self_cpu_us": 130.45400000001246,
+      "self_cpu_memory_bytes": 10914
+    },
+    {
+      "operator": "aten::_pad_packed_sequence",
+      "calls": 6,
+      "self_cpu_us": 128.84699999993245,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::where",
+      "calls": 6,
+      "self_cpu_us": 127.80799999997907,
+      "self_cpu_memory_bytes": 1036800
+    },
+    {
+      "operator": "aten::eq",
+      "calls": 6,
+      "self_cpu_us": 124.28299999998126,
+      "self_cpu_memory_bytes": 259200
+    },
+    {
+      "operator": "aten::abs",
+      "calls": 12,
+      "self_cpu_us": 98.98800000000483,
+      "self_cpu_memory_bytes": 1036800
+    },
+    {
+      "operator": "aten::_pack_padded_sequence",
+      "calls": 6,
+      "self_cpu_us": 98.84800000008909,
+      "self_cpu_memory_bytes": -2626320
+    },
+    {
+      "operator": "aten::scatter_",
+      "calls": 6,
+      "self_cpu_us": 96.11099999999715,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::_convolution",
+      "calls": 6,
+      "self_cpu_us": 84.46600000000399,
+      "self_cpu_memory_bytes": -4288896
+    },
+    {
+      "operator": "aten::resolve_conj",
+      "calls": 3266,
+      "self_cpu_us": 79.2790000001296,
+      "self_cpu_memory_bytes": 0
+    },
+    {
+      "operator": "aten::index",
+      "calls": 6,
+      "self_cpu_us": 77.8029999999817,
+      "self_cpu_memory_bytes": 912
+    },
+    {
+      "operator": "aten::sort",
+      "calls": 6,
+      "self_cpu_us": 77.18700000002718,
+      "self_cpu_memory_bytes": 912
+    }
+  ],
+  "notes": "Fictional model-only workload; no capture throughput or accuracy claim. Nested cumulative times overlap; diagnostic whole-call timing includes row-counting overhead. Cold/warm timings precede all instrumentation."
+}
