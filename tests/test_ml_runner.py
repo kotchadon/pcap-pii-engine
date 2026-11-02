@@ -84,6 +84,25 @@ def test_engine_runs_with_opt_in_high_capacity_and_reports_selected_limits(tmp_p
     assert report['summary']['ml_coverage_status'] in ('complete', 'no_eligible_fields')
 
 
+@pytest.mark.parametrize('profile,limit', [
+    ('capacity_5m', 5_000_000),
+    ('capacity_8m', 8_000_000),
+    ('capacity_10m', 10_000_000),
+    ('capacity_15m', 15_000_000),
+])
+def test_engine_uses_new_multi_million_profile_without_changing_detection(tmp_path, profile, limit):
+    source = capture(tmp_path)
+    reference = analyze(source, ml_detector=Stub(), ml_budget='high_capacity')
+    result = analyze(source, ml_detector=Stub(), ml_budget=profile)
+    assert result['metadata']['ml_work_limits']['profile'] == profile
+    assert result['metadata']['ml_work_limits']['max_fields'] == limit
+    assert result['summary']['ml_fields_skipped'] == 0
+    assert result['summary']['ml_coverage_status'] in ('complete', 'no_eligible_fields')
+    # Same actual predictions; increasing the admission limit alone changes neither
+    # the checkpoint nor the rule/model classifications on identical short work.
+    assert result['findings'] == reference['findings']
+
+
 # ------------------------------------------------------------------ coverage states
 def test_rules_only_reports_not_requested(tmp_path):
     s = analyze(capture(tmp_path))['summary']
