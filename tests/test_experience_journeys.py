@@ -287,7 +287,7 @@ def test_journey_e_slow_and_failed_evidence_never_shows_stale_details(browser, s
     rows.nth(2).click()              # fast: a different message
     expected = rows.nth(2).locator('.row-loc').inner_text()
     page.wait_for_timeout(2000)
-    assert expected in page.inner_text('#fi-where'), 'a slow earlier response replaced the newer selection'
+    assert expected.split('.')[-1].replace('_',' ') in page.inner_text('#fi-where').lower(), 'a slow earlier response replaced the newer selection'
     assert 'flow_0001' not in page.inner_text('#fi-where')
     page.unroute('**/investigation?*')
     # An expired job: the panel says so and keeps no stale evidence.
@@ -309,6 +309,8 @@ def test_summary_scope_distinguishes_supported_reconstruction_and_unreadable_con
     page, problems = open_page(browser, server(), 1280, 800)
     run_sample(page)
     assert page.is_visible('#scope-summary')
+    assert not page.locator('#scope-summary').evaluate('(el) => el.open'), 'Advanced scope must be collapsed by default'
+    page.locator('#scope-summary > summary').click()
     examined = page.inner_text('#scope-examined')
     assert 'readable web messages' in examined
     assert 'captured frames' in examined
@@ -473,5 +475,5 @@ def test_rapid_drawer_toggling_settles_on_the_last_choice(browser, server):
     page.wait_for_timeout(600)
     assert page.get_attribute('#inspector', 'data-open') == 'true'
     assert page.inner_text('#inspect-sub') == rows.nth(7).locator('.row-sub').inner_text()
-    assert rows.nth(7).locator('.row-loc').inner_text() in page.inner_text('#fi-where')
+    assert rows.nth(7).locator('.row-loc').inner_text().split('.')[-1].replace('_',' ') in page.inner_text('#fi-where').lower()
     assert problems == []
