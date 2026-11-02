@@ -12,7 +12,7 @@
 - `135452854b78bb2d2b94d7327fdf58015ba65ce5`: measured production implementation and diagnostics.
 - `7e4fd27b940f92d7c68bff86a128a655fc694b2a`: acceptance-only guard binding the owner's capture to its known packet/field/finding counts. Production code is unchanged from `1354528`.
 
-The final documentation commit does not change executable code. Local restored snapshots initially contained a transport-added final newline in some unchanged text files; this was normalized to exact Git blobs. No executable statement differed. `restoration-integrity.json` records this distinction; changed model files and binary assets were verified separately. Remote commits preserve unchanged Git objects directly.
+The final documentation commit does not change production code, tests or supported validation entry points; it includes an archived exploratory driver. Local restored snapshots initially contained a transport-added final newline in some unchanged text files; this was normalized to exact Git blobs. No executable statement differed. `restoration-integrity.json` records this distinction; changed model files and binary assets were verified separately. Remote commits preserve unchanged Git objects directly.
 
 ## Retained implementation
 
@@ -75,7 +75,7 @@ The pipeline already reuses encoded JSON between spool and index, streams final 
 
 ## Rejected/experimental paths
 
-`exploratory-results.json` retains unsuccessful and preliminary results, not just winners.
+`exploratory-results.json` retains unsuccessful and preliminary results, not just winners. The archived `exploratory-forward.py` was executed from the parent of a checkout named `perf-next` at `4e73649`, with an existing `perf-next-results` output directory. It records the early model-only experiment, not the retained production implementation.
 
 - Per-member `torch.unique` sorting preserved scores but regressed 2 MiB scan median from 10.716 to 11.320 s. It was replaced with one shared batch-local hash/index plan.
 - Equal-length dense LSTM: model-only improvement on the small probe, but raw-score drift up to `2.28e-7` and changed full report bytes in the scan. Not enabled.
