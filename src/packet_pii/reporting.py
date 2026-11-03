@@ -156,3 +156,70 @@ class ReportSpool:
 
     def __exit__(self,*exc):
         self.stack.close()
+
+
+class _IndexedRows:
+    """JSON rows kept in the dashboard's existing private SQLite index.
+
+    The ordinary CLI keeps using ReportSpool. Dashboard scans can reuse the
+    indexed JSON as their report source, avoiding a second multi-GiB plaintext
+    spool. No evidence fields, IDs or original bytes are discarded.
+    """
+    def __init__(self, owner, kind):
+        self.owner, self.kind, self.count = owner, kind, 0
+
+    def __len__(self):
+        return self.count
+
+    def append(self, row):
+        encoded = _ROW_ENCODER.encode(row)
+        size = len(encoded.encode('utf-8')) + 1
+        if size > self.owner.maximum - self.owner.written:
+            raise ReportLimitError('Indexed evidence exceeds configured uncompressed byte budget')
+        # This observer inserts the identical JSON into the job's SQLite index.
+        # A failed insert must not be counted as a successfully stored row.
+        self.owner.encoded_row_observer(self.kind, row, encoded)
+        self.owner.written += size
+        self.count += 1
+
+    def iter_json(self):
+        # All row production is complete before publication begins. One cursor
+        # streams one row at a time; neither Python nor the caller builds an
+        # in-memory list of millions of evidence records.
+        self.owner.connection.commit()
+        cursor = self.owner.connection.execute(
+            'SELECT data FROM rows WHERE kind=? ORDER BY n', (self.kind,))
+        try:
+            for (encoded,) in cursor:
+                yield encoded + '\n'
+        finally:
+            cursor.close()
+
+
+class IndexedReportSpool:
+    """Alternative bounded row source for indexed dashboard jobs.
+
+    Requires an existing private SQLite connection and a callback that stores
+    every encoded row in that connection. The caller owns transaction lifecycle,
+    cleanup, access control and the SQLite disk cap. No temporary report spool
+    is created: the final JSON is streamed from the index.
+    """
+    ROW_NAMES = ('flows', 'findings', 'ml_field_coverage',
+                 'packet_evidence', 'stream_evidence', 'http_evidence', 'field_evidence')
+
+    def __init__(self, connection, maximum, *, encoded_row_observer):
+        if encoded_row_observer is None:
+            raise ValueError('Indexed report storage requires an indexed-row writer')
+        self.connection = connection
+        self.maximum = maximum
+        self.encoded_row_observer = encoded_row_observer
+        self.written = 0
+
+    def __enter__(self):
+        for name in self.ROW_NAMES:
+            setattr(self, name, _IndexedRows(self, name))
+        return self
+
+    def __exit__(self, *exc):
+        # JobManager commits, closes and removes the index if anything fails.
+        return False
