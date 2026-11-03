@@ -238,3 +238,57 @@ def test_worker_start_failure_releases_lock_and_cleans_files(monkeypatch):
         assert job.status=='failed' and not manager.analysis_lock.locked()
         assert not list(job.directory.iterdir())
     finally:manager.close()
+
+
+
+def test_dense_report_streams_from_index_without_losing_ordinary_contract(monkeypatch):
+    """Opt-in dense format stays complete and keeps the authenticated download."""
+    import gzip
+    import packet_pii.jobs as jobs
+    from packet_pii.engine import AnalysisLimits, GIB
+    ordinary = AnalysisLimits.for_profile('stress')
+    dense = AnalysisLimits.for_profile('dense')
+    assert ordinary.max_report_bytes == 2*GIB
+    assert dense.max_report_bytes == 6*GIB
+    assert dense.max_memory_bytes == ordinary.max_memory_bytes
+    assert dense.max_capture_bytes == ordinary.max_capture_bytes
+    # Simulate sufficient free disk for a small fixture; large Mac acceptance
+    # must still establish real disk availability and peak RSS separately.
+    free_disk = 40*GIB
+    real_disk_usage = jobs.shutil.disk_usage
+    def available(directory):
+        original = real_disk_usage(directory)
+        return type(original)(original.total, original.used, free_disk)
+    monkeypatch.setattr(jobs.shutil, 'disk_usage', available)
+    with server() as s:
+        code, session, cookie = request(s, 'GET', '/api/session')
+        assert code == 200
+        assert json.loads(session)['profiles']['dense']['max_report_bytes'] == 6*GIB
+        normal_id = json.loads(begin(s,request_id='normal-report-1234',profile='standard')[1])['job_id']
+        normal_result = finish(s,normal_id)
+        assert normal_result['status'] == 'completed'
+        normal = s.jobs.get(normal_id)
+        assert normal.report.name == 'report.json'
+        with normal.report.open('rb') as stream:
+            ordinary_report = json.load(stream)
+        code, body, _ = begin(s,request_id='dense-report-123456',profile='dense')
+        assert code == 202
+        dense_id = json.loads(body)['job_id']
+        dense_result = finish(s,dense_id)
+        assert dense_result['status'] == 'completed', dense_result.get('error')
+        dense_job = s.jobs.get(dense_id)
+        assert dense_job.report.name == 'report.json.gz'
+        assert dense_job.report.is_file()
+        with gzip.open(dense_job.report,'rt',encoding='utf-8') as stream:
+            dense_report = json.load(stream)
+        assert dense_report['summary']['potential_leaks'] == ordinary_report['summary']['potential_leaks']
+        assert dense_report['field_evidence'] == ordinary_report['field_evidence']
+        assert dense_report['http_evidence'] == ordinary_report['http_evidence']
+        assert dense_report['findings'] == ordinary_report['findings']
+        cookie_header = {'Cookie': cookie['Set-Cookie'].split(';')[0]}
+        code, raw, headers = request(s,'GET',f'/api/jobs/{dense_id}/report',headers=cookie_header)
+        assert code == 200
+        assert headers['Content-Type'] == 'application/gzip'
+        assert 'trace-report-' + dense_id + '.json.gz' in headers['Content-Disposition']
+        assert json.loads(gzip.decompress(raw)) == dense_report
+        assert request(s,'GET',f'/api/jobs/{dense_id}/report')[0] == 403
