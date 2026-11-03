@@ -319,3 +319,27 @@ def test_failed_dense_scan_keeps_only_safe_numeric_progress(monkeypatch):
         assert result['progress']['elapsed_seconds'] == 520.0
         assert 'SECRET-should-not-be-in-status' not in json.dumps(result)
         assert 'report' not in result
+
+
+
+def test_deep_field_pages_use_index_seek_and_do_not_stop_at_four_million():
+    import sqlite3
+    with server() as s:
+        code, body, _ = begin(s, request_id='deep-evidence-pages-test')
+        assert code == 202
+        job_id = json.loads(body)['job_id']
+        assert finish(s, job_id)['status'] == 'completed'
+        job = s.jobs.get(job_id)
+        first = s.jobs.page(job,'field_evidence',offset=0,limit=2)
+        second = s.jobs.page(job,'field_evidence',offset=1,limit=2)
+        assert first['items'][1] == second['items'][0]
+        # This was previously rejected before it could query the index.
+        end = s.jobs.page(job,'field_evidence',offset=4_000_001,limit=2)
+        assert end['items'] == [] and end['offset'] == 4_000_001
+        with sqlite3.connect(job.index) as conn:
+            plan = ' '.join(str(row) for row in conn.execute(
+                'EXPLAIN QUERY PLAN SELECT data FROM rows '
+                'WHERE kind=? AND n>=? ORDER BY n LIMIT ?',
+                ('field_evidence', 4_000_001, 100)))
+        assert 'USING INDEX' in plan
+        assert 'SCAN rows' not in plan
