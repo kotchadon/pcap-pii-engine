@@ -470,7 +470,7 @@ class JobManager:
 
     def page(self, job, kind, *, offset=0,limit=100,q='',pii_type='',evidence_id='',stream_id=''):
         if job.status!='completed':raise ValueError('Results are not complete')
-        if kind not in ('findings','flows','packet_evidence','stream_evidence','http_evidence','field_evidence') or not 0<=offset<=4_000_000 or not 1<=limit<=100:
+        if kind not in ('findings','flows','packet_evidence','stream_evidence','http_evidence','field_evidence') or not 0<=offset<=25_000_000 or not 1<=limit<=100:
             raise ValueError('Invalid page range')
         if len(q)>120 or len(pii_type)>80:raise ValueError('Filter too long')
         if any(len(value)>160 for value in (evidence_id,stream_id)):
@@ -486,7 +486,17 @@ class JobManager:
         with self.lock, closing(sqlite3.connect('file:'+str(job.index)+'?mode=ro',uri=True)) as conn:
             where=' AND '.join(clauses)
             total=conn.execute('SELECT count(*) FROM rows WHERE '+where,params).fetchone()[0]
-            rows=conn.execute('SELECT data FROM rows WHERE '+where+' ORDER BY n LIMIT ? OFFSET ?',params+[limit,offset])
+            if not (q or pii_type or evidence_id or stream_id):
+                # n is a contiguous 0-based row number for each kind. A deep
+                # 4.3M-field page must seek via the (kind,n) primary key, not
+                # repeatedly skip millions of rows with OFFSET.
+                rows=conn.execute('SELECT data FROM rows WHERE kind=? AND n>=? ORDER BY n LIMIT ?',
+                                  (kind,offset,limit))
+            else:
+                # Filtering changes ordinal positions, so preserve true
+                # filtered OFFSET semantics for searched pages.
+                rows=conn.execute('SELECT data FROM rows WHERE '+where+' ORDER BY n LIMIT ? OFFSET ?',
+                                  params+[limit,offset])
             items=[json.loads(r[0]) for r in rows]
         return dict(items=items,total=total,offset=offset,limit=limit)
 
