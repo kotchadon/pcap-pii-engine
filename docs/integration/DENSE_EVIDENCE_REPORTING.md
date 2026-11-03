@@ -25,6 +25,27 @@ install in a separate worktree and run:
 Choose Dense evidence, Patterns + AI and 5 million eligible fields for the original dense capture, whose independent offline estimate is 2.71 million eligible fields. Verify the input SHA-256:
 24a4764627c184e36f5b6c64f8fe6abebb0b46841609fef57607b17141cba072.
 
+## SHA-bound M3 measurement (only after small-fixture CI)
+
+Run once against the **existing original file**, from the isolated PR worktree:
+
+    python scripts/validation/bench_performance_memory.py \
+      --source-root . \
+      --capture "$HOME/Downloads/TRACE_Fictional_Network_Day_220MiB.pcap" \
+      --expected-sha256 24a4764627c184e36f5b6c64f8fe6abebb0b46841609fef57607b17141cba072 \
+      --output "$HOME/Downloads/trace-dense-m3-receipt.json" \
+      --profile dense --indexed \
+      --checkpoint src/packet_pii/ml/artifacts/bilstm_v2 \
+      --ml-profile capacity_5m --threads 2 --repeat 1
+
+If the specified file is absent or its SHA differs, the runner rejects rather
+than silently generating a tiny surrogate. It emits measured per-stage
+times, model-only and total evaluated fields/sec, current/lifetime-peak RSS,
+private index size and compressed report bytes. It hashes the completed gzip
+with bounded reads; it does **not** JSON-load multiple GiB into Mac RAM.
+The report is not retained by this benchmark: use the authenticated dashboard
+run separately to test the full report download and deep Inspector navigation.
+
 ## Required before merge
 
 1. Actual complete original 220MiB PCAP on MacBook Air M3 16GiB with trustworthy current/peak RSS, disk use, compressed and decoded report sizes, and stage/total timings.
