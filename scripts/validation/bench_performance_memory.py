@@ -45,18 +45,26 @@ def canonical(report):
 
 def main():
     if len(sys.argv) == 3 and sys.argv[1] == '--digest-report':
-        print(canonical(json.loads(Path(sys.argv[2]).read_text())))
+        path=Path(sys.argv[2])
+        if path.name.endswith('.json.gz'):
+            import gzip
+            with gzip.open(path,'rt',encoding='utf-8') as stream:
+                report=json.load(stream)
+        else:
+            report=json.loads(path.read_text())
+        print(canonical(report))
         return
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--source-root',type=Path,required=True)
     p.add_argument('--capture',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--expected-sha256',default=None,help='Refuse if input SHA differs; use with the original 220MiB fixture')
     p.add_argument('--mib',type=float,default=2)
-    p.add_argument('--profile',choices=['standard','large'],default='standard')
+    p.add_argument('--profile',choices=['standard','large','stress','dense'],default='standard')
     p.add_argument('--repeat',type=int,default=1)
     p.add_argument('--instrument',action='store_true')
     p.add_argument('--checkpoint',type=Path,help='Genuine checkpoint; omission explicitly selects Rules')
-    p.add_argument('--ml-profile',choices=('standard','extended','complete','high_capacity'),default='standard',
+    p.add_argument('--ml-profile',choices=('standard','extended','complete','high_capacity','capacity_5m','capacity_8m','capacity_10m','capacity_15m'),default='standard',
                    help='Explicit bounded ML work profile for Hybrid; default Standard is unchanged')
     p.add_argument('--no-cache',action='store_true')
     p.add_argument('--threads',type=int,default=2)
@@ -64,12 +72,14 @@ def main():
     p.add_argument('--historical-peak',action='store_true')
     args=p.parse_args();root=args.source_root.resolve()
     if args.ml_profile != 'standard' and args.checkpoint is None:
-        p.error('--ml-profile extended/complete requires a genuine --checkpoint')
+        p.error('A nonstandard --ml-profile requires a genuine --checkpoint')
     if not 1<=args.repeat<=3:p.error('repeat must be1..3')
     if args.output.exists():p.error('output exists')
     sys.path.insert(0,str(root/'src'))
     from packet_pii.engine import analyze_to_report, AnalysisLimits
     if not args.capture.exists():
+        if args.profile == 'dense' or args.expected_sha256 is not None:
+            p.error('Dense/sha-bound benchmark requires an existing capture; no tiny synthetic substitute')
         spec=importlib.util.spec_from_file_location('fixture',root/'scripts/ml/bench_v2_inference.py')
         fixture=importlib.util.module_from_spec(spec);spec.loader.exec_module(fixture)
         fixture.generate_capture(args.capture,args.mib)
@@ -77,6 +87,8 @@ def main():
     with args.capture.open('rb') as capture_file:
         for block in iter(lambda: capture_file.read(1024*1024), b''):digest.update(block)
     capture_sha=digest.hexdigest()
+    if args.expected_sha256 is not None and capture_sha.lower() != args.expected_sha256.lower():
+        p.error('Existing capture does not match the required SHA-256; refusing benchmark')
     bounds=AnalysisLimits.for_profile(args.profile)
     before=rss();historical=None
     detector=None;load_seconds=0.0
@@ -149,11 +161,24 @@ def main():
             break
         if profiler:profiler.disable()
         elapsed=time.perf_counter()-start;current=rss();maximum=peak()
-        # Decode/hash outside the scan worker: a full JSON load would contaminate later RSS samples.
-        full_digest=subprocess.check_output([sys.executable, __file__, '--digest-report', str(target)], text=True).strip()
+        # Stream a physical-file hash in fixed memory even for multi-GiB gzip.
+        # Loading a 6GiB decoded report to digest it would invalidate a
+        # 16GiB-M3 memory benchmark; omit the canonical digest for Dense.
+        file_hasher=hashlib.sha256()
+        with target.open('rb') as output_stream:
+            for block in iter(lambda:output_stream.read(1024*1024),b''):
+                file_hasher.update(block)
+        full_digest=(None if args.profile=='dense' or target.stat().st_size>128*2**20 else
+            subprocess.check_output([sys.executable,__file__,'--digest-report',str(target)],text=True).strip())
+        evaluated=receipt['summary'].get('ml_fields_evaluated',0)
         runs.append({'status':'completed','seconds':elapsed,'model_seconds':stages.get('ml_inference',0),
                      'current_rss_after_analysis':current,'lifetime_peak_rss':maximum,'stages':stages,
-                     'memory':memory,'output_bytes':target.stat().st_size,'canonical_report_sha256':full_digest,
+                     'memory':memory,'output_bytes':target.stat().st_size,
+                     'report_file_sha256':file_hasher.hexdigest(),
+                     'canonical_report_sha256':full_digest,
+                     'fields_evaluated_per_total_second':round(evaluated/elapsed,2) if elapsed>0 else None,
+                     'fields_evaluated_per_model_second':round(evaluated/stages['ml_inference'],2)
+                       if stages.get('ml_inference',0)>0 else None,
                      'summary':receipt['summary']})
         del receipt;gc.collect()
         if manager:manager.close()

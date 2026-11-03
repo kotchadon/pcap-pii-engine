@@ -61,7 +61,7 @@ class AnalysisLimits:
     def __post_init__(self) -> None:
         ceilings = dict(max_capture_bytes=512*MIB, max_packets=2_000_000,
                         max_flows=300_000, max_tcp_payload_bytes=512*MIB,
-                        max_report_bytes=2*GIB, max_findings=4_000_000,
+                        max_report_bytes=6*GIB, max_findings=4_000_000,
                         max_memory_bytes=6*GIB)
         for key, value in asdict(self).items():
             if type(value) is not int or value <= 0:
@@ -81,9 +81,15 @@ class AnalysisLimits:
                            max_flows=300_000, max_tcp_payload_bytes=480*MIB,
                            max_report_bytes=2*GIB, max_findings=4_000_000,
                            max_memory_bytes=4*GIB),
+            # Separate opt-in evidence budget: no extra RAM or packet allowance.
+            # Requires a disk-backed indexed report and free-disk reservation.
+            'dense': dict(max_capture_bytes=512*MIB, max_packets=2_000_000,
+                          max_flows=300_000, max_tcp_payload_bytes=480*MIB,
+                          max_report_bytes=6*GIB, max_findings=4_000_000,
+                          max_memory_bytes=4*GIB),
         }
         if profile not in profiles:
-            raise ValueError('profile must be standard, large or stress')
+            raise ValueError('profile must be standard, large, stress or dense')
         return cls(**(profiles[profile] | overrides))
 
 
@@ -873,6 +879,7 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
                       profile: str = 'standard', overwrite: bool = False,
                       display_nonsecret_values: bool = False,
                       progress=None, timings=None, row_observer=None, encoded_row_observer=None,
+                      row_storage_factory=None,
                       ml_detector: ContextualPIIDetector | None = None,
                       ml_budget: 'MLWorkBudget | str | None' = None,
             ml_work_budget: 'LegacyMLWorkBudget | None' = None,
@@ -885,6 +892,8 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
     before publication; complete is a non-cancellable notification.
     ``encoded_row_observer(kind, row, json_text)`` may reuse the exact spooled
     representation for indexing. Observers must not mutate rows.
+    ``row_storage_factory`` lets dashboard scans use their SQLite index as
+    the only row spool; the standalone CLI output stays unchanged.
     """
     from .reporting import ReportSpool, ReportLimitError, write_private_report
     source, output = Path(path), Path(target)
@@ -899,8 +908,11 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
     guard = _MemoryGuard(budget)
     clock=time.monotonic()
     try:
-        with ReportSpool(output.parent,budget.max_report_bytes,row_observer=row_observer,
-                         encoded_row_observer=encoded_row_observer) as rows:
+        storage = (ReportSpool(output.parent, budget.max_report_bytes,
+                               row_observer=row_observer,
+                               encoded_row_observer=encoded_row_observer)
+                   if row_storage_factory is None else row_storage_factory(budget.max_report_bytes))
+        with storage as rows:
             report = _analyze(source,threshold,include_values,limits=budget,profile=profile,
                               display_nonsecret_values=display_nonsecret_values,
                               progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,ml_budget=ml_budget, ml_work_budget=ml_work_budget,
