@@ -19,6 +19,7 @@ import time
 
 from . import investigation
 from .engine import AnalysisLimits, AnalysisLimitError, analyze_to_report
+from .reporting import IndexedReportSpool
 from .groundtruth import EvaluationCollector, EvaluationRejected, Manifest, RESULT_SCHEMA_VERSION, sha256_file
 from .ml_runner import ML_PROFILES, shared
 from .quality import AssessmentBudget, AssessmentCancelled, ContextSampler, assess_summary, unavailable
@@ -46,8 +47,10 @@ def _explain_analysis_limit(exc: AnalysisLimitError, job) -> str:
     if 'report' in message or 'evidence' in message:
         maximum = limits.max_report_bytes // MIB
         suggestion = ('Try Stress for a larger report allowance, although dense files may still exceed it.'
-                      if job.profile != 'stress'
-                      else 'This capture needs a smaller evidence footprint or a separately validated higher-capacity reporting workflow.')
+                      if job.profile in ('standard', 'large') else
+                      'An experimental Dense evidence profile is available if at least 19 GiB of disk can be reserved; it has not been verified on this Mac.'
+                      if job.profile == 'stress' else
+                      'The experimental Dense profile also reached its limit. A more scalable reporting format is needed.')
         return (f'The {profile} analysis reached its {maximum:,} MiB evidence/report limit. '
                 f'{suggestion} Changing the AI field limit does not increase report storage.')
     if 'memory' in message:
@@ -112,13 +115,13 @@ class Job:
     @property
     def capture(self): return self.directory/'capture.bin'
     @property
-    def report(self): return self.directory/'report.json'
+    def report(self): return self.directory/('report.json.gz' if self.profile == 'dense' else 'report.json')
     @property
     def index(self): return self.directory/'index.sqlite'
 
 
 class JobManager:
-    def __init__(self, analysis_lock, detector=None, *, disk_quota_bytes=12*2**30,
+    def __init__(self, analysis_lock, detector=None, *, disk_quota_bytes=22*2**30,
                  max_retained=3, ttl_seconds=3600, ml_work_budget=None, assessment_budget='default',
                  retain_capture_for_inspection=False, display_nonsecret_values=False):
         if type(disk_quota_bytes) is not int or disk_quota_bytes < 32*MIB:
@@ -194,8 +197,11 @@ class JobManager:
                 if other.assessment is not None and other.assessment['status'] in ('pending','running'):
                     other.assessment_cancel.set()   # a new scan takes priority over a previous scan's assessment
             self._prune()
-            # Peak disk: capture + spool + final JSON + derived SQLite index.
-            reserve=limits.max_capture_bytes+4*limits.max_report_bytes+64*MIB
+            # Indexed dashboard scans have no second plaintext row spool.
+            # Worst-case disk: capture + JSON (gzip cannot exceed its decoded
+            # budget by more than a small header) + bounded SQLite index.
+            # The index page limit is 2*report +64MiB, hence 3*report total.
+            reserve=limits.max_capture_bytes+3*limits.max_report_bytes+64*MIB
             if self._used()+reserve > self.disk_quota or shutil.disk_usage(self.root).free < reserve:
                 raise JobQuota('Insufficient private job disk budget or free disk space')
             if not self.analysis_lock.acquire(blocking=False):
@@ -294,6 +300,8 @@ class JobManager:
                 ml_budget=None if job.use_legacy_budget else job.ml_profile or 'standard',
                 ml_work_budget=job.ml_work_budget if job.use_legacy_budget else None,
                 progress=progress,encoded_row_observer=observe,
+                row_storage_factory=lambda maximum: IndexedReportSpool(
+                    conn, maximum, encoded_row_observer=observe),
                 field_observer=observe_fields if observers else None,
                 disposition_observer=None if collector is None else collector.observe_disposition)
             conn.commit();conn.close();conn=None
