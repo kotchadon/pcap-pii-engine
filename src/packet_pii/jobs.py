@@ -255,6 +255,7 @@ class JobManager:
 
     def _run(self, job):
         conn=None
+        stage_timings={}
         try:
             # This is a rebuildable, private derived index. A failed/crashed job
             # never exposes it, so no rollback journal/double-copy is required.
@@ -299,7 +300,8 @@ class JobManager:
                 ml_detector=self.detector if job.mode=='hybrid' else None,
                 ml_budget=None if job.use_legacy_budget else job.ml_profile or 'standard',
                 ml_work_budget=job.ml_work_budget if job.use_legacy_budget else None,
-                progress=progress,encoded_row_observer=observe,
+                progress=progress,timings=stage_timings,
+                encoded_row_observer=observe,
                 row_storage_factory=lambda maximum: IndexedReportSpool(
                     conn, maximum, encoded_row_observer=observe),
                 field_observer=observe_fields if observers else None,
@@ -319,6 +321,8 @@ class JobManager:
             with self.lock:
                 if job.cancel.is_set():raise JobCancelled()
                 job.receipt={k:v for k,v in receipt.items() if k!='output_path'}
+                job.receipt['stage_timings_seconds']={k:round(v,4) for k,v in stage_timings.items()
+                    if type(v) in (int,float) and v>=0}
                 job.assessment=self._initial_assessment(job,receipt,sampler)
                 job.status='completed';job.updated=time.monotonic()
         except Exception as exc:
@@ -339,7 +343,19 @@ class JobManager:
                     job.error=('Scan cancelled' if job.status=='cancelled' else
                                _explain_analysis_limit(exc, job) if isinstance(exc, AnalysisLimitError) else
                                'Scan could not complete; no complete result is available')
-                    job.progress={'stage':job.status};job.updated=time.monotonic();job.evaluation=None
+                    # Keep only numeric counters from the last checkpoint, so
+                    # failed long-running scans retain useful throughput data
+                    # without exposing captured values or partial findings.
+                    last=job.progress
+                    safe_names=('elapsed_seconds','packets','endpoint_pairs','sessions',
+                                'http_messages','findings','ml_fields_evaluated',
+                                'ml_fields_skipped','ml_inference_batches')
+                    safe={k:last[k] for k in safe_names
+                          if type(last.get(k)) in (int,float) and last[k]>=0}
+                    job.progress={'stage':job.status,'last_stage':last.get('stage') if
+                                  last.get('stage') in ('reading','reconstructing','analysing',
+                                  'ml_inference','writing_report') else 'unknown',**safe}
+                    job.updated=time.monotonic();job.evaluation=None
         finally:
             if not (self.retain_capture_for_inspection and job.status=='completed'):
                 job.capture.unlink(missing_ok=True)
