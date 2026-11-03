@@ -1,0 +1,73 @@
+{
+  "tested_commit": "7e4fd27b940f92d7c68bff86a128a655fc694b2a",
+  "production_code_commit": "135452854b78bb2d2b94d7327fdf58015ba65ce5",
+  "run_url": "https://github.com/kotchadon/pcap-pii-engine/actions/runs/41431610468",
+  "jobs": [
+    {
+      "name": "Nishant packet-to-HTTP demo through real APIs",
+      "id": 125231944938,
+      "conclusion": "success",
+      "summary": [
+        "2026-11-02T10:49:13.1553841Z     \"reason\": \"TShark not installed; run documented macOS check\""
+      ]
+    },
+    {
+      "name": "ml tests",
+      "id": 125231945123,
+      "conclusion": "success",
+      "summary": [
+        "2026-11-02T10:51:04.0404367Z 1137 passed, 21 skipped in 84.81s (0:01:24)"
+      ]
+    },
+    {
+      "name": "Actual V2 Hybrid 2MiB smoke (not M3 benchmark)",
+      "id": 125231945168,
+      "conclusion": "success",
+      "summary": []
+    },
+    {
+      "name": "real Chromium UI journeys",
+      "id": 125231945230,
+      "conclusion": "success",
+      "summary": [
+        "2026-11-02T10:50:50.5437762Z 18 passed in 59.18s"
+      ]
+    },
+    {
+      "name": "core tests",
+      "id": 125231945306,
+      "conclusion": "success",
+      "summary": [
+        "2026-11-02T10:50:13.7934284Z 919 passed, 177 skipped in 60.84s (0:01:00)"
+      ]
+    }
+  ],
+  "local_targeted": {
+    "passed": 33,
+    "skipped": 0,
+    "failed": 0,
+    "seconds": 2.87
+  },
+  "frozen_comparison": {
+    "run_url": "https://github.com/kotchadon/pcap-pii-engine/actions/runs/41430702078",
+    "code_commit": "135452854b78bb2d2b94d7327fdf58015ba65ce5",
+    "fields": 4314,
+    "unthresholded_spans": 4175,
+    "max_raw_score_difference": 0
+  },
+  "skips": {
+    "ml": {
+      "browser_dependency": 17,
+      "h11_dependency": 4
+    },
+    "core": "177 optional dependency/module cases; core intentionally has no torch",
+    "optional_tshark": "not installed; required mentor API checks passed"
+  },
+  "blocked": [
+    "native M3/MPS acceptance",
+    "owner 110 MiB full scan",
+    "150/500 MiB goals",
+    "5M–15M fields at scale"
+  ],
+  "review": "One read-only Astra architecture review and one read-only final code review. Final review found no material defect; M3 and performance claims not independently judged."
+}

@@ -112,15 +112,17 @@ class BiLSTMTagger(nn.Module):
                             dropout=cfg.dropout if cfg.layers > 1 else 0.0)
         self.out = nn.Linear(2 * cfg.hidden, cfg.n_tags)
 
-    def forward(self, word_ids, shape_ids, ctx_ids, char_ids, lengths):
+    def forward(self, word_ids, shape_ids, ctx_ids, char_ids, lengths, character_plan=None):
         """word_ids/shape_ids/ctx_ids: [B,T]; char_ids: [B,T,C]; lengths: [B] (cpu). Returns logits [B,T,n_tags]."""
         B, T = word_ids.shape
         feats = [self.word(word_ids), self.shape(shape_ids), self.ctx(ctx_ids)]
         if self.cfg.char_filters:
-            flat_chars = char_ids.reshape(B * T, -1)
             compact = not torch.is_grad_enabled()
-            rows = None
-            if compact:
+            rows = inverse = None
+            flat_chars = char_ids.reshape(B * T, -1)
+            if compact and not self.training:
+                flat_chars, rows, inverse = character_plan if character_plan is not None else _character_plan(char_ids)
+            elif compact:
                 # Empty character rows always pool to zero. Do not allocate embeddings/convolution workspaces
                 # for padding (or empty separator tokens); leave the training/autograd calculation unchanged.
                 nonempty = flat_chars.ne(0).any(dim=1).nonzero(as_tuple=True)[0]
@@ -141,6 +143,8 @@ class BiLSTMTagger(nn.Module):
                         h = torch.relu(cv(ce))[:, :, :ce.shape[2]]
                         h = h.masked_fill(~mask, float("-inf")).amax(dim=2)
                     h = torch.where(torch.isfinite(h), h, torch.zeros_like(h))
+                    if inverse is not None:
+                        h = h.index_select(0, inverse)
                     if rows is not None:
                         h = h.new_zeros(B * T, self.cfg.char_filters).index_copy_(0, rows, h)
                     feats.append(h.reshape(B, T, -1))
@@ -168,10 +172,11 @@ def collate(batch: Sequence[Encoded], max_seq: int, unk_id: int = 1, word_dropou
         raise ValueError("batch empty or sequence longer than max_seq (chunk before encoding)")
     B, T = len(batch), max(lens)
     C = max(1, min(MAX_CHARS, max((len(c) for e in batch for c in e.char_ids), default=1)))
-    word = torch.zeros(B, T, dtype=torch.long); shape = torch.zeros(B, T, dtype=torch.long)
-    ctx = torch.zeros(B, T, dtype=torch.long); chars = torch.zeros(B, T, C, dtype=torch.long)
-    labels = torch.full((B, T), IGNORE, dtype=torch.long)
-    for i, e in enumerate(batch):
+    # Build each dense column once. Per-token tensor creation/indexed writes are
+    # disproportionately expensive for short CPU inference batches. These lists
+    # are batch-local; no buffers or field data survive this call.
+    word, shape, ctx, chars, labels = [], [], [], [], []
+    for e in batch:
         n = len(e)
         wids = list(e.word_ids)
         if word_dropout > 0 and rng is not None:  # train the <unk> embedding on realistic OOV contexts
@@ -182,19 +187,48 @@ def collate(batch: Sequence[Encoded], max_seq: int, unk_id: int = 1, word_dropou
             for k in range(e.n_ctx - 1):
                 if rng.random() < ctx_dropout:
                     wids[k] = unk_id
-        word[i, :n] = torch.tensor(wids); shape[i, :n] = torch.tensor(e.shape_ids)
-        ctx[i, :n] = torch.tensor(e.ctx_flags)
-        for k, cid in enumerate(e.char_ids):
-            if cid:
-                chars[i, k, :len(cid)] = torch.tensor(cid[:C])
-        if e.tags is not None:
-            labels[i, e.n_ctx:n] = torch.tensor(e.tags)
-    return {"word": word, "shape": shape, "ctx": ctx, "chars": chars, "labels": labels,
+        word.append(wids + [0] * (T - n))
+        shape.append(list(e.shape_ids) + [0] * (T - n))
+        ctx.append(list(e.ctx_flags) + [0] * (T - n))
+        for cid in e.char_ids:
+            chars.append(list(cid[:C]) + [0] * (C - min(len(cid), C)))
+        chars.extend([[0] * C for _ in range(T - n)])
+        labels.append(([IGNORE] * e.n_ctx + list(e.tags) if e.tags is not None else [IGNORE] * n)
+                      + [IGNORE] * (T - n))
+    return {"word": torch.tensor(word, dtype=torch.long), "shape": torch.tensor(shape, dtype=torch.long),
+            "ctx": torch.tensor(ctx, dtype=torch.long),
+            "chars": torch.tensor(chars, dtype=torch.long).reshape(B, T, C),
+            "labels": torch.tensor(labels, dtype=torch.long),
             "lengths": torch.tensor(lens, dtype=torch.long)}
 
 
+def _character_plan(char_ids):
+    """Batch-local index plan; no learned features, field strings or persistent cache."""
+    flat = char_ids.reshape(-1, char_ids.shape[-1])
+    identities, unique_positions, nonempty, inverse = {}, [], [], []
+    # One bulk conversion avoids torch.unique's per-row tensor sorting overhead
+    # for these small CPU rows. At most B*T*C integer IDs, bounded by the existing
+    # batch token and character-width caps; never a whole-scan allocation.
+    for position, row in enumerate(flat.tolist()):
+        if not any(row):
+            continue
+        key = tuple(row)  # full padded character IDs, never lowercased word IDs
+        index = identities.get(key)
+        if index is None:
+            index = len(unique_positions)
+            identities[key] = index
+            unique_positions.append(position)
+        nonempty.append(position)
+        inverse.append(index)
+    index_tensor = lambda values: torch.tensor(values, dtype=torch.long, device=char_ids.device)
+    unique = flat.index_select(0, index_tensor(unique_positions))
+    rows = index_tensor(nonempty) if len(nonempty) < flat.shape[0] else None
+    gather = index_tensor(inverse) if len(unique_positions) < len(nonempty) else None
+    return unique, rows, gather
+
+
 def _forward(model: BiLSTMTagger, b: dict):
-    return model(b["word"], b["shape"], b["ctx"], b["chars"], b["lengths"])
+    return model(b["word"], b["shape"], b["ctx"], b["chars"], b["lengths"], b.get("character_plan"))
 
 
 # ------------------------------------------------------------------ prediction
@@ -263,6 +297,8 @@ class SpanPredictor:
             with torch.inference_mode():
                 for part in self._batches(jobs):
                     batch = collate([jobs[j][1] for j in part], max_seq)
+                    if self.model.cfg.char_filters:
+                        batch['character_plan'] = _character_plan(batch['chars'])
                     if len(self.models) == 1:
                         lp = torch.log_softmax(_forward(self.models[0], batch), dim=-1)
                     else:  # average member probabilities, then log

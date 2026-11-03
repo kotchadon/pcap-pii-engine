@@ -83,6 +83,15 @@ def _allowed(prev: int, cur: int) -> bool:
     return TAGS[prev] in ("B-" + label, "I-" + label)
 
 
+# Immutable BIO graph. O and every B-* share the same predecessor set, so
+# compute their best predecessor once per token. Preserve ascending tag order
+# and strict '>' selection: ties must still choose the first reachable tag.
+_PREDECESSORS = tuple(tuple(p for p in range(len(TAGS)) if _allowed(p, c)) for c in range(len(TAGS)))
+_PREDECESSOR_GROUPS = tuple(dict.fromkeys(_PREDECESSORS))
+_GROUP_FOR_TAG = tuple(_PREDECESSOR_GROUPS.index(p) for p in _PREDECESSORS)
+_START_TAGS = tuple(c for c, tag in enumerate(TAGS) if not tag.startswith('I-'))
+
+
 def viterbi_decode(logprobs: Sequence[Sequence[float]]) -> list[int]:
     """BIO-constraint-aware best path over per-token log-probabilities.
 
@@ -91,21 +100,26 @@ def viterbi_decode(logprobs: Sequence[Sequence[float]]) -> list[int]:
     n, k = len(logprobs), len(TAGS)
     if n == 0:
         return []
-    score = [[_NEG] * k for _ in range(n)]
+    score = [_NEG] * k
     back = [[0] * k for _ in range(n)]
-    for c in range(k):
-        if not TAGS[c].startswith("I-"):
-            score[0][c] = logprobs[0][c]
+    for c in _START_TAGS:
+        score[c] = logprobs[0][c]
     for t in range(1, n):
-        for c in range(k):
+        best_groups = []
+        for predecessors in _PREDECESSOR_GROUPS:
             best, arg = _NEG, 0
-            for p in range(k):
-                if score[t - 1][p] > _NEG and _allowed(p, c) and score[t - 1][p] > best:
-                    best, arg = score[t - 1][p], p
+            for p in predecessors:
+                if score[p] > best:
+                    best, arg = score[p], p
+            best_groups.append((best, arg))
+        current = [_NEG] * k
+        for c, group in enumerate(_GROUP_FOR_TAG):
+            best, arg = best_groups[group]
             if best > _NEG:
-                score[t][c] = best + logprobs[t][c]
+                current[c] = best + logprobs[t][c]
                 back[t][c] = arg
-    c = max(range(k), key=lambda x: score[-1][x])
+        score = current
+    c = max(range(k), key=lambda x: score[x])
     path = [c]
     for t in range(n - 1, 0, -1):
         c = back[t][c]
