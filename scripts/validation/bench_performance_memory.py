@@ -58,6 +58,7 @@ def main():
     p.add_argument('--source-root',type=Path,required=True)
     p.add_argument('--capture',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--expected-sha256',default=None,help='Refuse if input SHA differs; use with the original 220MiB fixture')
     p.add_argument('--mib',type=float,default=2)
     p.add_argument('--profile',choices=['standard','large','stress','dense'],default='standard')
     p.add_argument('--repeat',type=int,default=1)
@@ -77,6 +78,8 @@ def main():
     sys.path.insert(0,str(root/'src'))
     from packet_pii.engine import analyze_to_report, AnalysisLimits
     if not args.capture.exists():
+        if args.profile == 'dense' or args.expected_sha256 is not None:
+            p.error('Dense/sha-bound benchmark requires an existing capture; no tiny synthetic substitute')
         spec=importlib.util.spec_from_file_location('fixture',root/'scripts/ml/bench_v2_inference.py')
         fixture=importlib.util.module_from_spec(spec);spec.loader.exec_module(fixture)
         fixture.generate_capture(args.capture,args.mib)
@@ -84,6 +87,8 @@ def main():
     with args.capture.open('rb') as capture_file:
         for block in iter(lambda: capture_file.read(1024*1024), b''):digest.update(block)
     capture_sha=digest.hexdigest()
+    if args.expected_sha256 is not None and capture_sha.lower() != args.expected_sha256.lower():
+        p.error('Existing capture does not match the required SHA-256; refusing benchmark')
     bounds=AnalysisLimits.for_profile(args.profile)
     before=rss();historical=None
     detector=None;load_seconds=0.0
@@ -163,7 +168,7 @@ def main():
         with target.open('rb') as output_stream:
             for block in iter(lambda:output_stream.read(1024*1024),b''):
                 file_hasher.update(block)
-        full_digest=(None if args.profile=='dense' else
+        full_digest=(None if args.profile=='dense' or target.stat().st_size>128*2**20 else
             subprocess.check_output([sys.executable,__file__,'--digest-report',str(target)],text=True).strip())
         evaluated=receipt['summary'].get('ml_fields_evaluated',0)
         runs.append({'status':'completed','seconds':elapsed,'model_seconds':stages.get('ml_inference',0),
