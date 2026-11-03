@@ -48,6 +48,8 @@ def test_job_showcase_pages_download_and_repeat_requests():
         code,body,_=begin(s);assert code==202
         job_id=json.loads(body)['job_id'];result=finish(s,job_id)
         assert result['status']=='completed'
+        assert 'report_write' in result['report']['stage_timings_seconds']
+        assert result['report']['stage_timings_seconds']['report_write'] >= 0
         assert result['report']['summary']['http_messages']==24
         assert result['report']['summary']['ml_invoked'] is False
         assert len(result['report']['findings'])<=100
@@ -292,3 +294,28 @@ def test_dense_report_streams_from_index_without_losing_ordinary_contract(monkey
         assert 'trace-report-' + dense_id + '.json.gz' in headers['Content-Disposition']
         assert json.loads(gzip.decompress(raw)) == dense_report
         assert request(s,'GET',f'/api/jobs/{dense_id}/report')[0] == 403
+
+
+
+def test_failed_dense_scan_keeps_only_safe_numeric_progress(monkeypatch):
+    from packet_pii.engine import AnalysisLimitError
+    import packet_pii.jobs as jobs
+    def fail_after_checkpoint(*args, **kwargs):
+        kwargs['progress']({'stage': 'ml_inference',
+                            'elapsed_seconds': 520.0, 'packets': 495797,
+                            'ml_fields_evaluated': 2100000,
+                            'ml_inference_batches': 8100,
+                            'value': 'SECRET-should-not-be-in-status'})
+        raise AnalysisLimitError('Analysis exceeded configured report byte budget')
+    monkeypatch.setattr(jobs, 'analyze_to_report', fail_after_checkpoint)
+    with server() as s:
+        code, body, _ = begin(s, request_id='progress-on-failed-scan', profile='stress')
+        assert code == 202
+        result = finish(s, json.loads(body)['job_id'])
+        assert result['status'] == 'failed'
+        assert result['progress']['stage'] == 'failed'
+        assert result['progress']['last_stage'] == 'ml_inference'
+        assert result['progress']['ml_fields_evaluated'] == 2100000
+        assert result['progress']['elapsed_seconds'] == 520.0
+        assert 'SECRET-should-not-be-in-status' not in json.dumps(result)
+        assert 'report' not in result
