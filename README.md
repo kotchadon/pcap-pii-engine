@@ -1,133 +1,58 @@
-# PCAP PII Engine
+# TRACE — Network Privacy & Evidence Explorer
 
-**Private, local-first cybersecurity prototype** that scans reconstructed **plaintext HTTP/1.x** over TCP in `.pcap` or `.pcapng` and emits a JSON report containing possible PII exposure.
+**A local-first cybersecurity project for finding personal information in recorded network traffic — and showing exactly where it appeared.**
 
-> **Status: v0.1 / engineering baseline, NOT production-ready and NOT yet ML-based.** Rule-based confidence scores are *heuristic*, not calibrated probabilities. A finding indicates that sensitive data may have been transmitted; it is **not by itself proof of a leak/exfiltration**.
+I started TRACE because a list of detected emails or passwords isn't particularly useful if you can't explain where those values came from. I wanted a tool that could read a packet capture, piece together the conversations inside it, identify information worth investigating, and take that finding all the way back to the original network evidence.
 
-## Architecture
+That idea has grown into a working Python-based analysis engine with a browser dashboard, structured reports, packet-level investigation and an experimental machine-learning detector.
 
-```
-PCAP/PCAPNG reader → Ethernet/IP/TCP decoding → TCP flow grouping
-→ TCP payload reassembly (out-of-order and retransmissions)
-→ HTTP/1.x message parsing → headers, URL query, JSON/form/body extraction
-→ rule-based PII detector → masked findings → JSON report
-                         ↳ planned: ML entity recogniser / BiLSTM evaluation
-```
+## What TRACE does
 
-## Run locally on macOS
+TRACE examines PCAP and PCAPNG recordings, reconstructs supported TCP and HTTP traffic, and looks for personal information in readable web requests and responses. Rather than treating detections as isolated text matches, it connects them to the conversation, field and supporting packet evidence.
 
-Requires **Python 3.10+**. Core prototype uses only Python's standard library.
+The current implementation includes:
 
-```bash
-# Inside the extracted project directory
-python3 examples/generate_demo.py demo.pcap
-PYTHONPATH=src python3 -m packet_pii.cli demo.pcap --output demo-report.json
-```
+- **Network reconstruction:** packet decoding, TCP conversation grouping and reassembly, with handling for retransmissions, out-of-order segments and incomplete recordings.
+- **Personal-information detection:** pattern-based checks for emails, telephone numbers, payment card candidates, IP addresses, credentials, usernames, names and selected device or account identifiers.
+- **Contextual AI:** an optional three-model BiLSTM V2 ensemble trained to identify names and usernames that simple field-name rules can miss.
+- **An evidence Inspector:** a finding can be followed into its HTTP message, field metadata, source ranges and supporting original packets. Recovered HTML can be inspected as inert content where the recording supports it.
+- **A local dashboard:** readable summaries, searchable findings, web conversations, technical evidence, coverage information and controlled report exports.
+- **Reproducible testing:** fictional network captures, verification against the original packet bytes, automated regression tests and ground-truth evaluation with independently labelled examples.
 
-Now open `demo-report.json` with VS Code or run:
+A major design decision is to keep the network evidence separate from the detection claim. TRACE should be able to explain both **what it noticed** and **what the recording actually proves**.
 
-```bash
-python3 -m json.tool demo-report.json
-```
+## How it's built
 
-Also test PCAPNG:
+The core pipeline is written in **Python**, with bounded packet processing and HTTP reconstruction feeding a rules engine and optional **PyTorch BiLSTM** inference. The browser interface runs locally; **SQLite** provides searchable evidence and result indexing, while JSON reports preserve structured findings and their provenance.
 
-```bash
-python3 examples/generate_demo.py demo.pcapng
-PYTHONPATH=src python3 -m packet_pii.cli demo.pcapng --output demo-ng-report.json
-```
+The machine-learning system is deliberately separate from the rule-based checks. That makes it possible to compare their results, track which fields the model examined and distinguish an incomplete analysis from a clean scan.
 
-Optional editable install + tests (requires `pip` and `pytest`):
+Key areas of the codebase include the capture/HTTP processing engine, detection rules, model inference and evaluation, report and evidence handling, and the dashboard/Inspector.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e . pytest
-pytest -q
-```
+## Detection quality and what the numbers mean
 
-After installing, the CLI also works with `pcap-pii demo.pcap -o demo-report.json`.
+The current **V2 BiLSTM ensemble** achieved **81.8% exact-span F1** on a held-out, out-of-generator **synthetic** challenge covering names and usernames. This is an evaluation of that specific model and dataset — **not an 81.8% accuracy claim for arbitrary packet captures**, and not a score for every kind of personal information TRACE reports.
 
-### CLI options
+A finding is a lead to investigate, not proof that a breach or exfiltration occurred. Model scores are not calibrated probabilities. File-specific accuracy can only be reported when the capture has matching independently verified ground-truth annotations.
 
-- `--threshold 0.8`: ignore detections with heuristic score below 0.8
-- `--output report.json`: location of report
-- `--include-values`: **SENSITIVE**: include complete detected secrets/PII. **Never use on real captures unless expressly approved and handled securely.** By default, values are masked. Reports do not export unkeyed secret fingerprints.
-- `--max-capture-mib`, `--max-packets`, `--max-flows`, `--max-tcp-mib`: cap file size, total records, endpoint-pair flows and buffered TCP payloads. Defaults: 128 MiB, 100000, 20000, and 64 MiB respectively. Exceeding a limit aborts without publishing a partial report.
-- `summary.analysis_incomplete`: true if corruption/truncation was observed or reconstructed TCP data has gaps. See `summary.capture_truncated_records` and `summary.capture_malformed_records`. Details: `docs/milestone3b-input-robustness.md`.
+[Read the V2 evaluation](docs/ml/V2_EVALUATION.md) · [Ground-truth evaluation approach](docs/ml/GROUND_TRUTH_EVALUATION.md)
 
-## What works (and what doesn't)
+## Where the project stands
 
-| Feature | Status |
-|---|---|
-| Classic PCAP + PCAPNG (enhanced packet blocks) | Implemented, basic Ethernet/raw IP/Linux cooked support |
-| IPv4, basic IPv6 TCP decoding | Implemented, limited |
-| TCP streams, out-of-order packets, retransmissions | Implemented for contiguous payloads and non-wrapping sequence numbers |
-| HTTP/1.x requests and responses | Implemented for common Content-Length and chunked cases |
-| URL query, JSON, URL-encoded/multipart forms, headers | Implemented for common text payloads |
-| gzip/deflate bodies | Implemented with output size cap |
-| Email/IP/phone/card/credential/username/structured name candidates | Implemented as rules and validators |
-| Advertising IDs (IDFA/GAID), explicitly transmitted age, gender/sex, device and account IDs | Context-validated deterministic rules; see [`PII_DETECTION_TAXONOMY.md`](docs/integration/PII_DETECTION_TAXONOMY.md) |
-| Network Evidence v2 | Verified capture hashing, packet-to-stream provenance, HTTP field source mapping and redacted Inspector; higher report-storage requirements apply |
-| Confidence threshold + structured JSON report | Implemented; scores are heuristics, not calibrated probabilities |
-| Contextual ML (BiLSTM V2, opt-in via `--ml-checkpoint`) | Implemented, **experimental**; bounded work budgets with explicit coverage accounting (see below) |
-| Encrypted TLS HTTP/2 or HTTP/3/QUIC | Not decrypted or decoded; only authorised plaintext/decrypted application data can be inspected |
-| TCP sequence wraparound, repeated connection tuples | Handled (reused tuples are split into separate flows) |
-| IP fragments / IPv6 extensions / plaintext HTTP/2 | Bounded, conservative support in Network Evidence v2; malformed/unsupported traffic still accounted for |
-| Production-grade HTTP framing, large-scale streaming, comprehensive evasion handling | **NOT supported** |
+TRACE is an **active research and engineering prototype**, not a commercial forensic product.
 
-The parser **skips malformed and incomplete traffic** rather than treating it as complete. Its output is not a forensic guarantee.
+The reconstruction, detection, dashboard and evidence-inspection workflows are implemented. The work still in progress is mainly about **large-capture reliability, report storage, processing speed and broader detection quality**. The higher AI-field settings are bounded processing allowances, not a promise that every large recording can finish within those limits. A V3 detector is being explored separately; the existing V2 remains the reference until a replacement is properly validated.
 
-## Contextual ML coverage and ground-truth evaluation
+TRACE does not magically decrypt HTTPS. Encrypted payloads, missing packet data and unsupported protocol features limit what can be recovered. HTTP support is intentionally bounded, and a completed analysis of readable traffic is not proof that every byte in the recording was interpreted.
 
-Hybrid mode runs the experimental BiLSTM V2 over every eligible extracted field (headers and credential fields are excluded by policy) in bounded, batched inference. Work is limited by a validated profile, selected with `X-ML-Coverage` in the dashboard (the *ML coverage* selector) or `ml_budget=` in the API:
+For the technical investigation work, see the [packet-to-HTTP mentor demonstration](docs/integration/MENTOR_DEMO_COMPLETION.md) and the [detection taxonomy](docs/integration/PII_DETECTION_TAXONOMY.md).
 
-| Profile | Eligible fields | Characters | Model time |
-|---|---|---|---|
-| `standard` (default) | 10,000 | 2,000,000 | 60 s |
-| `extended` | 100,000 | 20,000,000 | 300 s |
-| `complete` | 1,000,000 | 200,000,000 | 1,800 s |
+## Why this project matters to me
 
-There is no unlimited mode. Every eligible field is either evaluated or counted as skipped with a reason; `summary.ml_coverage_status` is `not_requested`, `no_eligible_fields`, `complete` or `partial` (a mid-scan model failure publishes nothing). Partial coverage sets `analysis_incomplete`, and the Model laboratory shows e.g. *"ML coverage limit reached. Analysed 10,000 of 88,192 eligible fields (11.3%). Results are incomplete."* Measured on this repository's synthetic 108,012-eligible-field capture: `standard` 4.6 s (partial, 9.3%), `complete` 40 s (complete) on the development machine.
+TRACE has been an opportunity to work across different parts of security engineering rather than stopping at detection rules: network protocols, Python systems design, machine learning, data provenance, local privacy controls, performance profiling, automated testing and user experience.
 
-File-specific precision, recall and F1 exist only when an independent, SHA-256-verified ground-truth manifest for that exact capture is supplied (`schemas/ground-truth-v1.schema.json`):
+The part I care most about is **trustworthy evidence**. A useful security tool should not just produce an impressive-looking result; it should be able to show what it examined, identify its limitations and let someone verify the finding for themselves.
 
-```bash
-pcap-pii-evaluate examples/groundtruth/controlled_fixture_v1.pcap \
-  examples/groundtruth/controlled_fixture_v1.manifest.json \
-  --ml-checkpoint src/packet_pii/ml/artifacts/bilstm_v2 -o evaluation.json
-```
+---
 
-Without a manifest, TRACE reports no accuracy for an uploaded file. The 81.8 % offline F1 is a different, synthetic benchmark. Method, the controlled fixture and measured V2 results: `docs/ml/GROUND_TRUTH_EVALUATION.md`; engineering handover: `docs/integration/HANDOVER_ML_COVERAGE_GROUNDTRUTH.md`.
-
-### Automated model quality assessment (synthetic probes)
-
-After every AI-assisted scan the dashboard automatically runs a small, bounded, local assessment: fictional, labelled probes (names, usernames, hard negatives) built from a privacy-safe structural summary of the capture are scored with the real V2 model. The result is called **Context-matched synthetic probe F1** and is *not* the accuracy of your capture (no values or field names from it are used). It is shown in Model laboratory → Automated Model Quality Assessment, separate from live coverage, from manifest-based ground-truth evaluation, and from the offline benchmark. `--assessment-probes 0` disables it. Details: `docs/ml/AUTOMATED_MODEL_QUALITY_ASSESSMENT.md`.
-
-## Security and data-handling
-
-- `.pcap`, `.pcapng`, and `*report.json` are excluded by `.gitignore`.
-- Never commit real captures, API keys, credentials, or raw leak reports.
-- Use synthetic samples and test-card numbers for development.
-- Prefer scanning locally; only upload approved, sanitized test artefacts.
-- Masked values still contain metadata that can be sensitive; keep reports private.
-
-## Project structure
-
-```
-src/packet_pii/
-  capture.py      # PCAP / PCAPNG and TCP parsing & reassembly
-  http_extract.py # HTTP messages and fields
-  detect.py       # PII rule-based baseline
-  engine.py       # pipeline and report generation
-  cli.py          # command line
-examples/
-  generate_demo.py # fake-PII capture generator, does NOT capture live traffic
-tests/
-  test_pipeline.py
-PLAN.md            # milestones and validation tasks
-```
-
-## Test and compare in Wireshark
-
-Generate `demo.pcap`, open it in Wireshark, use `tcp.stream eq 0`, and click **Follow → TCP Stream**. Compare reconstructed HTTP text and fields with `demo-report.json`. This helps verify the code, not just trust an AI-generated result.
+*TRACE is intended for authorised analysis and research. Test data in this repository is fictional; real packet captures and exported personal information should be handled privately and with permission.*
