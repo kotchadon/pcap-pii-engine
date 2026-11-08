@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
@@ -16,7 +17,7 @@ import tempfile
 
 def inspect_index(path: Path) -> dict:
     """Count results and TCP diagnoses using the existing private index."""
-    with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as db:
+    with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as db:
         findings = db.execute("SELECT count(*) FROM rows WHERE kind='findings'").fetchone()[0]
         http_messages = db.execute("SELECT count(*) FROM rows WHERE kind='http_evidence'").fetchone()[0]
         directions = unsafe = 0
