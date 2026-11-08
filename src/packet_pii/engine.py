@@ -6,7 +6,7 @@ missing session context.
 """
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -61,7 +61,7 @@ class AnalysisLimits:
     def __post_init__(self) -> None:
         ceilings = dict(max_capture_bytes=512*MIB, max_packets=2_000_000,
                         max_flows=300_000, max_tcp_payload_bytes=512*MIB,
-                        max_report_bytes=2*GIB, max_findings=4_000_000,
+                        max_report_bytes=6*GIB, max_findings=4_000_000,
                         max_memory_bytes=6*GIB)
         for key, value in asdict(self).items():
             if type(value) is not int or value <= 0:
@@ -81,9 +81,15 @@ class AnalysisLimits:
                            max_flows=300_000, max_tcp_payload_bytes=480*MIB,
                            max_report_bytes=2*GIB, max_findings=4_000_000,
                            max_memory_bytes=4*GIB),
+            # Separate opt-in evidence budget: no extra RAM or packet allowance.
+            # Requires a disk-backed indexed report and free-disk reservation.
+            'dense': dict(max_capture_bytes=512*MIB, max_packets=2_000_000,
+                          max_flows=300_000, max_tcp_payload_bytes=480*MIB,
+                          max_report_bytes=6*GIB, max_findings=4_000_000,
+                          max_memory_bytes=4*GIB),
         }
         if profile not in profiles:
-            raise ValueError('profile must be standard, large or stress')
+            raise ValueError('profile must be standard, large, stress or dense')
         return cls(**(profiles[profile] | overrides))
 
 
@@ -336,6 +342,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
 
     findings = [] if _rows is None else _rows.findings
     http_count = http_flows = gaps = unterminated = http_uncertain_streams = 0
+    unsafe_tcp_reasons = Counter()
     bodies_skipped: dict[str, int] = {}
     http2_streams = tls_streams = 0
     http2_connections_decoded = http2_messages = 0
@@ -469,6 +476,18 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 if missing:
                     gaps += 1
                     flow_gaps += 1
+                    # The legacy stream_gaps counter includes all unsafe TCP
+                    # directions, not only missing packet bytes. An observed
+                    # reset or conflicting overlap is a different uncertainty.
+                    # Preserve the conservative incomplete flag, but expose
+                    # the actual reason instead of claiming packet loss.
+                    issues = {'sequence_gap', 'conflicting_overlap',
+                              'fin_boundary_mismatch', 'direction_limit',
+                              'fragment_identity_reuse', 'mixed_directions',
+                              'multiple_handshakes', 'reset_observed'}
+                    seen = issues.intersection(assembled.diagnostics)
+                    for reason in seen or {'unclassified_unsafe_stream'}:
+                        unsafe_tcp_reasons[reason] += 1
                 tick = time.perf_counter()
                 if h2_result is not None:
                     notes = [d for d in h2_result.diagnostics if d['direction'] ==
@@ -788,6 +807,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'ml_inference_failed': False,
             'ml_incomplete': ml_skipped > 0,
             'stream_gaps': gaps,
+            'tcp_unsafe_stream_reasons': dict(sorted(unsafe_tcp_reasons.items())),
             'unterminated_http_messages': unterminated,
             'http_incomplete_streams': unterminated,
             'http_uncertain_streams': http_uncertain_streams,
@@ -873,6 +893,7 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
                       profile: str = 'standard', overwrite: bool = False,
                       display_nonsecret_values: bool = False,
                       progress=None, timings=None, row_observer=None, encoded_row_observer=None,
+                      row_storage_factory=None,
                       ml_detector: ContextualPIIDetector | None = None,
                       ml_budget: 'MLWorkBudget | str | None' = None,
             ml_work_budget: 'LegacyMLWorkBudget | None' = None,
@@ -885,6 +906,8 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
     before publication; complete is a non-cancellable notification.
     ``encoded_row_observer(kind, row, json_text)`` may reuse the exact spooled
     representation for indexing. Observers must not mutate rows.
+    ``row_storage_factory`` lets dashboard scans use their SQLite index as
+    the only row spool; the standalone CLI output stays unchanged.
     """
     from .reporting import ReportSpool, ReportLimitError, write_private_report
     source, output = Path(path), Path(target)
@@ -899,8 +922,11 @@ def analyze_to_report(path: str | Path, target: str | Path, threshold: float = 0
     guard = _MemoryGuard(budget)
     clock=time.monotonic()
     try:
-        with ReportSpool(output.parent,budget.max_report_bytes,row_observer=row_observer,
-                         encoded_row_observer=encoded_row_observer) as rows:
+        storage = (ReportSpool(output.parent, budget.max_report_bytes,
+                               row_observer=row_observer,
+                               encoded_row_observer=encoded_row_observer)
+                   if row_storage_factory is None else row_storage_factory(budget.max_report_bytes))
+        with storage as rows:
             report = _analyze(source,threshold,include_values,limits=budget,profile=profile,
                               display_nonsecret_values=display_nonsecret_values,
                               progress=progress,_rows=rows,timings=timings,ml_detector=ml_detector,ml_budget=ml_budget, ml_work_budget=ml_work_budget,

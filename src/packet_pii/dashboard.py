@@ -42,7 +42,7 @@ class DashboardServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, addr: tuple[str, int], max_upload: int = _MAX_UPLOAD, ml_detector=None,
-                 *, job_disk_mib: int = 12288, ml_budget_profile: str = 'standard', assessment_budget='default',
+                 *, job_disk_mib: int = 22528, ml_budget_profile: str = 'standard', assessment_budget='default',
                  retain_capture_for_inspection: bool = False):
         if addr[0] != '127.0.0.1':
             raise ValueError('Dashboard must bind to 127.0.0.1')
@@ -145,7 +145,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                          'jobs_supported': True, 'capture_retention_enabled': self.server.jobs.retain_capture_for_inspection, 'active_job_id': self.server.jobs.latest_id,
                          'ml_budget_profile': self.server.ml_budget_profile,
                          'ml_budget_profiles': {name: vars(LegacyMLWorkBudget.for_profile(name)) for name in ('standard','extended')},
-                         'profiles': {name:vars(AnalysisLimits.for_profile(name)) for name in ('standard','large','stress')},
+                         'profiles': {name:vars(AnalysisLimits.for_profile(name)) for name in ('standard','large','stress','dense')},
                          'detector_mode': 'rules_plus_bilstm' if self.server.ml_detector else 'rules_only',
                          'model_enabled': self.server.ml_detector is not None,
                          'model_available': self.server.ml_detector is not None,
@@ -334,8 +334,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             elif kind=='report':
                 if job.status!='completed':raise ValueError('Result not complete')
                 with job.report.open('rb') as stream:
-                    self._headers(200,'application/json',os.fstat(stream.fileno()).st_size,
-                                  download=f'trace-report-{job_id}.json')
+                    compressed = job.report.name.endswith('.json.gz')
+                    self._headers(200,'application/gzip' if compressed else 'application/json',
+                                  os.fstat(stream.fileno()).st_size,
+                                  download=f'trace-report-{job_id}.json.gz' if compressed else f'trace-report-{job_id}.json')
                     while block:=stream.read(256*1024):self.wfile.write(block)
             elif kind in ('conversations','investigation'):
                 query=parse_qs(urlsplit(self.path).query)
@@ -413,7 +415,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         ml_profile=self.headers.get('X-ML-Coverage', legacy_name or 'standard')
         manifest_id=self.headers.get('X-Ground-Truth-Manifest')
         request_id=self.headers.get('X-Request-ID','')
-        if mode not in ('rules','hybrid') or profile not in ('standard','large','stress') or ml_profile not in ML_PROFILES or not re.fullmatch(r'[A-Za-z0-9_-]{8,80}',request_id):
+        if mode not in ('rules','hybrid') or profile not in ('standard','large','stress','dense') or ml_profile not in ML_PROFILES or not re.fullmatch(r'[A-Za-z0-9_-]{8,80}',request_id):
             self._reply({'error':'Valid scan mode, profile, ML coverage profile and request ID are required'},400);return
         if mode=='hybrid' and self.server.ml_detector is None:
             self._reply({'error':'Requested model is unavailable'},422);return
@@ -487,7 +489,7 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument('--retain-capture-for-inspection',action='store_true',help='Retain private captures until job expiry for explicit sensitive HTTP source inspection; off by default')
     p.add_argument('--port', type=int, default=8765)
     p.add_argument('--ml-checkpoint', default=None, help='Opt in to offline research BiLSTM checkpoint')
-    p.add_argument('--job-disk-mib',type=int,default=12288,help='Private job disk quota MiB; conservative capacity is checked before accepting a scan')
+    p.add_argument('--job-disk-mib',type=int,default=22528,help='Private job disk quota MiB (default 22 GiB). Dense evidence scans reserve about 19 GiB of free disk before starting')
     p.add_argument('--assessment-probes',type=int,default=480,help='Probe budget for the automated post-scan model quality assessment (0 disables it)')
     p.add_argument('--ml-budget-profile',choices=('standard','extended'),default='standard')
     args = p.parse_args(argv)
