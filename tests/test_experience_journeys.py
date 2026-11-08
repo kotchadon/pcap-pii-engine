@@ -352,6 +352,7 @@ def test_summary_scope_distinguishes_supported_reconstruction_and_unreadable_con
     # aren't an assertion that the showcase capture itself has missing packets.
     page.evaluate('''() => {
       state.report.summary.stream_gaps=2;
+      state.report.summary.tcp_unsafe_stream_reasons={sequence_gap:1,reset_observed:1};
       state.report.summary.analysis_incomplete=true;
       state.report.summary.ml_coverage_status='partial';
       state.report.summary.ml_fields_eligible=10;
@@ -359,7 +360,11 @@ def test_summary_scope_distinguishes_supported_reconstruction_and_unreadable_con
       state.report.metadata.detection_method='rules_plus_bilstm';
       renderSummary();
     }''')
-    assert '2 conversations were missing' in page.inner_text('#scope-partial')
+    assert '2 reconstructed TCP directions' in page.inner_text('#scope-partial')
+    assert '1 sequence gaps' in page.inner_text('#scope-partial')
+    assert '1 connection resets' in page.inner_text('#scope-partial')
+    labels = page.evaluate("() => [pluralLabel('PERSON_NAME'),pluralLabel('PERSON_NAME_CANDIDATE')]")
+    assert labels == ['AI-detected names', 'Possible names (pattern checks)']
     assert '6 of 10 eligible pieces of information' in page.inner_text('#scope-partial')
     assert page.inner_text('#verdict-icon') == 'Check details'
     page.evaluate('''() => {
