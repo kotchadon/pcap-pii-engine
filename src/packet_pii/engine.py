@@ -6,7 +6,7 @@ missing session context.
 """
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -342,6 +342,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
 
     findings = [] if _rows is None else _rows.findings
     http_count = http_flows = gaps = unterminated = http_uncertain_streams = 0
+    unsafe_tcp_reasons = Counter()
     bodies_skipped: dict[str, int] = {}
     http2_streams = tls_streams = 0
     http2_connections_decoded = http2_messages = 0
@@ -475,6 +476,18 @@ def _analyze(path: str | Path, threshold: float = 0.8,
                 if missing:
                     gaps += 1
                     flow_gaps += 1
+                    # The legacy stream_gaps counter includes all unsafe TCP
+                    # directions, not only missing packet bytes. An observed
+                    # reset or conflicting overlap is a different uncertainty.
+                    # Preserve the conservative incomplete flag, but expose
+                    # the actual reason instead of claiming packet loss.
+                    issues = {'sequence_gap', 'conflicting_overlap',
+                              'fin_boundary_mismatch', 'direction_limit',
+                              'fragment_identity_reuse', 'mixed_directions',
+                              'multiple_handshakes', 'reset_observed'}
+                    seen = issues.intersection(assembled.diagnostics)
+                    for reason in seen or {'unclassified_unsafe_stream'}:
+                        unsafe_tcp_reasons[reason] += 1
                 tick = time.perf_counter()
                 if h2_result is not None:
                     notes = [d for d in h2_result.diagnostics if d['direction'] ==
@@ -794,6 +807,7 @@ def _analyze(path: str | Path, threshold: float = 0.8,
             'ml_inference_failed': False,
             'ml_incomplete': ml_skipped > 0,
             'stream_gaps': gaps,
+            'tcp_unsafe_stream_reasons': dict(sorted(unsafe_tcp_reasons.items())),
             'unterminated_http_messages': unterminated,
             'http_incomplete_streams': unterminated,
             'http_uncertain_streams': http_uncertain_streams,
