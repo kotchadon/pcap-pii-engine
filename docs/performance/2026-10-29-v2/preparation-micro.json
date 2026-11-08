@@ -1,0 +1,46 @@
+{
+  "model_version": "bilstm-v2-d1f9e9fb9a2b",
+  "torch": "2.6.0+cpu",
+  "threads": 2,
+  "exact_equivalence": true,
+  "results": {
+    "collate": {
+      "calls_per_sample": 6,
+      "seconds": {
+        "baseline": [
+          0.08323729899984755,
+          0.08545700200011197,
+          0.08782383599964305
+        ],
+        "candidate": [
+          0.015982478000296396,
+          0.09295932999975776,
+          0.014551282999946125
+        ]
+      },
+      "median_seconds": {
+        "baseline": 0.08545700200011197,
+        "candidate": 0.015982478000296396
+      }
+    },
+    "viterbi_decode": {
+      "calls_per_sample": 287,
+      "seconds": {
+        "baseline": [
+          0.0584609279999313,
+          0.05548669900008463,
+          0.05468039499965016
+        ],
+        "candidate": [
+          0.010244948000035947,
+          0.009573096000167425,
+          0.011338714999965305
+        ]
+      },
+      "median_seconds": {
+        "baseline": 0.05548669900008463,
+        "candidate": 0.010244948000035947
+      }
+    }
+  }
+}

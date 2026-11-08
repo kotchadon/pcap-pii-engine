@@ -1,0 +1,157 @@
+{
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "architecture": "x86_64",
+  "python": "3.12.14",
+  "source_root": "/workspace/scratch/28ec9f0f81f9/perf29/reference",
+  "capture_sha256": "dc0ad700ccf4bea7feb81c0954e0b94d78085342c6619b9a6a28d8d48f9ce161",
+  "capture_bytes": 8389315,
+  "profile": "stress",
+  "memory_budget_bytes": 4294967296,
+  "rss_before": 19279872,
+  "worker_timeout_seconds": 300,
+  "expected_capture_sha256": "dc0ad700ccf4bea7feb81c0954e0b94d78085342c6619b9a6a28d8d48f9ce161",
+  "scope": "JobManager + SQLite index + atomic report",
+  "mode": "hybrid",
+  "ml_profile": "high_capacity",
+  "model_load_seconds": 0.04455881099988801,
+  "rss_after_model_load": 234336256,
+  "cache_enabled": true,
+  "threads": 2,
+  "instrumented": false,
+  "historical_peak_reproduction": null,
+  "runs": [
+    {
+      "status": "completed",
+      "seconds": 41.73139847900006,
+      "model_seconds": 27.966008942998315,
+      "current_rss_after_analysis": 328052736,
+      "lifetime_peak_rss": 332587008,
+      "stages": {
+        "read_decode_group": 1.844684808000011,
+        "session_segmentation": 0.0933981179989587,
+        "reassembly": 1.273394753023922,
+        "http_parse": 0.15808149798908744,
+        "field_extraction": 0.3045669350087792,
+        "field_http_evidence": 4.238255013006892,
+        "rule_detection": 0.7119073120086341,
+        "ml_inference": 27.966008942998315,
+        "result_aggregation": 2.0275851240239717,
+        "report_write": 0.3951843029999509,
+        "index_observer_included_in_other_stages": 3.9915675139272935,
+        "index_bytes": 277028864
+      },
+      "memory": {
+        "reading": {
+          "last_current_rss": 269688832,
+          "observed_peak_rss": 269447168,
+          "max_sampled_rss": 269688832
+        },
+        "reconstructing": {
+          "last_current_rss": 272404480,
+          "observed_peak_rss": 272199680,
+          "max_sampled_rss": 272404480
+        },
+        "ml_inference": {
+          "last_current_rss": 328036352,
+          "observed_peak_rss": 332587008,
+          "max_sampled_rss": 328036352
+        },
+        "analysing": {
+          "last_current_rss": 326770688,
+          "observed_peak_rss": 332587008,
+          "max_sampled_rss": 327094272
+        },
+        "writing_report": {
+          "last_current_rss": 328036352,
+          "observed_peak_rss": 332587008,
+          "max_sampled_rss": 328036352
+        },
+        "complete": {
+          "last_current_rss": 328060928,
+          "observed_peak_rss": 332587008,
+          "max_sampled_rss": 328060928
+        }
+      },
+      "output_bytes": 165571264,
+      "canonical_report_sha256": "8321e0d120b03cb984093cf52525ea15c2e928dc0fd3bfca8db890be4ea7b1b6",
+      "report_digest_method": "ordered-json-events-v1",
+      "cache": {
+        "model_evaluations": 19132,
+        "cache_hits": 68905,
+        "cache_evictions": 0,
+        "accounted_cache_bytes": 15139785
+      },
+      "summary": {
+        "packets_captured": 53099,
+        "non_tcp_or_unsupported_packets": 0,
+        "unsupported_packets_by_reason": {},
+        "unsupported_packets_hiding_tcp": 0,
+        "packet_dispositions": {
+          "tcp_decoded": 53099
+        },
+        "fragment_diagnostics": {},
+        "fragment_loss_events": {},
+        "fragment_datagrams_invalidated_after_emission": 0,
+        "tcp_observed_damage": false,
+        "tcp_capture_completeness": "unknown",
+        "http_observed_incomplete": false,
+        "flows_processed": 8768,
+        "endpoint_pairs": 8768,
+        "http_flows": 8768,
+        "http_messages": 17536,
+        "http_transactions": 8768,
+        "unpaired_requests": 0,
+        "unpaired_responses": 0,
+        "total_data_bytes": 7539707,
+        "processing_time_seconds": 41.3092,
+        "distinct_exposed_locations": 26137,
+        "locations_flagged_by_rules": 17536,
+        "locations_flagged_by_model": 26137,
+        "locations_flagged_by_both": 17536,
+        "potential_leaks": 66383,
+        "fields_extracted": 114341,
+        "rules_findings": 17536,
+        "ml_findings": 48847,
+        "ml_fields_eligible": 88037,
+        "ml_fields_evaluated": 88037,
+        "ml_fields_excluded_by_policy": 26304,
+        "ml_fields_skipped": 0,
+        "ml_fields_skipped_by_reason": {},
+        "ml_skip_reasons": {},
+        "ml_inference_complete": true,
+        "ml_inference_invoked": true,
+        "ml_inference_batches": 344,
+        "ml_coverage_status": "complete",
+        "ml_coverage_ratio": 1.0,
+        "ml_batches": 344,
+        "ml_fields_model_inferred": 19132,
+        "ml_prediction_cache_hits": 68905,
+        "ml_prediction_cache_enabled": true,
+        "ml_fields_empty": 0,
+        "ml_predictions_by_label": {
+          "PERSON_NAME": 37682,
+          "USERNAME": 11165
+        },
+        "ml_processing_time_seconds": 27.966008942998315,
+        "ml_invoked": true,
+        "ml_inference_failed": false,
+        "ml_incomplete": false,
+        "stream_gaps": 0,
+        "unterminated_http_messages": 0,
+        "http_incomplete_streams": 0,
+        "http_uncertain_streams": 0,
+        "http2_streams_not_decoded": 0,
+        "http2_connections_decoded": 0,
+        "http2_messages_decoded": 0,
+        "tls_streams_not_inspected": 0,
+        "http_bodies_not_inspected": 0,
+        "http_bodies_not_inspected_by_reason": {},
+        "capture_truncated_records": 0,
+        "capture_malformed_records": 0,
+        "capture_unsupported_packet_records": 0,
+        "analysis_incomplete": false
+      },
+      "current_rss_after_report_release": 328196096
+    }
+  ]
+}
