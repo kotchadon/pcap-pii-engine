@@ -317,13 +317,18 @@ function renderSummary(){
  const partialNotes=[];
  if(Number(s.stream_gaps)>0){
   partialNotes.push(num(s.stream_gaps)+' reconstructed TCP directions contain gaps or other uncertainty; this is not a count of missing conversations.');
-  const issueNames={sequence_gap:'sequence gaps',conflicting_overlap:'conflicting retransmissions',
-    fin_boundary_mismatch:'uncertain connection endings',direction_limit:'per-direction byte limits',
-    fragment_identity_reuse:'ambiguous IP fragments',mixed_directions:'mixed packet directions',
-    multiple_handshakes:'multiple handshakes',reset_observed:'connection resets',
-    unclassified_unsafe_stream:'unclassified stream issues'};
+  const issueNames={
+    sequence_gap:['sequence gap','sequence gaps'],
+    conflicting_overlap:['conflicting retransmission','conflicting retransmissions'],
+    fin_boundary_mismatch:['uncertain connection ending','uncertain connection endings'],
+    direction_limit:['per-direction byte limit','per-direction byte limits'],
+    fragment_identity_reuse:['ambiguous IP fragment','ambiguous IP fragments'],
+    mixed_directions:['mixed packet direction','mixed packet directions'],
+    multiple_handshakes:['multiple handshake','multiple handshakes'],
+    reset_observed:['connection reset','connection resets'],
+    unclassified_unsafe_stream:['unclassified stream issue','unclassified stream issues']};
   const issues=Object.entries(s.tcp_unsafe_stream_reasons||{}).filter(([k,v])=>issueNames[k]&&Number(v)>0);
-  if(issues.length)partialNotes.push('Observed TCP reasons: '+issues.map(([k,v])=>num(v)+' '+issueNames[k]).join(', ')+'.');
+  if(issues.length)partialNotes.push('Observed TCP reasons: '+issues.map(([k,v])=>num(v)+' '+issueNames[k][Number(v)===1?0:1]).join(', ')+'.');
  }
  if(s.analysis_incomplete&&Number(s.stream_gaps)<=0&&s.ml_coverage_status!=='partial'&&!s.ml_inference_failed)partialNotes.push('Some parts of the recording may need another check.');
  const usedModel=r.metadata?.detection_method==='rules_plus_bilstm';
