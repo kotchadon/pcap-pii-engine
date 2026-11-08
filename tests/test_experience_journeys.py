@@ -361,8 +361,8 @@ def test_summary_scope_distinguishes_supported_reconstruction_and_unreadable_con
       renderSummary();
     }''')
     assert '2 reconstructed TCP directions' in page.inner_text('#scope-partial')
-    assert '1 sequence gaps' in page.inner_text('#scope-partial')
-    assert '1 connection resets' in page.inner_text('#scope-partial')
+    assert '1 sequence gap' in page.inner_text('#scope-partial')
+    assert '1 connection reset' in page.inner_text('#scope-partial')
     labels = page.evaluate("() => [pluralLabel('PERSON_NAME'),pluralLabel('PERSON_NAME_CANDIDATE')]")
     assert labels == ['AI-detected names', 'Possible names (pattern checks)']
     assert '6 of 10 eligible pieces of information' in page.inner_text('#scope-partial')
