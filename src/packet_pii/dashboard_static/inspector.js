@@ -454,10 +454,10 @@ const TraceInspector=(()=>{
   const f=entry.flow,ends=f.endpoints||[];const a=endpoint(ends[0]),b=endpoint(ends[1]);
   setHeader('Connection',a+' ↔ '+b);showOnly('insp-dynamic');const root=$i('insp-dynamic');root.replaceChildren();
   root.append(section('What happened',el('p','prose','These two devices exchanged '+nf(f.http_transactions)+' web '+(Number(f.http_transactions)===1?'conversation':'conversations')+' over '+nf(f.packets)+' recorded packets.')));
-  if(Number(f.stream_gaps)>0)root.append(note('Some pieces of this connection were missing from the recording, so its conversations may be incomplete.','warn'));
+  if(Number(f.stream_gaps)>0)root.append(note('TCP reconstruction reported a gap or uncertain data in this connection. Some content may not be verifiable.','warn'));
   root.append(section('Numbers',facts([['Endpoints',a+' ↔ '+b,'mono-soft'],['Packets',nf(f.packets)],['HTTP messages',nf(f.http_messages)],['Conversations',nf(f.http_transactions)],
    ['Requests without a response',f.unpaired_requests!=null?nf(f.unpaired_requests):null],['Responses without a request',f.unpaired_responses!=null?nf(f.unpaired_responses):null],
-   ['Gaps in the captured data',nf(f.stream_gaps)],['Unfinished HTTP messages',f.unterminated_http_messages!=null?nf(f.unterminated_http_messages):null]])),
+   ['TCP direction warnings',nf(f.stream_gaps)],['Unfinished HTTP messages',f.unterminated_http_messages!=null?nf(f.unterminated_http_messages):null]])),
    el('p','hint','Which endpoint acted as client or server is shown in each conversation under Conversations.'));
   if(Array.isArray(f.http_diagnostics)&&f.http_diagnostics.length){const ul=el('ul','plain-list');for(const d of f.http_diagnostics.slice(0,20))ul.append(el('li',null,typeof d==='string'?d.replaceAll('_',' '):String(d.reason||'unspecified').replaceAll('_',' ')));root.append(section('Reconstruction notes',ul))}
   const more=el('details','iv-more');more.append(el('summary',null,'Technical details'),facts([['Connection ID',f.flow_id,'mono']]));root.append(more);
