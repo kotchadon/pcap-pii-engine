@@ -12,7 +12,7 @@ const labels={
  model:['AI details','AI details','What the optional AI checked, and how it has been tested.'],
  how:['How TRACE works','How TRACE works','Four steps from a recording to the details behind each finding.']};
 // One description per kind of information: icon (Lucide), plural label for lists, and whether it is a secret.
-const CATEGORY={EMAIL:['c-mail','Email addresses'],PHONE:['c-phone','Phone numbers'],PERSON_NAME:['c-user','Names'],PERSON_NAME_CANDIDATE:['c-user','Names'],
+const CATEGORY={EMAIL:['c-mail','Email addresses'],PHONE:['c-phone','Phone numbers'],PERSON_NAME:['c-user','AI-detected names'],PERSON_NAME_CANDIDATE:['c-user','Possible names (pattern checks)'],
  USERNAME:['c-at','Usernames'],CREDENTIAL_OR_TOKEN:['c-key','Passwords and tokens',true],CREDIT_CARD:['c-card','Card numbers'],IP_ADDRESS:['c-network','Network addresses'],
  AGE:['c-cake','Ages'],GENDER:['c-user','Gender'],SEX:['c-user','Sex'],DEVICE_ID:['c-device','Device IDs'],APPLE_ADVERTISING_ID:['c-device','Advertising IDs'],
  ANDROID_ADVERTISING_ID:['c-device','Advertising IDs'],ADVERTISING_ID:['c-device','Advertising IDs'],USER_ACCOUNT_ID:['c-id','Account IDs']};
@@ -28,7 +28,7 @@ function catTile(type,extra){
 const RESULT_TABS=['summary','findings','flows','model'];
 const hasInspector=()=>typeof TraceInspector!=='undefined';
 const UPPER=new Set(['ip','id','pii','url','uuid']);
-const FRIENDLY={EMAIL:'Email address',PHONE:'Phone number',PERSON_NAME:'Name',PERSON_NAME_CANDIDATE:'Name',USERNAME:'Username',CREDENTIAL_OR_TOKEN:'Password or token',CREDIT_CARD:'Card number',IP_ADDRESS:'Network address',AGE:'Age',GENDER:'Gender',SEX:'Sex',DEVICE_ID:'Device ID',USER_ACCOUNT_ID:'Account ID',APPLE_ADVERTISING_ID:'Apple advertising ID',ANDROID_ADVERTISING_ID:'Android advertising ID',ADVERTISING_ID:'Advertising ID'};
+const FRIENDLY={EMAIL:'Email address',PHONE:'Phone number',PERSON_NAME:'AI-detected name',PERSON_NAME_CANDIDATE:'Possible name (pattern check)',USERNAME:'Username',CREDENTIAL_OR_TOKEN:'Password or token',CREDIT_CARD:'Card number',IP_ADDRESS:'Network address',AGE:'Age',GENDER:'Gender',SEX:'Sex',DEVICE_ID:'Device ID',USER_ACCOUNT_ID:'Account ID',APPLE_ADVERTISING_ID:'Apple advertising ID',ANDROID_ADVERTISING_ID:'Android advertising ID',ADVERTISING_ID:'Advertising ID'};
 function typeLabel(t){if(FRIENDLY[String(t||'')])return FRIENDLY[String(t)];const words=String(t||'Unknown').replaceAll('_',' ').toLowerCase().split(' ').map(w=>UPPER.has(w)?w.toUpperCase():w);const out=words.join(' ');return out.charAt(0).toUpperCase()+out.slice(1);}
 const num=n=>Number(n||0).toLocaleString('en-AU');
 function setText(id,value){$(id).textContent=String(value)}
@@ -306,7 +306,7 @@ function renderSummary(){
   :'TRACE read '+num(s.http_messages)+' web messages and found nothing that looked like personal information. Encrypted content and anything outside these messages wasn’t checked.');
  // Completeness: every signal that limits the result is stated, never hidden behind a green tick.
  const reasons=[];
- if(Number(s.stream_gaps)>0)reasons.push('Some packets were missing ('+num(s.stream_gaps)+' gaps in the captured streams), so parts of some conversations may be incomplete.');
+ if(Number(s.stream_gaps)>0)reasons.push(num(s.stream_gaps)+' TCP directions had unsafe or uncertain reconstruction. This does not necessarily mean packets were missing.');
  if(s.ml_coverage_status==='partial')reasons.push('The contextual model read only part of the eligible fields.');
  if(s.ml_inference_failed)reasons.push('The contextual model failed or did not finish.');
  if(s.analysis_incomplete&&!reasons.length)reasons.push('A capture problem or processing limit stopped TRACE reading some traffic.');
@@ -315,7 +315,16 @@ function renderSummary(){
  // All quantities are from the actual report; unsupported encrypted content has no measured count.
  setText('scope-examined','TRACE looked at '+num(s.http_messages)+' readable web messages in this recording.');
  const partialNotes=[];
- if(Number(s.stream_gaps)>0)partialNotes.push('Some parts of '+num(s.stream_gaps)+' conversations were missing from the recording.');
+ if(Number(s.stream_gaps)>0){
+  partialNotes.push(num(s.stream_gaps)+' reconstructed TCP directions contain gaps or other uncertainty; this is not a count of missing conversations.');
+  const issueNames={sequence_gap:'sequence gaps',conflicting_overlap:'conflicting retransmissions',
+    fin_boundary_mismatch:'uncertain connection endings',direction_limit:'per-direction byte limits',
+    fragment_identity_reuse:'ambiguous IP fragments',mixed_directions:'mixed packet directions',
+    multiple_handshakes:'multiple handshakes',reset_observed:'connection resets',
+    unclassified_unsafe_stream:'unclassified stream issues'};
+  const issues=Object.entries(s.tcp_unsafe_stream_reasons||{}).filter(([k,v])=>issueNames[k]&&Number(v)>0);
+  if(issues.length)partialNotes.push('Observed TCP reasons: '+issues.map(([k,v])=>num(v)+' '+issueNames[k]).join(', ')+'.');
+ }
  if(s.analysis_incomplete&&Number(s.stream_gaps)<=0&&s.ml_coverage_status!=='partial'&&!s.ml_inference_failed)partialNotes.push('Some parts of the recording may need another check.');
  const usedModel=r.metadata?.detection_method==='rules_plus_bilstm';
  if(usedModel&&(s.ml_coverage_status==='partial'||s.ml_inference_failed)){
@@ -330,7 +339,7 @@ function renderSummary(){
  setText('scope-uninspectable','TRACE checks readable web conversations. Encrypted information and other network formats are not part of this scan.');
  setText('verdict-icon',bad?'Check details':'Scan finished');$('verdict-icon').classList.toggle('warning',bad);$('verdict-icon').dataset.state=bad?'warn':'ok';
  setText('verdict-title',bad?'Part of this recording wasn’t fully checked':'TRACE read every web conversation it could');
- setText('verdict-text',bad?(s.ml_coverage_status==='partial'?aiShare(s)+' You can still review every finding. The exact numbers are in “What did TRACE check?”.':Number(s.stream_gaps)>0?'Some pieces of the recording were missing, so a few conversations may be incomplete. You can still review the findings.':s.ml_inference_failed?'The AI check didn’t finish, so only pattern checks contributed. You can still review the findings.':'Some of the recording couldn’t be read. You can still review the findings; details are in “What did TRACE check?”.'):'Nothing was missing from the readable conversations. Encrypted content is never read.');
+ setText('verdict-text',bad?(s.ml_coverage_status==='partial'?aiShare(s)+' You can still review every finding. The exact numbers are in “What did TRACE check?”.':Number(s.stream_gaps)>0?'TRACE recovered the readable web messages, but '+num(s.stream_gaps)+' TCP directions had gaps or uncertain reconstruction. Open “What did TRACE check?” for the actual reasons. Findings remain available.':s.ml_inference_failed?'The AI check didn’t finish, so only pattern checks contributed. You can still review the findings.':'Some of the recording couldn’t be read. You can still review the findings; details are in “What did TRACE check?”.'):'Nothing was missing from the readable conversations. Encrypted content is never read.');
  const root=$('breakdown');root.replaceChildren();
  if(!items.length){const p=document.createElement('p');p.className='empty-inline';p.textContent='No findings were reported at the current thresholds.';root.appendChild(p)}
  else for(const [label,count] of items.slice(0,12)){const line=document.createElement('button');line.type='button';line.className='cat-row';line.setAttribute('aria-label',pluralLabel(label)+': '+count+'. Show them.');const name=document.createElement('span');name.className='cat-label';name.textContent=pluralLabel(label);const n=document.createElement('b');n.className='cat-count';n.textContent=count;line.append(catTile(label),name,n);line.addEventListener('click',()=>showType(label));root.appendChild(line)}
