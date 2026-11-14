@@ -1,0 +1,18 @@
+{
+  "main": "50c3a1251995d7063f3b49a9354c71d4ff429504",
+  "records": [
+    {
+      "snapshot": "perf-next",
+      "transport_extra_final_newlines_removed": 64
+    },
+    {
+      "snapshot": "perf-reference",
+      "transport_extra_final_newlines_removed": 32
+    },
+    {
+      "snapshot": "perf-main-reference",
+      "transport_extra_final_newlines_removed": 32
+    }
+  ],
+  "note": "Some restored unmodified text files had one transport-added final newline during initial local measurements; normalized to exact Git blobs. Executable statements and changed model files were identical. No performance rerun for EOF whitespace."
+}

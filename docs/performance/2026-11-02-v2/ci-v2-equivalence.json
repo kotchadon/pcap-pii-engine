@@ -1,0 +1,81 @@
+{
+  "baseline": {
+    "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.11.17",
+    "torch": "2.15.0+cpu",
+    "threads": 2,
+    "batch_size": 64,
+    "max_batch_tokens": 4096,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "source_sha256": {
+      "bilstm.py": "fa380400ce68f1a5f24c93a139b82a7131e868a814f89caf906b6d53389e259e",
+      "spans.py": "987a7678df77ed6a4b578a99f4ba17d8db7c47ac1b0ddd5fdc748d82f645c41e",
+      "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+    },
+    "weights_sha256": {
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262",
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5"
+    },
+    "input_sha256": "f217f59da368560fda817b23eff6f21befcc8ce5bce723df6a8d4eebe1496314",
+    "fields": 4314,
+    "model_load_seconds": 0.06187597799998912,
+    "cold_seconds": 4.510023638999996,
+    "warm_seconds": [
+      4.089297235999993
+    ],
+    "warm_median_seconds": 4.089297235999993,
+    "lifetime_peak_rss_bytes_by_iteration": [
+      436375552,
+      441802752
+    ]
+  },
+  "candidate": {
+    "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "python": "3.11.17",
+    "torch": "2.15.0+cpu",
+    "threads": 2,
+    "batch_size": 64,
+    "max_batch_tokens": 4096,
+    "model_version": "bilstm-v2-d1f9e9fb9a2b",
+    "min_score": 0.35,
+    "source_sha256": {
+      "bilstm.py": "781d74f0bece53c8323eafcdc9eb54ce1694e5c3ac7ccd4cd1210dbb7f0381b4",
+      "spans.py": "c9e9352239b32a8840a33188682aa2f38311193cbbbbf8c9730c623f58b60e7a",
+      "encoding.py": "dd25666727cdbe80afeb868d13c3a92f254134b68857213f98bc6b0acf797ed9"
+    },
+    "weights_sha256": {
+      "seed11": "bebfc0c9afcfb2a975b060e0725a98ab8c095ecb00093e04b50f2e0571011db5",
+      "seed13": "46bd48b861abd19a8e0d6f64b7e959c056b1a9b14bed26af676ed1ff0e7d4262",
+      "seed12": "de292058fd26f5a014f211ef814db28e270b28ca6f73de081b03a63d2c216dd5"
+    },
+    "input_sha256": "f217f59da368560fda817b23eff6f21befcc8ce5bce723df6a8d4eebe1496314",
+    "fields": 4314,
+    "model_load_seconds": 0.06366540600001258,
+    "cold_seconds": 2.9159478249999893,
+    "warm_seconds": [
+      2.8865383769999937
+    ],
+    "warm_median_seconds": 2.8865383769999937,
+    "lifetime_peak_rss_bytes_by_iteration": [
+      416894976,
+      418144256
+    ]
+  },
+  "equivalence": {
+    "same_inputs": true,
+    "same_weights": true,
+    "same_model_version": true,
+    "same_configured_threshold": true,
+    "same_labels_spans_field_order": true,
+    "same_threshold_decisions": true,
+    "raw_scores_bit_identical": true,
+    "max_raw_score_difference": 0.0,
+    "unthresholded_spans": 4175
+  },
+  "warm_median_reduction_percent": 29.412360843118755,
+  "scope": "Isolated model-only CPU runs; excludes capture processing and report indexing."
+}

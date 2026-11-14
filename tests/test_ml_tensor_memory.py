@@ -36,7 +36,7 @@ def test_inference_convolves_only_nonempty_character_rows_and_matches_training_p
     with torch.inference_mode():
         actual = model(word, shape, ctx, chars, lengths)
     hook.remove()
-    assert rows == [4]  # four real character sequences; no convolution for padding or empty separator rows
+    assert rows == [2]  # four occurrences of two character rows; no padding/empty-row convolution
     torch.testing.assert_close(actual, reference, atol=1e-6, rtol=1e-6)
 
 
@@ -48,3 +48,4 @@ def test_all_empty_character_rows_still_produce_finite_logits():
     with torch.inference_mode():
         logits = model(word, word, word, chars, torch.tensor([2]))
     assert torch.isfinite(logits).all() and logits.shape == (1, 2, 5)
+
